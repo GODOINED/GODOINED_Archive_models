@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D модель — ретро просмотр</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta property="og:title" content="Архив 3D моделей — просмотр модели">
+    <meta property="og:description" content="Просмотр 3D модели с анимацией. Ретро-архив.">
+    <meta property="og:image" content="https://yourusername.github.io/your-repo/social-preview.png">
+    <meta property="og:url" content="https://yourusername.github.io/your-repo/model.html">
+</head>
+<body>
+    <canvas id="bg-canvas" class="bg-canvas"></canvas>
+    <div class="transition-overlay" id="transition-overlay"></div>
+
+    <header>
+        <a href="#" class="back-link" id="back-link">< К ГЛАВНОЙ</a>
+        <h1 id="model-title">ЗАГРУЗКА МОДЕЛИ... <span class="cursor">█</span></h1>
+    </header>
+
+    <main class="model-detail">
+        <div class="model-container">
+            <div class="animation-area">
+                <canvas id="animation-canvas" width="400" height="400"></canvas>
+                <div id="frame-loader" class="frame-loader" style="display: none;">
+                    <span>ЗАГРУЗКА КАДРОВ</span>
+                    <div class="loader-progress"><div class="loader-fill"></div></div>
+                    <span id="loader-percent">0%</span>
+                </div>
+            </div>
+            <div class="info-area">
+                <h2 id="model-name"></h2>
+                <div id="model-tags" class="tags"></div>
+                <p id="model-description" class="description-text"></p>
+                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                    <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
+                    <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
+                </div>
+                <div id="share-message" class="share-message" style="display: none;">Ссылка скопирована!</div>
+            </div>
+        </div>
+    </main>
+
+    <canvas id="particles-canvas"></canvas>
+    <div class="theme-switcher">
+        <button class="theme-btn theme-green" data-theme="green" style="background:#3eff6e;"></button>
+        <button class="theme-btn theme-amber" data-theme="amber" style="background:#ffb347;"></button>
+        <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

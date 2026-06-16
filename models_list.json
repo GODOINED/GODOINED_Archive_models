@@ -1,0 +1,58 @@
+[
+    {
+        "name": "Helix",
+        "displayName": "Helix[color=red][/color][shake=0.08,2][/shake]",
+        "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 2,
+        "idleFrames": 3,
+        "preview": "/models/Helix/icon.webp"
+    },
+    {
+        "name": "Beez",
+        "displayName": "Beez",
+        "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby iconBumby, Sandy iconSandy, and Ant iconAnt. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "/models/Beez/icon.webp"
+    },
+    {
+        "name": "Eliot",
+        "displayName": "Eliot",
+        "description": "---",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "/models/Eliot/icon.webp"
+    },
+    {
+        "name": "Jess",
+        "displayName": "[shake=0.02,0.5]Jess[/shake]",
+        "description": "---",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "oc", "color": "#3ead7d" }
+        ],
+        "downloadable": true,
+        "downloadFile": "model.blend",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "/models/Jess/icon.webp"
+    }
+]
