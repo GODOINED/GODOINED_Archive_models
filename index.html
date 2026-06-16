@@ -12,7 +12,7 @@
     <meta property="og:type" content="website">
     <script src="version.js"></script>
     <script>
-        // Подставляем версию в CSS
+        // Загрузка CSS с версией
         (function() {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -78,12 +78,21 @@
         <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
     </div>
 
-    <script src="version.js"></script>
     <script>
-        // Подставляем версию в script.js
+        // Загрузка script.js с версией и вызов initApp после загрузки
         (function() {
             const script = document.createElement('script');
             script.src = 'script.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : Date.now());
+            script.onload = function() {
+                if (typeof initApp === 'function') {
+                    initApp();
+                } else {
+                    console.warn('initApp не определена. Проверьте, что script.js содержит функцию initApp.');
+                }
+            };
+            script.onerror = function() {
+                console.error('Не удалось загрузить script.js');
+            };
             document.body.appendChild(script);
         })();
     </script>

@@ -8,14 +8,12 @@ const isModel = window.location.pathname.includes('model.html');
 console.log('Текущая страница:', isIndex ? 'Главная' : isModel ? 'Модель' : 'Другая');
 
 let allModels = [];
-let currentFilteredModels = [];
+let audioCtx = null;
+let soundsEnabled = true;
 let currentSort = 'random';
 let currentFilterTag = null;
 let currentPage = 1;
 const itemsPerPage = 12;
-
-let audioCtx = null;
-let soundsEnabled = true;
 
 // ===== АКТИВАЦИЯ АУДИО ПРИ ПЕРВОМ КЛИКЕ =====
 function activateAudioOnFirstClick() {
@@ -32,6 +30,7 @@ function activateAudioOnFirstClick() {
     }
 }
 
+// ===== ПРЕДВАРИТЕЛЬНОЕ СОЗДАНИЕ АУДИОКОНТЕКСТА =====
 function initAudioContext() {
     if (audioCtx) return audioCtx;
     try {
@@ -40,7 +39,6 @@ function initAudioContext() {
         return audioCtx;
     } catch(e) { soundsEnabled = false; return null; }
 }
-// Создаём контекст сразу при загрузке
 initAudioContext();
 
 // ===== ЗВУКИ =====
@@ -869,34 +867,41 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
     });
 })();
 
-// ===== ИНИЦИАЛИЗАЦИЯ =====
-document.addEventListener('DOMContentLoaded', async () => {
-    await fetchModels();
-    if (isIndex) {
-        console.log('Главная страница: инициализация галереи');
-        currentSort = 'random';
-        renderTagFilters();
-        setupSearch();
-        setupSort();
-        setupPagination();
-        applyFilters();
-    }
-    if (isModel) {
-        console.log('Страница модели');
-        const backLink = document.getElementById('back-link');
-        if (backLink) {
-            backLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                playClick();
-                smoothTransition('index.html');
-            });
+// ===== ФУНКЦИЯ ИНИЦИАЛИЗАЦИИ (вызывается из HTML) =====
+function initApp() {
+    console.log('🚀 Инициализация приложения');
+    fetchModels().then(() => {
+        if (isIndex) {
+            console.log('Главная страница: инициализация галереи');
+            window.focus();
+            if (document.activeElement) document.activeElement.blur();
+            window.scrollTo(0, 0);
+            currentSort = 'random';
+            renderTagFilters();
+            setupSearch();
+            setupSort();
+            setupPagination();
+            applyFilters();
         }
-        const params = new URLSearchParams(window.location.search);
-        const modelName = params.get('name');
-        if (modelName) {
-            loadModelDetail(modelName);
-        } else {
-            document.querySelector('.model-container').innerHTML = '<div class="loading">МОДЕЛЬ НЕ УКАЗАНА</div>';
+        if (isModel) {
+            console.log('Страница модели');
+            window.focus();
+            if (document.activeElement) document.activeElement.blur();
+            const backLink = document.getElementById('back-link');
+            if (backLink) {
+                backLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    playClick();
+                    smoothTransition('index.html');
+                });
+            }
+            const params = new URLSearchParams(window.location.search);
+            const modelName = params.get('name');
+            if (modelName) {
+                loadModelDetail(modelName);
+            } else {
+                document.querySelector('.model-container').innerHTML = '<div class="loading">МОДЕЛЬ НЕ УКАЗАНА</div>';
+            }
         }
-    }
-});
+    }).catch(e => console.error('Ошибка инициализации:', e));
+}
