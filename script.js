@@ -1,49 +1,3 @@
-// ===== ВСТРОЕННЫЕ ДАННЫЕ (ЗАПАСНОЙ ВАРИАНТ) =====
-const EMBEDDED_MODELS = [
-    {
-        "name": "Helix",
-        "displayName": "Helix",
-        "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]",
-        "tags": [
-            { "name": "gift", "color": "#ffaa44" },
-            { "name": "Dandy's world", "color": "rainbow" }
-        ],
-        "downloadable": false,
-        "downloadFile": "model.zip",
-        "startFrames": 2,
-        "idleFrames": 3,
-        "preview": "models/Helix/icon.webp"
-    },
-    {
-        "name": "Beez",
-        "displayName": "Beez",
-        "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby, Sandy, and Ant. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]",
-        "tags": [
-            { "name": "gift", "color": "#ffaa44" },
-            { "name": "Dandy's world", "color": "rainbow" }
-        ],
-        "downloadable": false,
-        "downloadFile": "model.zip",
-        "startFrames": 0,
-        "idleFrames": 0,
-        "preview": "models/Beez/icon.webp"
-    },
-    {
-        "name": "Eliot",
-        "displayName": "Eliot",
-        "description": "---",
-        "tags": [
-            { "name": "gift", "color": "#ffaa44" },
-            { "name": "Dandy's world", "color": "rainbow" }
-        ],
-        "downloadable": false,
-        "downloadFile": "model.zip",
-        "startFrames": 0,
-        "idleFrames": 0,
-        "preview": "models/Eliot/icon.webp"
-    }
-];
-
 let allModels = [];
 let currentFilteredModels = [];
 let currentSort = 'random';
@@ -52,6 +6,8 @@ let currentPage = 1;
 const itemsPerPage = 12;
 let audioCtx = null;
 let soundsEnabled = true;
+let modelDetailContainer = null;
+let modelDetailVisible = false;
 
 // ===== ЗВУКИ =====
 function initAudioContext() {
@@ -178,7 +134,7 @@ function downloadWithEffect(downloadUrl) {
     playWipeSound();
 }
 
-// ===== ЗАГРУЗКА МОДЕЛЕЙ =====
+// ===== ЗАГРУЗКА МОДЕЛЕЙ (только из внешнего JSON) =====
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
@@ -186,25 +142,30 @@ async function fetchModels() {
         if (grid && allModels.length === 0) {
             grid.innerHTML = '<div class="loading"><span class="spinner"></span> ЗАГРУЗКА МОДЕЛЕЙ...</div>';
         }
-        let response = await fetch('models_list.json');
+        const response = await fetch('models_list.json');
         if (!response.ok) {
             throw new Error('Не удалось загрузить models_list.json');
         }
         const data = await response.json();
         if (Array.isArray(data) && data.length) {
             allModels = data;
-            console.log('✅ Загружены данные из models_list.json');
+            console.log('✅ Модели загружены из models_list.json');
             return allModels;
+        } else {
+            throw new Error('Файл models_list.json пуст или имеет неверный формат');
         }
     } catch (e) {
-        console.warn('⚠️ Не удалось загрузить models_list.json, используем встроенные данные.', e);
+        console.error('Ошибка загрузки моделей:', e);
+        const grid = document.getElementById('models-grid');
+        if (grid) {
+            grid.innerHTML = `<div class="loading" style="color: var(--text-secondary); border-color: var(--border-color);">
+                ❌ ОШИБКА ЗАГРУЗКИ<br>
+                <span style="font-size:0.8rem; opacity:0.7;">${e.message}</span><br>
+                <span style="font-size:0.7rem; opacity:0.5;">Проверьте наличие и формат models_list.json</span>
+            </div>`;
+        }
+        return [];
     }
-    if (EMBEDDED_MODELS.length) {
-        allModels = EMBEDDED_MODELS;
-        console.log('✅ Используем встроенные данные');
-        return allModels;
-    }
-    throw new Error('Нет данных о моделях');
 }
 
 // ===== ПЕРЕМЕШИВАНИЕ =====
@@ -519,8 +480,6 @@ function parseBBCode(text) {
 }
 
 // ===== СТРАНИЦА МОДЕЛИ (динамическая) =====
-let modelDetailContainer = null;
-
 function showModelDetail(modelName) {
     const main = document.querySelector('main');
     const extraHeader = document.querySelector('header:nth-of-type(2)');
@@ -528,6 +487,8 @@ function showModelDetail(modelName) {
         modelDetailContainer = document.createElement('main');
         modelDetailContainer.className = 'model-detail';
         modelDetailContainer.id = 'model-detail-container';
+        modelDetailContainer.style.opacity = '0';
+        modelDetailContainer.style.transition = 'opacity 0.3s ease';
         modelDetailContainer.innerHTML = `
             <div class="model-container">
                 <div class="animation-area">
@@ -542,12 +503,12 @@ function showModelDetail(modelName) {
                     <h2 id="model-name"></h2>
                     <div id="model-tags" class="tags"></div>
                     <p id="model-description" class="description-text"></p>
-                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
                         <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
                         <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
+                        <button id="back-to-gallery" class="back-link" style="display:inline-block; margin:0;">← Назад к галерее</button>
                     </div>
                     <div id="share-message" class="share-message" style="display: none;">Ссылка скопирована!</div>
-                    <button id="back-to-gallery" class="back-link" style="margin-top:1rem; display:inline-block;">← Назад к галерее</button>
                 </div>
             </div>
         `;
@@ -556,6 +517,10 @@ function showModelDetail(modelName) {
     main.style.display = 'none';
     if (extraHeader) extraHeader.style.display = 'none';
     modelDetailContainer.style.display = 'block';
+    requestAnimationFrame(() => {
+        modelDetailContainer.style.opacity = '1';
+    });
+    modelDetailVisible = true;
 
     const model = allModels.find(m => m.name === modelName);
     if (!model) return;
@@ -603,12 +568,16 @@ function showModelDetail(modelName) {
     };
 
     document.getElementById('back-to-gallery').addEventListener('click', () => {
-        modelDetailContainer.style.display = 'none';
-        main.style.display = 'block';
-        if (extraHeader) extraHeader.style.display = 'block';
-        const canvas = document.getElementById('animation-canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        modelDetailContainer.style.opacity = '0';
+        setTimeout(() => {
+            modelDetailContainer.style.display = 'none';
+            main.style.display = 'block';
+            if (extraHeader) extraHeader.style.display = 'block';
+            modelDetailVisible = false;
+            const canvas = document.getElementById('animation-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }, 300);
     });
 
     const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
