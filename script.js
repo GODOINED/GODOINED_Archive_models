@@ -1,3 +1,49 @@
+// ========== ВСТРОЕННЫЕ ДАННЫЕ (ЗАПАСНОЙ ВАРИАНТ) ==========
+const EMBEDDED_MODELS = [
+    {
+        "name": "Helix",
+        "displayName": "Helix",
+        "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 2,
+        "idleFrames": 3,
+        "preview": "/models/Helix/icon.webp"
+    },
+    {
+        "name": "Beez",
+        "displayName": "Beez",
+        "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby, Sandy, and Ant. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "/models/Beez/icon.webp"
+    },
+    {
+        "name": "Eliot",
+        "displayName": "Eliot",
+        "description": "---",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "/models/Eliot/icon.webp"
+    }
+];
+
 let allModels = [];
 let currentFilteredModels = [];
 let currentSort = 'random';
@@ -78,7 +124,7 @@ function playWipeSound() {
 function playClick() { playRetroClick(); }
 function playHover() { playRetroHover(); }
 
-// ========== ПЕРЕХОД (для навигации) ==========
+// ========== ПЕРЕХОД ==========
 function smoothTransition(url) {
     const overlay = document.getElementById('transition-overlay');
     if (!overlay) { window.location.href = url; return; }
@@ -142,22 +188,35 @@ function downloadWithEffect(downloadUrl) {
     playWipeSound();
 }
 
-// ========== ЗАГРУЗКА МОДЕЛЕЙ (с проверкой на ошибки) ==========
+// ========== ЗАГРУЗКА МОДЕЛЕЙ (С РЕЗЕРВНЫМИ ДАННЫМИ) ==========
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
         const grid = document.getElementById('models-grid');
         if (grid && allModels.length === 0) grid.innerHTML = '<div class="loading"><span class="spinner"></span> ЗАГРУЗКА МОДЕЛЕЙ...</div>';
-        
-        // Пытаемся загрузить из корня сайта
-        let response = await fetch('/models_list.json');
-        if (!response.ok) {
-            // Если не нашлось, пробуем без слеша (относительный путь)
-            response = await fetch('models_list.json');
+        let response;
+        // Пробуем загрузить внешний JSON
+        try {
+            response = await fetch('/models_list.json');
+            if (!response.ok) {
+                response = await fetch('models_list.json');
+            }
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data) && data.length) {
+                    allModels = data;
+                    return allModels;
+                }
+            }
+        } catch (e) {
+            console.warn('Внешний JSON не загружен, используем встроенные данные.', e);
         }
-        if (!response.ok) throw new Error('HTTP ' + response.status + ' — файл models_list.json не найден');
-        allModels = await response.json();
-        return allModels;
+        // Если внешний не загрузился – используем встроенный
+        if (EMBEDDED_MODELS.length) {
+            allModels = EMBEDDED_MODELS;
+            return allModels;
+        }
+        throw new Error('Нет данных о моделях');
     } catch(e) {
         console.error('Ошибка загрузки моделей:', e);
         const grid = document.getElementById('models-grid');
@@ -165,14 +224,14 @@ async function fetchModels() {
             grid.innerHTML = `<div class="loading" style="color: var(--text-secondary); border-color: var(--border-color);">
                 ❌ ОШИБКА ЗАГРУЗКИ<br>
                 <span style="font-size:0.8rem; opacity:0.7;">${e.message}</span><br>
-                <span style="font-size:0.7rem; opacity:0.5;">Проверьте, что файл models_list.json лежит в корне сайта</span>
+                <span style="font-size:0.7rem; opacity:0.5;">Проверьте интернет или наличие models_list.json</span>
             </div>`;
         }
         return [];
     }
 }
 
-// ========== ПЕРЕМЕШИВАНИЕ (Fisher–Yates) ==========
+// ========== ПЕРЕМЕШИВАНИЕ ==========
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -182,7 +241,7 @@ function shuffleArray(array) {
     return arr;
 }
 
-// ========== СОРТИРОВКА (с поддержкой случайной) ==========
+// ========== СОРТИРОВКА ==========
 function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
@@ -352,7 +411,7 @@ function setupSearch() {
     });
 }
 
-// ========== СОРТИРОВКА (обработчик) ==========
+// ========== СОРТИРОВКА ==========
 function setupSort() {
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
