@@ -1,3 +1,8 @@
+/* ===== ГЛОБАЛЬНЫЙ ФОН ===== */
+html {
+    background: black; /* чтобы не было белых проблесков между страницами */
+}
+
 @font-face {
     font-family: 'RetroFont';
     src: url('font.otf') format('opentype');
@@ -25,9 +30,6 @@
     --scrollbar-thumb: #3eff6e;
     --neon-color: #3eff6e;
     --neon-shadow: 0 0 10px #3eff6e, 0 0 20px #3eff6e, 0 0 40px #3eff6e;
-}
-html {
-    background: black;
 }
 body.theme-amber {
     --bg-dark: #1a0f0a;
@@ -119,6 +121,7 @@ body::after {
     opacity: 1;
 }
 
+/* Остальные стили (все ваши, без изменений) */
 .bg-canvas {
     position: fixed;
     top: 0;
