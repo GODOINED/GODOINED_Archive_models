@@ -1,4 +1,4 @@
-// ===== ОПРЕДЕЛЕНИЕ СТРАНИЦЫ (надёжное) =====
+// ===== ОПРЕДЕЛЕНИЕ СТРАНИЦЫ =====
 const isIndex = window.location.pathname === '/' || 
                 window.location.pathname === '/index.html' || 
                 window.location.pathname.endsWith('/') ||
@@ -8,25 +8,50 @@ const isModel = window.location.pathname.includes('model.html');
 console.log('Текущая страница:', isIndex ? 'Главная' : isModel ? 'Модель' : 'Другая');
 
 let allModels = [];
-let audioCtx = null;
-let soundsEnabled = true;
+let currentFilteredModels = [];
 let currentSort = 'random';
 let currentFilterTag = null;
 let currentPage = 1;
 const itemsPerPage = 12;
 
-// ===== ЗВУКИ =====
+let audioCtx = null;
+let soundsEnabled = true;
+
+// ===== АКТИВАЦИЯ АУДИО ПРИ ПЕРВОМ КЛИКЕ =====
+function activateAudioOnFirstClick() {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        const resume = () => {
+            audioCtx.resume().then(() => {
+                document.removeEventListener('click', resume);
+                document.removeEventListener('touchstart', resume);
+                console.log('🔊 Аудио активировано');
+            }).catch(e => console.warn('Не удалось активировать аудио', e));
+        };
+        document.addEventListener('click', resume);
+        document.addEventListener('touchstart', resume);
+    }
+}
+
 function initAudioContext() {
     if (audioCtx) return audioCtx;
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        activateAudioOnFirstClick();
         return audioCtx;
     } catch(e) { soundsEnabled = false; return null; }
 }
+// Создаём контекст сразу при загрузке
+initAudioContext();
+
+// ===== ЗВУКИ =====
 function playRetroClick() {
     if (!soundsEnabled) return;
-    const ctx = initAudioContext();
-    if (!ctx || ctx.state === 'suspended') { if(ctx) ctx.resume().catch(()=>{}); return; }
+    const ctx = audioCtx || initAudioContext();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+        ctx.resume().catch(()=>{});
+        return;
+    }
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -41,8 +66,12 @@ function playRetroClick() {
 }
 function playRetroHover() {
     if (!soundsEnabled) return;
-    const ctx = initAudioContext();
-    if (!ctx || ctx.state === 'suspended') return;
+    const ctx = audioCtx || initAudioContext();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+        ctx.resume().catch(()=>{});
+        return;
+    }
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -57,8 +86,12 @@ function playRetroHover() {
 }
 function playWipeSound() {
     if (!soundsEnabled) return;
-    const ctx = initAudioContext();
-    if (!ctx || ctx.state === 'suspended') return;
+    const ctx = audioCtx || initAudioContext();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+        ctx.resume().catch(()=>{});
+        return;
+    }
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -218,16 +251,9 @@ function applyFilters() {
 
 // ===== ОТРИСОВКА СЕТКИ (только для index.html) =====
 function renderModelsGrid(models) {
-    console.log('renderModelsGrid вызван, isIndex =', isIndex);
-    if (!isIndex) {
-        console.warn('renderModelsGrid пропущен (не главная страница)');
-        return;
-    }
+    if (!isIndex) return;
     const grid = document.getElementById('models-grid');
-    if (!grid) {
-        console.error('Элемент #models-grid не найден!');
-        return;
-    }
+    if (!grid) return;
     if (!models.length) {
         grid.innerHTML = '<div class="loading">НИЧЕГО НЕ НАЙДЕНО</div>';
         updatePaginationControls(0);
@@ -844,7 +870,6 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
 })();
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
-initAudioContext();
 document.addEventListener('DOMContentLoaded', async () => {
     await fetchModels();
     if (isIndex) {
@@ -858,6 +883,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (isModel) {
         console.log('Страница модели');
+        const backLink = document.getElementById('back-link');
+        if (backLink) {
+            backLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                playClick();
+                smoothTransition('index.html');
+            });
+        }
         const params = new URLSearchParams(window.location.search);
         const modelName = params.get('name');
         if (modelName) {
