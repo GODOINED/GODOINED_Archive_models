@@ -7,7 +7,7 @@ const itemsPerPage = 12;
 let audioCtx = null;
 let soundsEnabled = true;
 
-// ========== ЗВУКИ (те же, что и раньше) ==========
+// ========== ЗВУКИ ==========
 function initAudioContext() {
     if (audioCtx) return audioCtx;
     try {
@@ -142,76 +142,21 @@ function downloadWithEffect(downloadUrl) {
     playWipeSound();
 }
 
-// ========== ЗАГРУЗКА МОДЕЛЕЙ (с поддержкой относительных путей) ==========
+// ========== ЗАГРУЗКА МОДЕЛЕЙ (с проверкой на ошибки) ==========
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
         const grid = document.getElementById('models-grid');
         if (grid && allModels.length === 0) grid.innerHTML = '<div class="loading"><span class="spinner"></span> ЗАГРУЗКА МОДЕЛЕЙ...</div>';
-        // Пробуем разные варианты путей
-        let response;
-        try {
+        
+        // Пытаемся загрузить из корня сайта
+        let response = await fetch('/models_list.json');
+        if (!response.ok) {
+            // Если не нашлось, пробуем без слеша (относительный путь)
             response = await fetch('models_list.json');
-            if (!response.ok) {
-                response = await fetch('./models_list.json');
-            }
-            if (!response.ok) {
-                // Если не нашли, используем встроенные данные
-                throw new Error('Не найден models_list.json');
-            }
-            const data = await response.json();
-            if (Array.isArray(data) && data.length) {
-                allModels = data;
-                return allModels;
-            }
-        } catch (e) {
-            console.warn('Внешний JSON не загружен, используем встроенные данные.', e);
         }
-        // Встроенные данные (для надёжности)
-        allModels = [
-            {
-                "name": "Helix",
-                "displayName": "Helix",
-                "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]",
-                "tags": [
-                    { "name": "gift", "color": "#ffaa44" },
-                    { "name": "Dandy's world", "color": "rainbow" }
-                ],
-                "downloadable": false,
-                "downloadFile": "model.zip",
-                "startFrames": 2,
-                "idleFrames": 3,
-                "preview": "models/Helix/icon.webp"
-            },
-            {
-                "name": "Beez",
-                "displayName": "Beez",
-                "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby, Sandy, and Ant. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]",
-                "tags": [
-                    { "name": "gift", "color": "#ffaa44" },
-                    { "name": "Dandy's world", "color": "rainbow" }
-                ],
-                "downloadable": false,
-                "downloadFile": "model.zip",
-                "startFrames": 0,
-                "idleFrames": 0,
-                "preview": "models/Beez/icon.webp"
-            },
-            {
-                "name": "Eliot",
-                "displayName": "Eliot",
-                "description": "---",
-                "tags": [
-                    { "name": "gift", "color": "#ffaa44" },
-                    { "name": "Dandy's world", "color": "rainbow" }
-                ],
-                "downloadable": false,
-                "downloadFile": "model.zip",
-                "startFrames": 0,
-                "idleFrames": 0,
-                "preview": "models/Eliot/icon.webp"
-            }
-        ];
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' — файл models_list.json не найден');
+        allModels = await response.json();
         return allModels;
     } catch(e) {
         console.error('Ошибка загрузки моделей:', e);
@@ -219,14 +164,15 @@ async function fetchModels() {
         if (grid) {
             grid.innerHTML = `<div class="loading" style="color: var(--text-secondary); border-color: var(--border-color);">
                 ❌ ОШИБКА ЗАГРУЗКИ<br>
-                <span style="font-size:0.8rem; opacity:0.7;">${e.message}</span>
+                <span style="font-size:0.8rem; opacity:0.7;">${e.message}</span><br>
+                <span style="font-size:0.7rem; opacity:0.5;">Проверьте, что файл models_list.json лежит в корне сайта</span>
             </div>`;
         }
         return [];
     }
 }
 
-// ========== ПЕРЕМЕШИВАНИЕ ==========
+// ========== ПЕРЕМЕШИВАНИЕ (Fisher–Yates) ==========
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -236,7 +182,7 @@ function shuffleArray(array) {
     return arr;
 }
 
-// ========== СОРТИРОВКА ==========
+// ========== СОРТИРОВКА (с поддержкой случайной) ==========
 function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
@@ -278,7 +224,7 @@ function applyFilters() {
     renderModelsGrid(currentFilteredModels);
 }
 
-// ========== ОТРИСОВКА СЕТКИ (с относительными путями) ==========
+// ========== ОТРИСОВКА СЕТКИ ==========
 function renderModelsGrid(models) {
     const grid = document.getElementById('models-grid');
     if (!grid) return;
@@ -293,13 +239,12 @@ function renderModelsGrid(models) {
     pageItems.forEach(model => {
         const card = document.createElement('div');
         card.className = 'model-card';
-        card.addEventListener('click', () => smoothTransition(`model.html?name=${encodeURIComponent(model.name)}`));
+        card.addEventListener('click', () => smoothTransition(`/model.html?name=${encodeURIComponent(model.name)}`));
         card.addEventListener('mouseenter', playHover);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
-        // Относительные пути
-        let previewUrl = model.preview || `models/${model.name}/start_0.webp`;
-        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/idle_0.webp`;
-        if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `models/${model.name}/icon.webp`;
+        let previewUrl = model.preview || `/models/${model.name}/start_0.webp`;
+        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `/models/${model.name}/idle_0.webp`;
+        if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `/models/${model.name}/icon.webp`;
         const img = document.createElement('img');
         img.className = 'preview';
         img.src = previewUrl;
@@ -407,7 +352,7 @@ function setupSearch() {
     });
 }
 
-// ========== СОРТИРОВКА ==========
+// ========== СОРТИРОВКА (обработчик) ==========
 function setupSort() {
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
@@ -452,7 +397,6 @@ function parseBBCode(text) {
     while (changed && iter < maxIter) {
         changed = false;
         iter++;
-        // [b]...[/b]
         let bMatch = /\[b\]([\s\S]*?)\[\/b\]/i.exec(safe);
         if (bMatch) {
             const content = bMatch[1];
@@ -461,7 +405,6 @@ function parseBBCode(text) {
             changed = true;
             continue;
         }
-        // [i]...[/i]
         let iMatch = /\[i\]([\s\S]*?)\[\/i\]/i.exec(safe);
         if (iMatch) {
             const content = iMatch[1];
@@ -470,7 +413,6 @@ function parseBBCode(text) {
             changed = true;
             continue;
         }
-        // [u]...[/u]
         let uMatch = /\[u\]([\s\S]*?)\[\/u\]/i.exec(safe);
         if (uMatch) {
             const content = uMatch[1];
@@ -479,7 +421,6 @@ function parseBBCode(text) {
             changed = true;
             continue;
         }
-        // [url=...]...[/url]
         let urlMatch = /\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/i.exec(safe);
         if (urlMatch) {
             const href = urlMatch[1].trim();
@@ -489,7 +430,6 @@ function parseBBCode(text) {
             changed = true;
             continue;
         }
-        // [url]...[/url]
         let urlSimple = /\[url\]([\s\S]*?)\[\/url\]/i.exec(safe);
         if (urlSimple) {
             const content = urlSimple[1].trim();
@@ -500,7 +440,6 @@ function parseBBCode(text) {
             changed = true;
             continue;
         }
-        // [color=...]...[/color]
         let colorMatch = /\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/i.exec(safe);
         if (colorMatch) {
             const color = colorMatch[1].trim();
@@ -510,7 +449,6 @@ function parseBBCode(text) {
             changed = true;
             continue;
         }
-        // [rainbow]...[/rainbow]
         let rainbowMatch = /\[rainbow\]([\s\S]*?)\[\/rainbow\]/i.exec(safe);
         if (rainbowMatch) {
             const content = rainbowMatch[1];
@@ -519,7 +457,6 @@ function parseBBCode(text) {
             changed = true;
             continue;
         }
-        // [shake]...[/shake]
         let shakeMatch = /\[shake(?:=([\d.]+)(?:,([\d.]+))?)?\]([\s\S]*?)\[\/shake\]/i.exec(safe);
         if (shakeMatch) {
             const duration = shakeMatch[1] ? parseFloat(shakeMatch[1]) : 0.1;
@@ -581,7 +518,7 @@ async function loadModelDetail(modelName) {
         if (model.downloadable && model.downloadFile) {
             downloadBtn.style.display = 'inline-block';
             downloadBtn.onclick = () => {
-                const downloadUrl = `models/${model.name}/${model.downloadFile}`;
+                const downloadUrl = `/models/${model.name}/${model.downloadFile}`;
                 downloadWithEffect(downloadUrl);
             };
         } else downloadBtn.style.display = 'none';
@@ -593,13 +530,12 @@ async function loadModelDetail(modelName) {
             shareMsg.style.display = 'inline-block';
             setTimeout(() => shareMsg.style.display = 'none', 2000);
         };
-        const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
-        const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
-
+        const startUrls = Array.from({ length: model.startFrames }, (_, i) => `/models/${model.name}/start_${i}.webp`);
+        const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `/models/${model.name}/idle_${i}.webp`);
         if (model.startFrames === 0 && model.idleFrames === 0) {
             const canvas = document.getElementById('animation-canvas');
             const ctx = canvas.getContext('2d');
-            const iconUrl = model.preview || `models/${model.name}/icon.webp`;
+            const iconUrl = model.preview || `/models/${model.name}/icon.webp`;
             const img = new Image();
             img.onload = () => {
                 canvas.width = img.width;
@@ -630,6 +566,7 @@ async function loadModelDetail(modelName) {
     }
 }
 
+// ========== ПРЕДЗАГРУЗКА КАДРОВ ==========
 async function preloadFramesWithIndicator(startUrls, idleUrls) {
     const loaderDiv = document.getElementById('frame-loader');
     const fillDiv = document.querySelector('.loader-fill');
@@ -894,8 +831,8 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
 initAudioContext();
 document.addEventListener('DOMContentLoaded', async () => {
     const back = document.getElementById('back-link');
-    if (back) back.addEventListener('click', (e) => { e.preventDefault(); smoothTransition('index.html'); });
-    if (window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '') {
+    if (back) back.addEventListener('click', (e) => { e.preventDefault(); smoothTransition('/'); });
+    if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
         await fetchModels();
         if (allModels.length > 0) {
             currentSort = 'random';
@@ -906,7 +843,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyFilters();
         }
     }
-    if (window.location.pathname.includes('model.html')) {
+    if (window.location.pathname === '/model.html') {
         const params = new URLSearchParams(window.location.search);
         const modelName = params.get('name');
         if (modelName) loadModelDetail(modelName);

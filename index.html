@@ -9,7 +9,7 @@
     <meta property="og:title" content="Архив 3D моделей — ретро портфолио">
     <meta property="og:description" content="Мой архив 3D моделей с анимацией, поиском и ретро-стилем.">
     <meta property="og:image" content="https://yourusername.github.io/your-repo/social-preview.png">
-    <meta property="og:url" content="https://yourusername.github.io/your-repo/">
+    <meta property="og:url" content="https://godoined.github.io/GODOINED_Archive_models/">
     <meta property="og:type" content="website">
 </head>
 <body>
@@ -29,10 +29,13 @@
 
         <section class="gallery">
             <h2>> ДОСТУПНЫЕ МОДЕЛИ</h2>
+
             <div class="info-bar">
                 <span id="model-count">Всего: 0</span>
             </div>
+
             <div id="tag-filters" class="tag-filters"></div>
+
             <div class="sort-bar">
                 <label for="sort-select">Сортировка:</label>
                 <select id="sort-select" class="sort-select">
@@ -42,13 +45,16 @@
                     <option value="name-desc">По имени (Я→А)</option>
                 </select>
             </div>
+
             <div class="search-bar">
                 <input type="text" id="search-input" placeholder="🔍 ПОИСК ПО НАЗВАНИЮ ИЛИ ОПИСАНИЮ..." class="search-input">
                 <button id="clear-search" class="clear-search">✕</button>
             </div>
+
             <div id="models-grid" class="models-grid">
                 <div class="loading">ЗАГРУЗКА ДАННЫХ...</div>
             </div>
+
             <div id="pagination-controls" class="pagination-controls">
                 <button id="prev-page" class="pagination-btn" disabled>◀</button>
                 <span id="page-info">Страница 1 из 1</span>
