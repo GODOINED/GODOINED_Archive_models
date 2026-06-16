@@ -1,6 +1,6 @@
 let allModels = [];
 let currentFilteredModels = [];
-let currentSort = 'random'; // теперь по умолчанию случайная
+let currentSort = 'random';
 let currentFilterTag = null;
 let currentPage = 1;
 const itemsPerPage = 12;
@@ -142,17 +142,34 @@ function downloadWithEffect(downloadUrl) {
     playWipeSound();
 }
 
-// ========== ЗАГРУЗКА МОДЕЛЕЙ ==========
+// ========== ЗАГРУЗКА МОДЕЛЕЙ (с проверкой на ошибки) ==========
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
         const grid = document.getElementById('models-grid');
         if (grid && allModels.length === 0) grid.innerHTML = '<div class="loading"><span class="spinner"></span> ЗАГРУЗКА МОДЕЛЕЙ...</div>';
-        const response = await fetch('/models_list.json');
-        if (!response.ok) throw new Error('HTTP ' + response.status);
+        
+        // Пытаемся загрузить из корня сайта
+        let response = await fetch('/models_list.json');
+        if (!response.ok) {
+            // Если не нашлось, пробуем без слеша (относительный путь)
+            response = await fetch('models_list.json');
+        }
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' — файл models_list.json не найден');
         allModels = await response.json();
         return allModels;
-    } catch(e) { console.error(e); return []; }
+    } catch(e) {
+        console.error('Ошибка загрузки моделей:', e);
+        const grid = document.getElementById('models-grid');
+        if (grid) {
+            grid.innerHTML = `<div class="loading" style="color: var(--text-secondary); border-color: var(--border-color);">
+                ❌ ОШИБКА ЗАГРУЗКИ<br>
+                <span style="font-size:0.8rem; opacity:0.7;">${e.message}</span><br>
+                <span style="font-size:0.7rem; opacity:0.5;">Проверьте, что файл models_list.json лежит в корне сайта</span>
+            </div>`;
+        }
+        return [];
+    }
 }
 
 // ========== ПЕРЕМЕШИВАНИЕ (Fisher–Yates) ==========
@@ -339,7 +356,6 @@ function setupSearch() {
 function setupSort() {
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
-    // Устанавливаем текущее значение из переменной (по умолчанию 'random')
     sortSelect.value = currentSort;
     sortSelect.addEventListener('change', (e) => {
         currentSort = e.target.value;
@@ -818,13 +834,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (back) back.addEventListener('click', (e) => { e.preventDefault(); smoothTransition('/'); });
     if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
         await fetchModels();
-        // Устанавливаем сортировку 'random' как начальную
-        currentSort = 'random';
-        renderTagFilters();
-        setupSearch();
-        setupSort(); // эта функция установит selected в select
-        setupPagination();
-        applyFilters();
+        if (allModels.length > 0) {
+            currentSort = 'random';
+            renderTagFilters();
+            setupSearch();
+            setupSort();
+            setupPagination();
+            applyFilters();
+        }
     }
     if (window.location.pathname === '/model.html') {
         const params = new URLSearchParams(window.location.search);
