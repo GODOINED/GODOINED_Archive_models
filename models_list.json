@@ -40,5 +40,19 @@
         "startFrames": 0,
         "idleFrames": 0,
         "preview": "models/Eliot/icon.webp"
+    },
+    {
+        "name": "Jess",
+        "displayName": "Jess",
+        "description": "---",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "OC", "color": "#ffaa44" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "models/Jess/icon.webp"
     }
 ]
