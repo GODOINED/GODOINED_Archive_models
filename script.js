@@ -1,3 +1,12 @@
+// ===== ОПРЕДЕЛЕНИЕ СТРАНИЦЫ (надёжное) =====
+const isIndex = window.location.pathname === '/' || 
+                window.location.pathname === '/index.html' || 
+                window.location.pathname.endsWith('/') ||
+                window.location.pathname.includes('index.html');
+const isModel = window.location.pathname.includes('model.html');
+
+console.log('Текущая страница:', isIndex ? 'Главная' : isModel ? 'Модель' : 'Другая');
+
 let allModels = [];
 let audioCtx = null;
 let soundsEnabled = true;
@@ -5,10 +14,6 @@ let currentSort = 'random';
 let currentFilterTag = null;
 let currentPage = 1;
 const itemsPerPage = 12;
-
-// Определяем страницу
-const isIndex = window.location.pathname === '/' || window.location.pathname === '/index.html';
-const isModel = window.location.pathname.includes('model.html');
 
 // ===== ЗВУКИ =====
 function initAudioContext() {
@@ -213,10 +218,21 @@ function applyFilters() {
 
 // ===== ОТРИСОВКА СЕТКИ (только для index.html) =====
 function renderModelsGrid(models) {
-    if (!isIndex) return;
+    console.log('renderModelsGrid вызван, isIndex =', isIndex);
+    if (!isIndex) {
+        console.warn('renderModelsGrid пропущен (не главная страница)');
+        return;
+    }
     const grid = document.getElementById('models-grid');
-    if (!grid) return;
-    if (!models.length) { grid.innerHTML = '<div class="loading">НИЧЕГО НЕ НАЙДЕНО</div>'; updatePaginationControls(0); return; }
+    if (!grid) {
+        console.error('Элемент #models-grid не найден!');
+        return;
+    }
+    if (!models.length) {
+        grid.innerHTML = '<div class="loading">НИЧЕГО НЕ НАЙДЕНО</div>';
+        updatePaginationControls(0);
+        return;
+    }
     const sortedModels = sortModels(models, currentSort);
     const totalPages = Math.ceil(sortedModels.length / itemsPerPage);
     if (currentPage > totalPages) currentPage = totalPages || 1;
@@ -832,6 +848,7 @@ initAudioContext();
 document.addEventListener('DOMContentLoaded', async () => {
     await fetchModels();
     if (isIndex) {
+        console.log('Главная страница: инициализация галереи');
         currentSort = 'random';
         renderTagFilters();
         setupSearch();
@@ -840,6 +857,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         applyFilters();
     }
     if (isModel) {
+        console.log('Страница модели');
         const params = new URLSearchParams(window.location.search);
         const modelName = params.get('name');
         if (modelName) {

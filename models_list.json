@@ -49,8 +49,8 @@
             { "name": "gift", "color": "#ffaa44" },
             { "name": "OC", "color": "#ffaa44" }
         ],
-        "downloadable": false,
-        "downloadFile": "model.zip",
+        "downloadable": true,
+        "downloadFile": "model.blend",
         "startFrames": 0,
         "idleFrames": 0,
         "preview": "models/Jess/icon.webp"
