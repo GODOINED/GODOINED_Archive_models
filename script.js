@@ -1,3 +1,49 @@
+// ===== ВСТРОЕННЫЕ ДАННЫЕ МОДЕЛЕЙ (без внешнего JSON) =====
+const MODELS_DATA = [
+    {
+        "name": "Helix",
+        "displayName": "Helix",
+        "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 2,
+        "idleFrames": 3,
+        "preview": "models/Helix/icon.webp"
+    },
+    {
+        "name": "Beez",
+        "displayName": "Beez",
+        "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby, Sandy, and Ant. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "models/Beez/icon.webp"
+    },
+    {
+        "name": "Eliot",
+        "displayName": "Eliot",
+        "description": "---",
+        "tags": [
+            { "name": "gift", "color": "#ffaa44" },
+            { "name": "Dandy's world", "color": "rainbow" }
+        ],
+        "downloadable": false,
+        "downloadFile": "model.zip",
+        "startFrames": 0,
+        "idleFrames": 0,
+        "preview": "models/Eliot/icon.webp"
+    }
+];
+
 let allModels = [];
 let currentFilteredModels = [];
 let currentSort = 'random';
@@ -7,7 +53,7 @@ const itemsPerPage = 12;
 let audioCtx = null;
 let soundsEnabled = true;
 
-// ========== ЗВУКИ ==========
+// ========== ЗВУКИ (без изменений) ==========
 function initAudioContext() {
     if (audioCtx) return audioCtx;
     try {
@@ -78,7 +124,7 @@ function playWipeSound() {
 function playClick() { playRetroClick(); }
 function playHover() { playRetroHover(); }
 
-// ========== ПЕРЕХОД (для навигации) ==========
+// ========== ПЕРЕХОД ==========
 function smoothTransition(url) {
     const overlay = document.getElementById('transition-overlay');
     if (!overlay) { window.location.href = url; return; }
@@ -94,7 +140,7 @@ function smoothTransition(url) {
     }, 250);
 }
 
-// ========== СКАЧИВАНИЕ С ЭФФЕКТОМ ==========
+// ========== СКАЧИВАНИЕ ==========
 function downloadWithEffect(downloadUrl) {
     const overlay = document.createElement('div');
     overlay.id = 'download-overlay';
@@ -142,37 +188,15 @@ function downloadWithEffect(downloadUrl) {
     playWipeSound();
 }
 
-// ========== ЗАГРУЗКА МОДЕЛЕЙ (с проверкой на ошибки) ==========
-async function fetchModels() {
-    if (allModels.length) return allModels;
-    try {
-        const grid = document.getElementById('models-grid');
-        if (grid && allModels.length === 0) grid.innerHTML = '<div class="loading"><span class="spinner"></span> ЗАГРУЗКА МОДЕЛЕЙ...</div>';
-        
-        // Пытаемся загрузить из корня сайта
-        let response = await fetch('/models_list.json');
-        if (!response.ok) {
-            // Если не нашлось, пробуем без слеша (относительный путь)
-            response = await fetch('models_list.json');
-        }
-        if (!response.ok) throw new Error('HTTP ' + response.status + ' — файл models_list.json не найден');
-        allModels = await response.json();
-        return allModels;
-    } catch(e) {
-        console.error('Ошибка загрузки моделей:', e);
-        const grid = document.getElementById('models-grid');
-        if (grid) {
-            grid.innerHTML = `<div class="loading" style="color: var(--text-secondary); border-color: var(--border-color);">
-                ❌ ОШИБКА ЗАГРУЗКИ<br>
-                <span style="font-size:0.8rem; opacity:0.7;">${e.message}</span><br>
-                <span style="font-size:0.7rem; opacity:0.5;">Проверьте, что файл models_list.json лежит в корне сайта</span>
-            </div>`;
-        }
-        return [];
-    }
+// ========== ИСПОЛЬЗУЕМ ВСТРОЕННЫЕ ДАННЫЕ БЕЗ ЗАГРУЗКИ JSON ==========
+function fetchModels() {
+    return new Promise((resolve) => {
+        allModels = MODELS_DATA;
+        resolve(allModels);
+    });
 }
 
-// ========== ПЕРЕМЕШИВАНИЕ (Fisher–Yates) ==========
+// ========== ОСТАЛЬНЫЕ ФУНКЦИИ (те же, что и раньше) ==========
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -182,7 +206,6 @@ function shuffleArray(array) {
     return arr;
 }
 
-// ========== СОРТИРОВКА (с поддержкой случайной) ==========
 function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
@@ -197,7 +220,6 @@ function sortModels(models, sortType) {
     }
 }
 
-// ========== ФИЛЬТРЫ ==========
 function getFilteredModels() {
     let result = [...allModels];
     if (currentFilterTag) {
@@ -224,7 +246,6 @@ function applyFilters() {
     renderModelsGrid(currentFilteredModels);
 }
 
-// ========== ОТРИСОВКА СЕТКИ ==========
 function renderModelsGrid(models) {
     const grid = document.getElementById('models-grid');
     if (!grid) return;
@@ -239,12 +260,12 @@ function renderModelsGrid(models) {
     pageItems.forEach(model => {
         const card = document.createElement('div');
         card.className = 'model-card';
-        card.addEventListener('click', () => smoothTransition(`/model.html?name=${encodeURIComponent(model.name)}`));
+        card.addEventListener('click', () => smoothTransition(`model.html?name=${encodeURIComponent(model.name)}`));
         card.addEventListener('mouseenter', playHover);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
-        let previewUrl = model.preview || `/models/${model.name}/start_0.webp`;
-        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `/models/${model.name}/idle_0.webp`;
-        if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `/models/${model.name}/icon.webp`;
+        let previewUrl = model.preview || `models/${model.name}/start_0.webp`;
+        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/idle_0.webp`;
+        if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `models/${model.name}/icon.webp`;
         const img = document.createElement('img');
         img.className = 'preview';
         img.src = previewUrl;
@@ -280,7 +301,6 @@ function renderModelsGrid(models) {
     updatePaginationControls(totalPages);
 }
 
-// ========== ПАГИНАЦИЯ ==========
 function updatePaginationControls(totalPages) {
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
@@ -301,7 +321,6 @@ function setupPagination() {
     });
 }
 
-// ========== ТЕГИ-ФИЛЬТРЫ ==========
 function getUniqueTags() {
     const tagSet = new Set();
     allModels.forEach(m => {
@@ -336,7 +355,6 @@ function renderTagFilters() {
     });
 }
 
-// ========== ПОИСК ==========
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-search');
@@ -352,7 +370,6 @@ function setupSearch() {
     });
 }
 
-// ========== СОРТИРОВКА (обработчик) ==========
 function setupSort() {
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
@@ -365,7 +382,6 @@ function setupSort() {
     });
 }
 
-// ========== ЧАСТИЦЫ ПРИ НАВЕДЕНИИ ==========
 function createParticles(e, card) {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -387,7 +403,6 @@ function createParticles(e, card) {
     }
 }
 
-// ========== ПАРСЕР BBCode ==========
 function parseBBCode(text) {
     if (!text) return '';
     let safe = escapeHtml(text);
@@ -485,7 +500,6 @@ function parseBBCode(text) {
     return safe;
 }
 
-// ========== СТРАНИЦА МОДЕЛИ ==========
 async function loadModelDetail(modelName) {
     try {
         const models = await fetchModels();
@@ -518,7 +532,7 @@ async function loadModelDetail(modelName) {
         if (model.downloadable && model.downloadFile) {
             downloadBtn.style.display = 'inline-block';
             downloadBtn.onclick = () => {
-                const downloadUrl = `/models/${model.name}/${model.downloadFile}`;
+                const downloadUrl = `models/${model.name}/${model.downloadFile}`;
                 downloadWithEffect(downloadUrl);
             };
         } else downloadBtn.style.display = 'none';
@@ -530,12 +544,13 @@ async function loadModelDetail(modelName) {
             shareMsg.style.display = 'inline-block';
             setTimeout(() => shareMsg.style.display = 'none', 2000);
         };
-        const startUrls = Array.from({ length: model.startFrames }, (_, i) => `/models/${model.name}/start_${i}.webp`);
-        const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `/models/${model.name}/idle_${i}.webp`);
+        const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
+        const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
+
         if (model.startFrames === 0 && model.idleFrames === 0) {
             const canvas = document.getElementById('animation-canvas');
             const ctx = canvas.getContext('2d');
-            const iconUrl = model.preview || `/models/${model.name}/icon.webp`;
+            const iconUrl = model.preview || `models/${model.name}/icon.webp`;
             const img = new Image();
             img.onload = () => {
                 canvas.width = img.width;
@@ -566,7 +581,6 @@ async function loadModelDetail(modelName) {
     }
 }
 
-// ========== ПРЕДЗАГРУЗКА КАДРОВ ==========
 async function preloadFramesWithIndicator(startUrls, idleUrls) {
     const loaderDiv = document.getElementById('frame-loader');
     const fillDiv = document.querySelector('.loader-fill');
@@ -831,8 +845,8 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
 initAudioContext();
 document.addEventListener('DOMContentLoaded', async () => {
     const back = document.getElementById('back-link');
-    if (back) back.addEventListener('click', (e) => { e.preventDefault(); smoothTransition('/'); });
-    if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+    if (back) back.addEventListener('click', (e) => { e.preventDefault(); smoothTransition('index.html'); });
+    if (window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '') {
         await fetchModels();
         if (allModels.length > 0) {
             currentSort = 'random';
@@ -843,7 +857,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyFilters();
         }
     }
-    if (window.location.pathname === '/model.html') {
+    if (window.location.pathname.includes('model.html')) {
         const params = new URLSearchParams(window.location.search);
         const modelName = params.get('name');
         if (modelName) loadModelDetail(modelName);
