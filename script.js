@@ -1,3 +1,4 @@
+// ===== ВСТРОЕННЫЕ ДАННЫЕ (ЗАПАСНОЙ ВАРИАНТ) =====
 const EMBEDDED_MODELS = [
     {
         "name": "Helix",
@@ -178,11 +179,32 @@ function downloadWithEffect(downloadUrl) {
 }
 
 // ===== ЗАГРУЗКА МОДЕЛЕЙ =====
-function fetchModels() {
-    return new Promise((resolve) => {
+async function fetchModels() {
+    if (allModels.length) return allModels;
+    try {
+        const grid = document.getElementById('models-grid');
+        if (grid && allModels.length === 0) {
+            grid.innerHTML = '<div class="loading"><span class="spinner"></span> ЗАГРУЗКА МОДЕЛЕЙ...</div>';
+        }
+        let response = await fetch('models_list.json');
+        if (!response.ok) {
+            throw new Error('Не удалось загрузить models_list.json');
+        }
+        const data = await response.json();
+        if (Array.isArray(data) && data.length) {
+            allModels = data;
+            console.log('✅ Загружены данные из models_list.json');
+            return allModels;
+        }
+    } catch (e) {
+        console.warn('⚠️ Не удалось загрузить models_list.json, используем встроенные данные.', e);
+    }
+    if (EMBEDDED_MODELS.length) {
         allModels = EMBEDDED_MODELS;
-        resolve(allModels);
-    });
+        console.log('✅ Используем встроенные данные');
+        return allModels;
+    }
+    throw new Error('Нет данных о моделях');
 }
 
 // ===== ПЕРЕМЕШИВАНИЕ =====
