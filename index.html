@@ -4,65 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Архив моделей</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #0a0f0a; color: #b3ffb0; font-family: monospace; padding: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+        .card { background: #0f1a0f; border: 2px solid #3eff6e; padding: 1rem; cursor: pointer; }
+        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #000; }
+    </style>
 </head>
 <body>
-    <canvas id="bg-canvas" class="bg-canvas"></canvas>
-    <div class="transition-overlay" id="transition-overlay"></div>
+    <h1>АРХИВ</h1>
+    <div class="grid" id="models-grid"></div>
+    <script>
+        // Данные моделей (встроенные)
+        const models = [
+            { name: "Helix", displayName: "Helix", description: "Dandy's world Clown", preview: "models/Helix/icon.webp" },
+            { name: "Beez", displayName: "Beez", description: "Beez The Bee", preview: "models/Beez/icon.webp" },
+            { name: "Eliot", displayName: "Eliot", description: "---", preview: "models/Eliot/icon.webp" }
+        ];
 
-    <header>
-        <h1>АРХИВ<span class="cursor">█</span></h1>
-        <p>По приколу мой архив всяких моих работ 3D</p>
-    </header>
+        const grid = document.getElementById('models-grid');
 
-    <main>
-        <section class="description">
-            <h2>> О сайте</h2>
-            <p>Сделал я этот сайт специально для того чтобы хранить свои 3D модели, так же будут разные пополнения или типа того, МОЙ АРХИИИИИИИИВ!!</p>
-        </section>
-
-        <section class="gallery">
-            <h2>> ДОСТУПНЫЕ МОДЕЛИ</h2>
-            <div class="info-bar">
-                <span id="model-count">Всего: 0</span>
-            </div>
-            <div id="tag-filters" class="tag-filters"></div>
-            <div class="sort-bar">
-                <label for="sort-select">Сортировка:</label>
-                <select id="sort-select" class="sort-select">
-                    <option value="random" selected>Случайно</option>
-                    <option value="default">Без сортировки</option>
-                    <option value="name-asc">По имени (А→Я)</option>
-                    <option value="name-desc">По имени (Я→А)</option>
-                </select>
-            </div>
-            <div class="search-bar">
-                <input type="text" id="search-input" placeholder="🔍 ПОИСК ПО НАЗВАНИЮ ИЛИ ОПИСАНИЮ..." class="search-input">
-                <button id="clear-search" class="clear-search">✕</button>
-            </div>
-            <div id="models-grid" class="models-grid">
-                <div class="loading">ЗАГРУЗКА ДАННЫХ...</div>
-            </div>
-            <div id="pagination-controls" class="pagination-controls">
-                <button id="prev-page" class="pagination-btn" disabled>◀</button>
-                <span id="page-info">Страница 1 из 1</span>
-                <button id="next-page" class="pagination-btn" disabled>▶</button>
-            </div>
-        </section>
-    </main>
-
-    <header>
-        <h1>>Прочитайте</h1>
-        <p>Все доступные модели вы можете скачать если сам автор или владелец разрешил их вам скачивать через сам сайт, пожалуйста уважайте чужое творчество, так же будут оставлены ссылки на автора персонажа или модели</p>
-    </header>
-
-    <canvas id="particles-canvas"></canvas>
-    <div class="theme-switcher">
-        <button class="theme-btn theme-green" data-theme="green" style="background:#3eff6e;"></button>
-        <button class="theme-btn theme-amber" data-theme="amber" style="background:#ffb347;"></button>
-        <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
-    </div>
-
-    <script src="script.js"></script>
+        models.forEach(model => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const img = document.createElement('img');
+            img.src = model.preview;
+            img.alt = model.displayName;
+            img.onerror = () => { img.src = 'https://placehold.co/400x400?text=No+image'; };
+            const title = document.createElement('h3');
+            title.textContent = model.displayName;
+            const desc = document.createElement('p');
+            desc.textContent = model.description;
+            card.appendChild(img);
+            card.appendChild(title);
+            card.appendChild(desc);
+            grid.appendChild(card);
+        });
+    </script>
 </body>
 </html>
