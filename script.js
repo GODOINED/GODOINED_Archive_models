@@ -1,5 +1,4 @@
-// ===== ВСТРОЕННЫЕ ДАННЫЕ МОДЕЛЕЙ (без внешнего JSON) =====
-const MODELS_DATA = [
+const EMBEDDED_MODELS = [
     {
         "name": "Helix",
         "displayName": "Helix",
@@ -53,7 +52,7 @@ const itemsPerPage = 12;
 let audioCtx = null;
 let soundsEnabled = true;
 
-// ========== ЗВУКИ (без изменений) ==========
+// ===== ЗВУКИ =====
 function initAudioContext() {
     if (audioCtx) return audioCtx;
     try {
@@ -124,7 +123,7 @@ function playWipeSound() {
 function playClick() { playRetroClick(); }
 function playHover() { playRetroHover(); }
 
-// ========== ПЕРЕХОД ==========
+// ===== ПЕРЕХОД =====
 function smoothTransition(url) {
     const overlay = document.getElementById('transition-overlay');
     if (!overlay) { window.location.href = url; return; }
@@ -135,12 +134,10 @@ function smoothTransition(url) {
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
     overlay.classList.add('active');
-    setTimeout(() => {
-        window.location.href = url;
-    }, 250);
+    setTimeout(() => { window.location.href = url; }, 250);
 }
 
-// ========== СКАЧИВАНИЕ ==========
+// ===== СКАЧИВАНИЕ =====
 function downloadWithEffect(downloadUrl) {
     const overlay = document.createElement('div');
     overlay.id = 'download-overlay';
@@ -150,27 +147,20 @@ function downloadWithEffect(downloadUrl) {
         <div class="download-flash"></div>
     `;
     document.body.appendChild(overlay);
-
     const arrow = overlay.querySelector('.download-arrow');
     const flash = overlay.querySelector('.download-flash');
     const vignette = overlay.querySelector('.download-vignette');
-
     const style = getComputedStyle(document.body);
     const themeColor = style.getPropertyValue('--accent').trim() || '#3eff6e';
-
     arrow.style.animation = 'arrowFall 1.2s ease-in forwards';
-
     setTimeout(() => {
         flash.style.background = `radial-gradient(ellipse at center, transparent 30%, ${themeColor} 100%)`;
         flash.style.opacity = '0.7';
         flash.style.transition = 'opacity 0.1s';
         vignette.style.opacity = '1';
         vignette.style.transition = 'opacity 0.3s';
-        setTimeout(() => {
-            flash.style.opacity = '0';
-        }, 200);
+        setTimeout(() => { flash.style.opacity = '0'; }, 200);
     }, 600);
-
     setTimeout(() => {
         overlay.classList.add('fade-out');
         setTimeout(() => {
@@ -183,20 +173,19 @@ function downloadWithEffect(downloadUrl) {
             document.body.removeChild(link);
         }, 300);
     }, 1200);
-
     playClick();
     playWipeSound();
 }
 
-// ========== ИСПОЛЬЗУЕМ ВСТРОЕННЫЕ ДАННЫЕ БЕЗ ЗАГРУЗКИ JSON ==========
+// ===== ЗАГРУЗКА МОДЕЛЕЙ =====
 function fetchModels() {
     return new Promise((resolve) => {
-        allModels = MODELS_DATA;
+        allModels = EMBEDDED_MODELS;
         resolve(allModels);
     });
 }
 
-// ========== ОСТАЛЬНЫЕ ФУНКЦИИ (те же, что и раньше) ==========
+// ===== ПЕРЕМЕШИВАНИЕ =====
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -206,20 +195,18 @@ function shuffleArray(array) {
     return arr;
 }
 
+// ===== СОРТИРОВКА =====
 function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
-        case 'random':
-            return shuffleArray(sorted);
-        case 'name-asc':
-            return sorted.sort((a, b) => a.displayName.localeCompare(b.displayName));
-        case 'name-desc':
-            return sorted.sort((a, b) => b.displayName.localeCompare(a.displayName));
-        default:
-            return sorted;
+        case 'random': return shuffleArray(sorted);
+        case 'name-asc': return sorted.sort((a,b) => a.displayName.localeCompare(b.displayName));
+        case 'name-desc': return sorted.sort((a,b) => b.displayName.localeCompare(a.displayName));
+        default: return sorted;
     }
 }
 
+// ===== ФИЛЬТРЫ =====
 function getFilteredModels() {
     let result = [...allModels];
     if (currentFilterTag) {
@@ -246,6 +233,7 @@ function applyFilters() {
     renderModelsGrid(currentFilteredModels);
 }
 
+// ===== ОТРИСОВКА СЕТКИ =====
 function renderModelsGrid(models) {
     const grid = document.getElementById('models-grid');
     if (!grid) return;
@@ -260,7 +248,9 @@ function renderModelsGrid(models) {
     pageItems.forEach(model => {
         const card = document.createElement('div');
         card.className = 'model-card';
-        card.addEventListener('click', () => smoothTransition(`model.html?name=${encodeURIComponent(model.name)}`));
+        card.addEventListener('click', () => {
+            showModelDetail(model.name);
+        });
         card.addEventListener('mouseenter', playHover);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
         let previewUrl = model.preview || `models/${model.name}/start_0.webp`;
@@ -301,6 +291,7 @@ function renderModelsGrid(models) {
     updatePaginationControls(totalPages);
 }
 
+// ===== ПАГИНАЦИЯ =====
 function updatePaginationControls(totalPages) {
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
@@ -321,6 +312,7 @@ function setupPagination() {
     });
 }
 
+// ===== ТЕГИ-ФИЛЬТРЫ =====
 function getUniqueTags() {
     const tagSet = new Set();
     allModels.forEach(m => {
@@ -355,6 +347,7 @@ function renderTagFilters() {
     });
 }
 
+// ===== ПОИСК =====
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-search');
@@ -370,6 +363,7 @@ function setupSearch() {
     });
 }
 
+// ===== СОРТИРОВКА =====
 function setupSort() {
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
@@ -382,6 +376,7 @@ function setupSort() {
     });
 }
 
+// ===== ЧАСТИЦЫ =====
 function createParticles(e, card) {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -403,6 +398,7 @@ function createParticles(e, card) {
     }
 }
 
+// ===== PARSE BBCODE =====
 function parseBBCode(text) {
     if (!text) return '';
     let safe = escapeHtml(text);
@@ -500,87 +496,130 @@ function parseBBCode(text) {
     return safe;
 }
 
-async function loadModelDetail(modelName) {
-    try {
-        const models = await fetchModels();
-        const model = models.find(m => m.name === modelName);
-        if (!model) throw new Error('Модель не найдена');
-        document.title = `${model.displayName} — 3D модель`;
-        document.getElementById('model-title').innerHTML = parseBBCode(model.displayName);
-        document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
-        document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
-        const tagsHtml = (model.tags || []).map(tag => {
-            let tagName, tagColor;
-            if (typeof tag === 'string') {
-                tagName = tag;
-                tagColor = null;
-            } else {
-                tagName = tag.name || '';
-                tagColor = tag.color || null;
-            }
-            let colorStyle = '';
-            let extraClass = '';
-            if (tagColor === 'rainbow') {
-                extraClass = 'rainbow-text';
-            } else if (tagColor) {
-                colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
-            }
-            return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
-        }).join('');
-        document.getElementById('model-tags').innerHTML = tagsHtml;
-        const downloadBtn = document.getElementById('download-btn');
-        if (model.downloadable && model.downloadFile) {
-            downloadBtn.style.display = 'inline-block';
-            downloadBtn.onclick = () => {
-                const downloadUrl = `models/${model.name}/${model.downloadFile}`;
-                downloadWithEffect(downloadUrl);
-            };
-        } else downloadBtn.style.display = 'none';
-        const shareBtn = document.getElementById('share-btn');
-        const shareMsg = document.getElementById('share-message');
-        shareBtn.onclick = () => {
-            playClick();
-            navigator.clipboard.writeText(window.location.href);
-            shareMsg.style.display = 'inline-block';
-            setTimeout(() => shareMsg.style.display = 'none', 2000);
-        };
-        const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
-        const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
+// ===== СТРАНИЦА МОДЕЛИ (динамическая) =====
+let modelDetailContainer = null;
 
-        if (model.startFrames === 0 && model.idleFrames === 0) {
-            const canvas = document.getElementById('animation-canvas');
-            const ctx = canvas.getContext('2d');
-            const iconUrl = model.preview || `models/${model.name}/icon.webp`;
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-                const loader = document.getElementById('frame-loader');
-                if (loader) loader.style.display = 'none';
-            };
-            img.onerror = () => {
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#fff';
-                ctx.font = '16px RetroFont';
-                ctx.textAlign = 'center';
-                ctx.fillText('Нет изображения', canvas.width/2, canvas.height/2);
-                const loader = document.getElementById('frame-loader');
-                if (loader) loader.style.display = 'none';
-            };
-            img.src = iconUrl;
-            return;
-        }
-        await preloadFramesWithIndicator(startUrls, idleUrls);
-    } catch(e) {
-        console.error(e);
-        const container = document.querySelector('.model-container');
-        if (container) container.innerHTML = '<div class="loading">ОШИБКА ЗАГРУЗКИ МОДЕЛИ</div>';
+function showModelDetail(modelName) {
+    const main = document.querySelector('main');
+    const extraHeader = document.querySelector('header:nth-of-type(2)');
+    if (!modelDetailContainer) {
+        modelDetailContainer = document.createElement('main');
+        modelDetailContainer.className = 'model-detail';
+        modelDetailContainer.id = 'model-detail-container';
+        modelDetailContainer.innerHTML = `
+            <div class="model-container">
+                <div class="animation-area">
+                    <canvas id="animation-canvas" width="400" height="400"></canvas>
+                    <div id="frame-loader" class="frame-loader" style="display: none;">
+                        <span>ЗАГРУЗКА КАДРОВ</span>
+                        <div class="loader-progress"><div class="loader-fill"></div></div>
+                        <span id="loader-percent">0%</span>
+                    </div>
+                </div>
+                <div class="info-area">
+                    <h2 id="model-name"></h2>
+                    <div id="model-tags" class="tags"></div>
+                    <p id="model-description" class="description-text"></p>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                        <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
+                        <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
+                    </div>
+                    <div id="share-message" class="share-message" style="display: none;">Ссылка скопирована!</div>
+                    <button id="back-to-gallery" class="back-link" style="margin-top:1rem; display:inline-block;">← Назад к галерее</button>
+                </div>
+            </div>
+        `;
+        document.body.insertBefore(modelDetailContainer, extraHeader);
     }
+    main.style.display = 'none';
+    if (extraHeader) extraHeader.style.display = 'none';
+    modelDetailContainer.style.display = 'block';
+
+    const model = allModels.find(m => m.name === modelName);
+    if (!model) return;
+
+    document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
+    document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
+    const tagsHtml = (model.tags || []).map(tag => {
+        let tagName, tagColor;
+        if (typeof tag === 'string') {
+            tagName = tag;
+            tagColor = null;
+        } else {
+            tagName = tag.name || '';
+            tagColor = tag.color || null;
+        }
+        let colorStyle = '';
+        let extraClass = '';
+        if (tagColor === 'rainbow') {
+            extraClass = 'rainbow-text';
+        } else if (tagColor) {
+            colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
+        }
+        return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
+    }).join('');
+    document.getElementById('model-tags').innerHTML = tagsHtml;
+
+    const downloadBtn = document.getElementById('download-btn');
+    if (model.downloadable && model.downloadFile) {
+        downloadBtn.style.display = 'inline-block';
+        downloadBtn.onclick = () => {
+            const downloadUrl = `models/${model.name}/${model.downloadFile}`;
+            downloadWithEffect(downloadUrl);
+        };
+    } else {
+        downloadBtn.style.display = 'none';
+    }
+
+    const shareBtn = document.getElementById('share-btn');
+    const shareMsg = document.getElementById('share-message');
+    shareBtn.onclick = () => {
+        playClick();
+        navigator.clipboard.writeText(window.location.href + '?model=' + model.name);
+        shareMsg.style.display = 'inline-block';
+        setTimeout(() => shareMsg.style.display = 'none', 2000);
+    };
+
+    document.getElementById('back-to-gallery').addEventListener('click', () => {
+        modelDetailContainer.style.display = 'none';
+        main.style.display = 'block';
+        if (extraHeader) extraHeader.style.display = 'block';
+        const canvas = document.getElementById('animation-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
+    const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
+
+    if (model.startFrames === 0 && model.idleFrames === 0) {
+        const canvas = document.getElementById('animation-canvas');
+        const ctx = canvas.getContext('2d');
+        const iconUrl = model.preview || `models/${model.name}/icon.webp`;
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            document.getElementById('frame-loader').style.display = 'none';
+        };
+        img.onerror = () => {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px RetroFont';
+            ctx.textAlign = 'center';
+            ctx.fillText('Нет изображения', canvas.width/2, canvas.height/2);
+            document.getElementById('frame-loader').style.display = 'none';
+        };
+        img.src = iconUrl;
+        return;
+    }
+    preloadFramesWithIndicator(startUrls, idleUrls);
 }
 
+// ===== ПРЕДЗАГРУЗКА КАДРОВ =====
 async function preloadFramesWithIndicator(startUrls, idleUrls) {
     const loaderDiv = document.getElementById('frame-loader');
     const fillDiv = document.querySelector('.loader-fill');
@@ -652,7 +691,7 @@ function escapeHtml(str) {
     return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 }
 
-// ========== ФОНОВЫЕ ЧАСТИЦЫ ==========
+// ===== ФОНОВЫЕ ЧАСТИЦЫ =====
 (function initParticles() {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
@@ -693,7 +732,7 @@ function escapeHtml(str) {
     window.addEventListener('beforeunload', () => cancelAnimationFrame(animId));
 })();
 
-// ========== ШАХМАТНЫЙ ФОН ==========
+// ===== ШАХМАТНЫЙ ФОН =====
 (function initPulsingCheckerboard() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
@@ -760,7 +799,7 @@ function escapeHtml(str) {
     window.addEventListener('beforeunload', () => { if (animFrame) cancelAnimationFrame(animFrame); });
 })();
 
-// ========== ТЕМЫ ==========
+// ===== ТЕМЫ =====
 function applyTheme(theme) {
     document.body.classList.remove('theme-amber', 'theme-blue');
     if (theme === 'amber') document.body.classList.add('theme-amber');
@@ -773,7 +812,7 @@ document.querySelectorAll('.theme-btn').forEach(btn => {
 const savedTheme = localStorage.getItem('retro-theme');
 if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
 
-// ========== КАСТОМНЫЙ СКРОЛЛБАР ==========
+// ===== КАСТОМНЫЙ СКРОЛЛБАР =====
 (function initCustomScrollbar() {
     const scrollbarContainer = document.createElement('div');
     scrollbarContainer.id = 'custom-scrollbar';
@@ -841,25 +880,21 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
     });
 })();
 
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
+// ===== ИНИЦИАЛИЗАЦИЯ =====
 initAudioContext();
 document.addEventListener('DOMContentLoaded', async () => {
-    const back = document.getElementById('back-link');
-    if (back) back.addEventListener('click', (e) => { e.preventDefault(); smoothTransition('index.html'); });
-    if (window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '') {
-        await fetchModels();
-        if (allModels.length > 0) {
-            currentSort = 'random';
-            renderTagFilters();
-            setupSearch();
-            setupSort();
-            setupPagination();
-            applyFilters();
-        }
-    }
-    if (window.location.pathname.includes('model.html')) {
+    await fetchModels();
+    if (allModels.length > 0) {
+        currentSort = 'random';
+        renderTagFilters();
+        setupSearch();
+        setupSort();
+        setupPagination();
+        applyFilters();
         const params = new URLSearchParams(window.location.search);
-        const modelName = params.get('name');
-        if (modelName) loadModelDetail(modelName);
+        const modelParam = params.get('model');
+        if (modelParam) {
+            showModelDetail(modelParam);
+        }
     }
 });
