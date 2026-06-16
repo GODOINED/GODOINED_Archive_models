@@ -4,13 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Архив моделей</title>
-    <link rel="stylesheet" href="style.css?v=2.2">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <meta property="og:title" content="Архив моделей GODOINED">
-    <meta property="og:description" content="Здесь обычно находятся модели которые были созданы пользователем GODOINED">
+    <meta property="og:title" content="Архив 3D моделей — ретро портфолио">
+    <meta property="og:description" content="Мой архив 3D моделей с анимацией, поиском и ретро-стилем.">
     <meta property="og:image" content="https://yourusername.github.io/your-repo/social-preview.png">
-    <meta property="og:url" content="https://godoined.github.io/GODOINED_Archive_models">
+    <meta property="og:url" content="https://yourusername.github.io/your-repo/">
     <meta property="og:type" content="website">
+    <script src="version.js"></script>
+    <script>
+        // Подставляем версию в CSS
+        (function() {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'style.css?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : Date.now());
+            document.head.appendChild(link);
+        })();
+    </script>
 </head>
 <body>
     <canvas id="bg-canvas" class="bg-canvas"></canvas>
@@ -69,6 +78,14 @@
         <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
     </div>
 
-    <script src="script.js?v=2.2"></script>
+    <script src="version.js"></script>
+    <script>
+        // Подставляем версию в script.js
+        (function() {
+            const script = document.createElement('script');
+            script.src = 'script.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : Date.now());
+            document.body.appendChild(script);
+        })();
+    </script>
 </body>
 </html>
