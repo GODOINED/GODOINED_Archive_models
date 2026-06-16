@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D модель — ретро просмотр</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta property="og:title" content="Архив 3D моделей — просмотр модели">
+    <meta property="og:description" content="Просмотр 3D модели с анимацией. Ретро-архив.">
+    <meta property="og:image" content="https://yourusername.github.io/your-repo/social-preview.png">
+    <meta property="og:url" content="https://yourusername.github.io/your-repo/model.html">
 </head>
 <body>
     <canvas id="bg-canvas" class="bg-canvas"></canvas>
+    <canvas id="particles-canvas"></canvas>
     <div class="transition-overlay" id="transition-overlay"></div>
 
     <header>
@@ -29,7 +35,7 @@
                 <h2 id="model-name"></h2>
                 <div id="model-tags" class="tags"></div>
                 <p id="model-description" class="description-text"></p>
-                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
                     <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
                     <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
                 </div>
@@ -38,7 +44,6 @@
         </div>
     </main>
 
-    <canvas id="particles-canvas"></canvas>
     <div class="theme-switcher">
         <button class="theme-btn theme-green" data-theme="green" style="background:#3eff6e;"></button>
         <button class="theme-btn theme-amber" data-theme="amber" style="background:#ffb347;"></button>

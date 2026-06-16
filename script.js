@@ -1,13 +1,14 @@
 let allModels = [];
-let currentFilteredModels = [];
+let audioCtx = null;
+let soundsEnabled = true;
 let currentSort = 'random';
 let currentFilterTag = null;
 let currentPage = 1;
 const itemsPerPage = 12;
-let audioCtx = null;
-let soundsEnabled = true;
-let modelDetailContainer = null;
-let modelDetailVisible = false;
+
+// Определяем страницу
+const isIndex = window.location.pathname === '/' || window.location.pathname === '/index.html';
+const isModel = window.location.pathname.includes('model.html');
 
 // ===== ЗВУКИ =====
 function initAudioContext() {
@@ -134,18 +135,12 @@ function downloadWithEffect(downloadUrl) {
     playWipeSound();
 }
 
-// ===== ЗАГРУЗКА МОДЕЛЕЙ (только из внешнего JSON) =====
+// ===== ЗАГРУЗКА МОДЕЛЕЙ =====
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
-        const grid = document.getElementById('models-grid');
-        if (grid && allModels.length === 0) {
-            grid.innerHTML = '<div class="loading"><span class="spinner"></span> ЗАГРУЗКА МОДЕЛЕЙ...</div>';
-        }
         const response = await fetch('models_list.json');
-        if (!response.ok) {
-            throw new Error('Не удалось загрузить models_list.json');
-        }
+        if (!response.ok) throw new Error('Не удалось загрузить models_list.json');
         const data = await response.json();
         if (Array.isArray(data) && data.length) {
             allModels = data;
@@ -212,12 +207,13 @@ function getFilteredModels() {
 }
 
 function applyFilters() {
-    currentFilteredModels = getFilteredModels();
-    renderModelsGrid(currentFilteredModels);
+    const filtered = getFilteredModels();
+    renderModelsGrid(filtered);
 }
 
-// ===== ОТРИСОВКА СЕТКИ =====
+// ===== ОТРИСОВКА СЕТКИ (только для index.html) =====
 function renderModelsGrid(models) {
+    if (!isIndex) return;
     const grid = document.getElementById('models-grid');
     if (!grid) return;
     if (!models.length) { grid.innerHTML = '<div class="loading">НИЧЕГО НЕ НАЙДЕНО</div>'; updatePaginationControls(0); return; }
@@ -232,7 +228,8 @@ function renderModelsGrid(models) {
         const card = document.createElement('div');
         card.className = 'model-card';
         card.addEventListener('click', () => {
-            showModelDetail(model.name);
+            playClick();
+            smoothTransition(`model.html?name=${encodeURIComponent(model.name)}`);
         });
         card.addEventListener('mouseenter', playHover);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
@@ -308,6 +305,7 @@ function getUniqueTags() {
 }
 
 function renderTagFilters() {
+    if (!isIndex) return;
     const container = document.getElementById('tag-filters');
     if (!container) return;
     const tags = getUniqueTags();
@@ -332,6 +330,7 @@ function renderTagFilters() {
 
 // ===== ПОИСК =====
 function setupSearch() {
+    if (!isIndex) return;
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-search');
     if (!searchInput) return;
@@ -348,6 +347,7 @@ function setupSearch() {
 
 // ===== СОРТИРОВКА =====
 function setupSort() {
+    if (!isIndex) return;
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
     sortSelect.value = currentSort;
@@ -479,135 +479,91 @@ function parseBBCode(text) {
     return safe;
 }
 
-// ===== СТРАНИЦА МОДЕЛИ (динамическая) =====
-function showModelDetail(modelName) {
-    const main = document.querySelector('main');
-    const extraHeader = document.querySelector('header:nth-of-type(2)');
-    if (!modelDetailContainer) {
-        modelDetailContainer = document.createElement('main');
-        modelDetailContainer.className = 'model-detail';
-        modelDetailContainer.id = 'model-detail-container';
-        modelDetailContainer.style.opacity = '0';
-        modelDetailContainer.style.transition = 'opacity 0.3s ease';
-        modelDetailContainer.innerHTML = `
-            <div class="model-container">
-                <div class="animation-area">
-                    <canvas id="animation-canvas" width="400" height="400"></canvas>
-                    <div id="frame-loader" class="frame-loader" style="display: none;">
-                        <span>ЗАГРУЗКА КАДРОВ</span>
-                        <div class="loader-progress"><div class="loader-fill"></div></div>
-                        <span id="loader-percent">0%</span>
-                    </div>
-                </div>
-                <div class="info-area">
-                    <h2 id="model-name"></h2>
-                    <div id="model-tags" class="tags"></div>
-                    <p id="model-description" class="description-text"></p>
-                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
-                        <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
-                        <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
-                        <button id="back-to-gallery" class="back-link" style="display:inline-block; margin:0;">← Назад к галерее</button>
-                    </div>
-                    <div id="share-message" class="share-message" style="display: none;">Ссылка скопирована!</div>
-                </div>
-            </div>
-        `;
-        document.body.insertBefore(modelDetailContainer, extraHeader);
-    }
-    main.style.display = 'none';
-    if (extraHeader) extraHeader.style.display = 'none';
-    modelDetailContainer.style.display = 'block';
-    requestAnimationFrame(() => {
-        modelDetailContainer.style.opacity = '1';
-    });
-    modelDetailVisible = true;
-
-    const model = allModels.find(m => m.name === modelName);
-    if (!model) return;
-
-    document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
-    document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
-    const tagsHtml = (model.tags || []).map(tag => {
-        let tagName, tagColor;
-        if (typeof tag === 'string') {
-            tagName = tag;
-            tagColor = null;
+// ===== СТРАНИЦА МОДЕЛИ (для model.html) =====
+async function loadModelDetail(modelName) {
+    if (!isModel) return;
+    try {
+        const models = await fetchModels();
+        const model = models.find(m => m.name === modelName);
+        if (!model) throw new Error('Модель не найдена');
+        
+        document.title = `${model.displayName} — 3D модель`;
+        document.getElementById('model-title').innerHTML = parseBBCode(model.displayName);
+        document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
+        document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
+        
+        const tagsHtml = (model.tags || []).map(tag => {
+            let tagName, tagColor;
+            if (typeof tag === 'string') {
+                tagName = tag;
+                tagColor = null;
+            } else {
+                tagName = tag.name || '';
+                tagColor = tag.color || null;
+            }
+            let colorStyle = '';
+            let extraClass = '';
+            if (tagColor === 'rainbow') {
+                extraClass = 'rainbow-text';
+            } else if (tagColor) {
+                colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
+            }
+            return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
+        }).join('');
+        document.getElementById('model-tags').innerHTML = tagsHtml;
+        
+        const downloadBtn = document.getElementById('download-btn');
+        if (model.downloadable && model.downloadFile) {
+            downloadBtn.style.display = 'inline-block';
+            downloadBtn.onclick = () => {
+                const downloadUrl = `models/${model.name}/${model.downloadFile}`;
+                downloadWithEffect(downloadUrl);
+            };
         } else {
-            tagName = tag.name || '';
-            tagColor = tag.color || null;
+            downloadBtn.style.display = 'none';
         }
-        let colorStyle = '';
-        let extraClass = '';
-        if (tagColor === 'rainbow') {
-            extraClass = 'rainbow-text';
-        } else if (tagColor) {
-            colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
-        }
-        return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
-    }).join('');
-    document.getElementById('model-tags').innerHTML = tagsHtml;
-
-    const downloadBtn = document.getElementById('download-btn');
-    if (model.downloadable && model.downloadFile) {
-        downloadBtn.style.display = 'inline-block';
-        downloadBtn.onclick = () => {
-            const downloadUrl = `models/${model.name}/${model.downloadFile}`;
-            downloadWithEffect(downloadUrl);
+        
+        const shareBtn = document.getElementById('share-btn');
+        const shareMsg = document.getElementById('share-message');
+        shareBtn.onclick = () => {
+            playClick();
+            navigator.clipboard.writeText(window.location.href);
+            shareMsg.style.display = 'inline-block';
+            setTimeout(() => shareMsg.style.display = 'none', 2000);
         };
-    } else {
-        downloadBtn.style.display = 'none';
-    }
-
-    const shareBtn = document.getElementById('share-btn');
-    const shareMsg = document.getElementById('share-message');
-    shareBtn.onclick = () => {
-        playClick();
-        navigator.clipboard.writeText(window.location.href + '?model=' + model.name);
-        shareMsg.style.display = 'inline-block';
-        setTimeout(() => shareMsg.style.display = 'none', 2000);
-    };
-
-    document.getElementById('back-to-gallery').addEventListener('click', () => {
-        modelDetailContainer.style.opacity = '0';
-        setTimeout(() => {
-            modelDetailContainer.style.display = 'none';
-            main.style.display = 'block';
-            if (extraHeader) extraHeader.style.display = 'block';
-            modelDetailVisible = false;
+        
+        const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
+        const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
+        
+        if (model.startFrames === 0 && model.idleFrames === 0) {
             const canvas = document.getElementById('animation-canvas');
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }, 300);
-    });
-
-    const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
-    const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
-
-    if (model.startFrames === 0 && model.idleFrames === 0) {
-        const canvas = document.getElementById('animation-canvas');
-        const ctx = canvas.getContext('2d');
-        const iconUrl = model.preview || `models/${model.name}/icon.webp`;
-        const img = new Image();
-        img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-            document.getElementById('frame-loader').style.display = 'none';
-        };
-        img.onerror = () => {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#fff';
-            ctx.font = '16px RetroFont';
-            ctx.textAlign = 'center';
-            ctx.fillText('Нет изображения', canvas.width/2, canvas.height/2);
-            document.getElementById('frame-loader').style.display = 'none';
-        };
-        img.src = iconUrl;
-        return;
+            const iconUrl = model.preview || `models/${model.name}/icon.webp`;
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                document.getElementById('frame-loader').style.display = 'none';
+            };
+            img.onerror = () => {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '16px RetroFont';
+                ctx.textAlign = 'center';
+                ctx.fillText('Нет изображения', canvas.width/2, canvas.height/2);
+                document.getElementById('frame-loader').style.display = 'none';
+            };
+            img.src = iconUrl;
+            return;
+        }
+        await preloadFramesWithIndicator(startUrls, idleUrls);
+    } catch(e) {
+        console.error(e);
+        document.querySelector('.model-container').innerHTML = '<div class="loading">ОШИБКА ЗАГРУЗКИ МОДЕЛИ</div>';
     }
-    preloadFramesWithIndicator(startUrls, idleUrls);
 }
 
 // ===== ПРЕДЗАГРУЗКА КАДРОВ =====
@@ -875,17 +831,21 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
 initAudioContext();
 document.addEventListener('DOMContentLoaded', async () => {
     await fetchModels();
-    if (allModels.length > 0) {
+    if (isIndex) {
         currentSort = 'random';
         renderTagFilters();
         setupSearch();
         setupSort();
         setupPagination();
         applyFilters();
+    }
+    if (isModel) {
         const params = new URLSearchParams(window.location.search);
-        const modelParam = params.get('model');
-        if (modelParam) {
-            showModelDetail(modelParam);
+        const modelName = params.get('name');
+        if (modelName) {
+            loadModelDetail(modelName);
+        } else {
+            document.querySelector('.model-container').innerHTML = '<div class="loading">МОДЕЛЬ НЕ УКАЗАНА</div>';
         }
     }
 });

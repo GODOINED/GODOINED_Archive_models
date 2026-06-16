@@ -647,3 +647,29 @@ main {
     margin-right: 0.5rem;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Кнопка "Назад к галерее" в детальном виде */
+#model-detail-container .back-link {
+    display: inline-block;
+    padding: 0.3rem 1.2rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.1s linear;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+}
+#model-detail-container .back-link:hover {
+    background: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 8px var(--accent);
+}
+
+/* Плавное появление детального просмотра */
+#model-detail-container {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
