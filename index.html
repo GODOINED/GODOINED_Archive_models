@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Архив моделей</title>
     <style>
-        /* ===== ВСЕ СТИЛИ (встроены в index.html) ===== */
+        /* ===== ВСЕ СТИЛИ (встроены) ===== */
         @font-face {
             font-family: 'RetroFont';
             src: url('font.otf') format('opentype');
@@ -312,37 +312,6 @@
             background: var(--accent);
             color: var(--bg-dark);
         }
-        .frame-loader {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-        }
-        .loader-progress {
-            width: 100px;
-            height: 6px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border-color);
-        }
-        .loader-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--accent);
-            transition: width 0.1s;
-        }
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid var(--border-color);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-right: 0.5rem;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .models-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -483,16 +452,19 @@
             border: 1px dashed var(--border-color);
             background: var(--bg-panel);
         }
-        .shake-text {
-            animation: shake 0.15s infinite;
-            display: inline-block;
-        }
         @keyframes shake {
             0% { transform: translate(0,0); }
             25% { transform: translate(-1px,1px); }
             50% { transform: translate(1px,-1px); }
             75% { transform: translate(-1px,-1px); }
             100% { transform: translate(0,0); }
+        }
+        .shake-text {
+            animation: shake 0.15s infinite;
+            display: inline-block;
+        }
+        @media (max-width: 700px) {
+            .models-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
         }
         .shake-letter {
             display: inline-block;
@@ -581,20 +553,118 @@
             pointer-events: none;
             transition: opacity 0.1s;
         }
-        @media (max-width: 700px) {
-            .models-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+        /* Дополнительный стиль для модели (детальный просмотр) */
+        .model-detail { display: flex; justify-content: center; }
+        .model-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            background: var(--bg-panel);
+            padding: 2rem;
+            width: 100%;
+            border: 2px solid var(--border-color);
+            box-shadow: 8px 8px 0 var(--shadow);
         }
+        .animation-area {
+            flex: 1;
+            min-width: 300px;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+        }
+        #animation-canvas {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            background: #000;
+            border: 2px solid var(--border-color);
+        }
+        .info-area { flex: 1; padding: 0.5rem; }
+        #model-name {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        .description-text {
+            margin: 1rem 0;
+            line-height: 1.6;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .download-button, .share-button {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: bold;
+            padding: 0.7rem 1.6rem;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .download-button:hover, .share-button:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+        .share-message {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            background: var(--bg-card);
+            display: inline-block;
+            padding: 0.2rem 0.8rem;
+            border: 1px solid var(--border-color);
+        }
+        .frame-loader {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        .loader-progress {
+            width: 100px;
+            height: 6px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+        }
+        .loader-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.1s;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+    <!-- ===== ФОНОВЫЕ КАНВАСЫ ===== -->
     <canvas id="bg-canvas" class="bg-canvas"></canvas>
+    <canvas id="particles-canvas"></canvas>
     <div class="transition-overlay" id="transition-overlay"></div>
 
+    <!-- ===== ШАПКА ===== -->
     <header>
         <h1>АРХИВ<span class="cursor">█</span></h1>
         <p>По приколу мой архив всяких моих работ 3D</p>
     </header>
 
+    <!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
     <main>
         <section class="description">
             <h2>> О сайте</h2>
@@ -631,20 +701,22 @@
         </section>
     </main>
 
+    <!-- ===== ДОПОЛНИТЕЛЬНЫЙ БЛОК ===== -->
     <header>
         <h1>>Прочитайте</h1>
         <p>Все доступные модели вы можете скачать если сам автор или владелец разрешил их вам скачивать через сам сайт, пожалуйста уважайте чужое творчество, так же будут оставлены ссылки на автора персонажа или модели</p>
     </header>
 
-    <canvas id="particles-canvas"></canvas>
+    <!-- ===== ПЕРЕКЛЮЧАТЕЛЬ ТЕМ ===== -->
     <div class="theme-switcher">
         <button class="theme-btn theme-green" data-theme="green" style="background:#3eff6e;"></button>
         <button class="theme-btn theme-amber" data-theme="amber" style="background:#ffb347;"></button>
         <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
     </div>
 
+    <!-- ===== СКРИПТ ===== -->
     <script>
-        // ===== ВСТРОЕННЫЕ ДАННЫЕ МОДЕЛЕЙ (без внешнего JSON) =====
+        // ===== ВСТРОЕННЫЕ ДАННЫЕ МОДЕЛЕЙ =====
         const EMBEDDED_MODELS = [
             {
                 "name": "Helix",
@@ -827,7 +899,6 @@
         // ===== ЗАГРУЗКА МОДЕЛЕЙ =====
         function fetchModels() {
             return new Promise((resolve) => {
-                // Сразу используем встроенные данные
                 allModels = EMBEDDED_MODELS;
                 resolve(allModels);
             });
@@ -881,7 +952,7 @@
             renderModelsGrid(currentFilteredModels);
         }
 
-        // ===== ОТРИСОВКА =====
+        // ===== ОТРИСОВКА СЕТКИ =====
         function renderModelsGrid(models) {
             const grid = document.getElementById('models-grid');
             if (!grid) return;
@@ -896,12 +967,15 @@
             pageItems.forEach(model => {
                 const card = document.createElement('div');
                 card.className = 'model-card';
-                card.addEventListener('click', () => smoothTransition('model.html?name=' + encodeURIComponent(model.name)));
+                card.addEventListener('click', () => {
+                    // Показываем страницу модели (в этом же файле, через JS)
+                    showModelDetail(model.name);
+                });
                 card.addEventListener('mouseenter', playHover);
                 card.addEventListener('mousemove', (e) => createParticles(e, card));
-                let previewUrl = model.preview || 'models/' + model.name + '/start_0.webp';
-                if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = 'models/' + model.name + '/idle_0.webp';
-                if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || 'models/' + model.name + '/icon.webp';
+                let previewUrl = model.preview || `models/${model.name}/start_0.webp`;
+                if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/idle_0.webp`;
+                if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `models/${model.name}/icon.webp`;
                 const img = document.createElement('img');
                 img.className = 'preview';
                 img.src = previewUrl;
@@ -923,17 +997,17 @@
                     if (tagColor === 'rainbow') {
                         extraClass = 'rainbow-text';
                     } else if (tagColor) {
-                        colorStyle = ' style="color: ' + tagColor + '; border-color: ' + tagColor + '; background: rgba(0,0,0,0.5);"';
+                        colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
                     }
-                    return '<span class="tag ' + extraClass + '"' + colorStyle + '>' + escapeHtml(tagName) + '</span>';
+                    return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
                 }).join('');
                 const descHtml = parseBBCode(model.description).replace(/\n/g, '<br>');
-                info.innerHTML = '<h3>' + parseBBCode(model.displayName) + '</h3><p>' + descHtml + '</p><div class="tags">' + tagsHtml + '</div>';
+                info.innerHTML = `<h3>${parseBBCode(model.displayName)}</h3><p>${descHtml}</p><div class="tags">${tagsHtml}</div>`;
                 card.appendChild(img);
                 card.appendChild(info);
                 grid.appendChild(card);
             });
-            document.getElementById('model-count').textContent = 'Всего: ' + models.length;
+            document.getElementById('model-count').textContent = `Всего: ${models.length}`;
             updatePaginationControls(totalPages);
         }
 
@@ -945,7 +1019,7 @@
             if (!prevBtn || !nextBtn || !pageInfo) return;
             prevBtn.disabled = currentPage <= 1 || totalPages === 0;
             nextBtn.disabled = currentPage >= totalPages || totalPages === 0;
-            pageInfo.textContent = totalPages > 0 ? 'Страница ' + currentPage + ' из ' + totalPages : 'Нет моделей';
+            pageInfo.textContent = totalPages > 0 ? `Страница ${currentPage} из ${totalPages}` : 'Нет моделей';
         }
 
         function setupPagination() {
@@ -958,7 +1032,7 @@
             });
         }
 
-        // ===== ТЕГИ =====
+        // ===== ТЕГИ-ФИЛЬТРЫ =====
         function getUniqueTags() {
             const tagSet = new Set();
             allModels.forEach(m => {
@@ -974,10 +1048,10 @@
             const container = document.getElementById('tag-filters');
             if (!container) return;
             const tags = getUniqueTags();
-            let html = '<button class="tag-filter-btn all ' + (!currentFilterTag ? 'active' : '') + '" data-tag="all">Все</button>';
+            let html = `<button class="tag-filter-btn all ${!currentFilterTag ? 'active' : ''}" data-tag="all">Все</button>`;
             tags.forEach(tag => {
                 const active = currentFilterTag === tag ? 'active' : '';
-                html += '<button class="tag-filter-btn ' + active + '" data-tag="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</button>';
+                html += `<button class="tag-filter-btn ${active}" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`;
             });
             container.innerHTML = html;
             container.querySelectorAll('.tag-filter-btn').forEach(btn => {
@@ -1022,7 +1096,7 @@
             });
         }
 
-        // ===== ЧАСТИЦЫ ПРИ НАВЕДЕНИИ =====
+        // ===== ЧАСТИЦЫ =====
         function createParticles(e, card) {
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -1037,14 +1111,14 @@
                 particle.style.position = 'absolute';
                 particle.style.width = '3px';
                 particle.style.height = '3px';
-                particle.style.background = 'rgba(100, 255, 100, ' + (Math.random() * 0.8 + 0.2) + ')';
+                particle.style.background = `rgba(100, 255, 100, ${Math.random() * 0.8 + 0.2})`;
                 particle.style.boxShadow = '0 0 2px #3eff6e';
                 card.appendChild(particle);
                 setTimeout(() => particle.remove(), 600);
             }
         }
 
-        // ===== ПАРСЕР BBCode =====
+        // ===== PARSE BBCODE =====
         function parseBBCode(text) {
             if (!text) return '';
             let safe = escapeHtml(text);
@@ -1057,7 +1131,7 @@
                 let bMatch = /\[b\]([\s\S]*?)\[\/b\]/i.exec(safe);
                 if (bMatch) {
                     const content = bMatch[1];
-                    const replacement = '<strong>' + parseBBCode(content) + '</strong>';
+                    const replacement = `<strong>${parseBBCode(content)}</strong>`;
                     safe = safe.substring(0, bMatch.index) + replacement + safe.substring(bMatch.index + bMatch[0].length);
                     changed = true;
                     continue;
@@ -1065,7 +1139,7 @@
                 let iMatch = /\[i\]([\s\S]*?)\[\/i\]/i.exec(safe);
                 if (iMatch) {
                     const content = iMatch[1];
-                    const replacement = '<em>' + parseBBCode(content) + '</em>';
+                    const replacement = `<em>${parseBBCode(content)}</em>`;
                     safe = safe.substring(0, iMatch.index) + replacement + safe.substring(iMatch.index + iMatch[0].length);
                     changed = true;
                     continue;
@@ -1073,7 +1147,7 @@
                 let uMatch = /\[u\]([\s\S]*?)\[\/u\]/i.exec(safe);
                 if (uMatch) {
                     const content = uMatch[1];
-                    const replacement = '<u>' + parseBBCode(content) + '</u>';
+                    const replacement = `<u>${parseBBCode(content)}</u>`;
                     safe = safe.substring(0, uMatch.index) + replacement + safe.substring(uMatch.index + uMatch[0].length);
                     changed = true;
                     continue;
@@ -1082,7 +1156,7 @@
                 if (urlMatch) {
                     const href = urlMatch[1].trim();
                     const content = urlMatch[2];
-                    const replacement = '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="bbcode-link">' + parseBBCode(content) + '</a>';
+                    const replacement = `<a href="${href}" target="_blank" rel="noopener noreferrer" class="bbcode-link">${parseBBCode(content)}</a>`;
                     safe = safe.substring(0, urlMatch.index) + replacement + safe.substring(urlMatch.index + urlMatch[0].length);
                     changed = true;
                     continue;
@@ -1092,7 +1166,7 @@
                     const content = urlSimple[1].trim();
                     let href = content;
                     if (!/^https?:\/\//i.test(href)) href = 'https://' + href;
-                    const replacement = '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="bbcode-link">' + parseBBCode(content) + '</a>';
+                    const replacement = `<a href="${href}" target="_blank" rel="noopener noreferrer" class="bbcode-link">${parseBBCode(content)}</a>`;
                     safe = safe.substring(0, urlSimple.index) + replacement + safe.substring(urlSimple.index + urlSimple[0].length);
                     changed = true;
                     continue;
@@ -1101,7 +1175,7 @@
                 if (colorMatch) {
                     const color = colorMatch[1].trim();
                     const content = colorMatch[2];
-                    const replacement = '<span style="color: ' + color + ';">' + parseBBCode(content) + '</span>';
+                    const replacement = `<span style="color: ${color};">${parseBBCode(content)}</span>`;
                     safe = safe.substring(0, colorMatch.index) + replacement + safe.substring(colorMatch.index + colorMatch[0].length);
                     changed = true;
                     continue;
@@ -1109,7 +1183,7 @@
                 let rainbowMatch = /\[rainbow\]([\s\S]*?)\[\/rainbow\]/i.exec(safe);
                 if (rainbowMatch) {
                     const content = rainbowMatch[1];
-                    const replacement = '<span class="rainbow-text">' + parseBBCode(content) + '</span>';
+                    const replacement = `<span class="rainbow-text">${parseBBCode(content)}</span>`;
                     safe = safe.substring(0, rainbowMatch.index) + replacement + safe.substring(rainbowMatch.index + rainbowMatch[0].length);
                     changed = true;
                     continue;
@@ -1122,7 +1196,7 @@
                     const innerHtml = parseBBCode(content);
                     let processed;
                     if (innerHtml.includes('<') && innerHtml.includes('>')) {
-                        processed = '<span class="shake-letter" style="animation-duration: ' + duration + 's; --shake-distance: ' + distance + 'px; display: inline-block;">' + innerHtml + '</span>';
+                        processed = `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; display: inline-block;">${innerHtml}</span>`;
                     } else {
                         const chars = innerHtml.split('');
                         let result = '';
@@ -1130,7 +1204,7 @@
                             const ch = chars[i];
                             if (ch === ' ') { result += ' '; continue; }
                             const delay = (i * 0.03).toFixed(3);
-                            result += '<span class="shake-letter" style="animation-duration: ' + duration + 's; --shake-distance: ' + distance + 'px; animation-delay: ' + delay + 's;">' + ch + '</span>';
+                            result += `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; animation-delay: ${delay}s;">${ch}</span>`;
                         }
                         processed = result;
                     }
@@ -1142,14 +1216,208 @@
             return safe;
         }
 
+        // ===== СТРАНИЦА МОДЕЛИ (динамическая) =====
+        let modelDetailContainer = null;
+
+        function showModelDetail(modelName) {
+            // Скрываем главную галерею и показываем детальный просмотр
+            const main = document.querySelector('main');
+            const extraHeader = document.querySelector('header:nth-of-type(2)');
+            if (!modelDetailContainer) {
+                modelDetailContainer = document.createElement('main');
+                modelDetailContainer.className = 'model-detail';
+                modelDetailContainer.id = 'model-detail-container';
+                modelDetailContainer.innerHTML = `
+                    <div class="model-container">
+                        <div class="animation-area">
+                            <canvas id="animation-canvas" width="400" height="400"></canvas>
+                            <div id="frame-loader" class="frame-loader" style="display: none;">
+                                <span>ЗАГРУЗКА КАДРОВ</span>
+                                <div class="loader-progress"><div class="loader-fill"></div></div>
+                                <span id="loader-percent">0%</span>
+                            </div>
+                        </div>
+                        <div class="info-area">
+                            <h2 id="model-name"></h2>
+                            <div id="model-tags" class="tags"></div>
+                            <p id="model-description" class="description-text"></p>
+                            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                                <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
+                                <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
+                            </div>
+                            <div id="share-message" class="share-message" style="display: none;">Ссылка скопирована!</div>
+                            <button id="back-to-gallery" class="back-link" style="margin-top:1rem; display:inline-block;">← Назад к галерее</button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertBefore(modelDetailContainer, extraHeader);
+            }
+            // Показываем детальную страницу, скрываем галерею
+            document.querySelector('main').style.display = 'none';
+            if (extraHeader) extraHeader.style.display = 'none';
+            modelDetailContainer.style.display = 'block';
+
+            // Загружаем модель
+            const model = allModels.find(m => m.name === modelName);
+            if (!model) return;
+
+            // Заполняем данные
+            document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
+            document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
+            const tagsHtml = (model.tags || []).map(tag => {
+                let tagName, tagColor;
+                if (typeof tag === 'string') {
+                    tagName = tag;
+                    tagColor = null;
+                } else {
+                    tagName = tag.name || '';
+                    tagColor = tag.color || null;
+                }
+                let colorStyle = '';
+                let extraClass = '';
+                if (tagColor === 'rainbow') {
+                    extraClass = 'rainbow-text';
+                } else if (tagColor) {
+                    colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
+                }
+                return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
+            }).join('');
+            document.getElementById('model-tags').innerHTML = tagsHtml;
+
+            // Кнопка скачивания
+            const downloadBtn = document.getElementById('download-btn');
+            if (model.downloadable && model.downloadFile) {
+                downloadBtn.style.display = 'inline-block';
+                downloadBtn.onclick = () => {
+                    const downloadUrl = `models/${model.name}/${model.downloadFile}`;
+                    downloadWithEffect(downloadUrl);
+                };
+            } else {
+                downloadBtn.style.display = 'none';
+            }
+
+            // Кнопка "Поделиться"
+            const shareBtn = document.getElementById('share-btn');
+            const shareMsg = document.getElementById('share-message');
+            shareBtn.onclick = () => {
+                playClick();
+                navigator.clipboard.writeText(window.location.href + '?model=' + model.name);
+                shareMsg.style.display = 'inline-block';
+                setTimeout(() => shareMsg.style.display = 'none', 2000);
+            };
+
+            // Кнопка "Назад"
+            document.getElementById('back-to-gallery').addEventListener('click', () => {
+                modelDetailContainer.style.display = 'none';
+                document.querySelector('main').style.display = 'block';
+                if (extraHeader) extraHeader.style.display = 'block';
+                // Сбрасываем анимацию
+                const canvas = document.getElementById('animation-canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+
+            // Загружаем анимацию
+            const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
+            const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
+
+            if (model.startFrames === 0 && model.idleFrames === 0) {
+                const canvas = document.getElementById('animation-canvas');
+                const ctx = canvas.getContext('2d');
+                const iconUrl = model.preview || `models/${model.name}/icon.webp`;
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    document.getElementById('frame-loader').style.display = 'none';
+                };
+                img.onerror = () => {
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '16px RetroFont';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Нет изображения', canvas.width/2, canvas.height/2);
+                    document.getElementById('frame-loader').style.display = 'none';
+                };
+                img.src = iconUrl;
+                return;
+            }
+            preloadFramesWithIndicator(startUrls, idleUrls);
+        }
+
+        // ===== ПРЕДЗАГРУЗКА КАДРОВ =====
+        async function preloadFramesWithIndicator(startUrls, idleUrls) {
+            const loaderDiv = document.getElementById('frame-loader');
+            const fillDiv = document.querySelector('.loader-fill');
+            const percentSpan = document.getElementById('loader-percent');
+            const allUrls = [...startUrls, ...idleUrls];
+            if (!allUrls.length) return;
+            loaderDiv.style.display = 'flex';
+            let loaded = 0;
+            const startTime = Date.now();
+            const promises = allUrls.map(url => new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => { loaded++; update(); resolve(); };
+                img.onerror = () => { loaded++; update(); resolve(); };
+                img.src = url;
+                function update() {
+                    const p = (loaded / allUrls.length) * 100;
+                    if (fillDiv) fillDiv.style.width = p + '%';
+                    if (percentSpan) percentSpan.innerText = Math.floor(p) + '%';
+                }
+            }));
+            await Promise.all(promises);
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 500) await new Promise(r => setTimeout(r, 500 - elapsed));
+            loaderDiv.style.display = 'none';
+            startAnimation(startUrls, idleUrls);
+        }
+
+        function startAnimation(startUrls, idleUrls) {
+            const canvas = document.getElementById('animation-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let startIdx = 0, idleIdx = 0, isStart = true;
+            let interval;
+            const frameDelay = 120;
+            function drawFrame(url) {
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = url;
+            }
+            function nextFrame() {
+                if (isStart) {
+                    if (startIdx < startUrls.length) {
+                        drawFrame(startUrls[startIdx]);
+                        startIdx++;
+                    } else if (idleUrls.length) {
+                        isStart = false;
+                        idleIdx = 0;
+                        drawFrame(idleUrls[idleIdx]);
+                        idleIdx = (idleIdx + 1) % idleUrls.length;
+                    }
+                } else if (idleUrls.length) {
+                    drawFrame(idleUrls[idleIdx]);
+                    idleIdx = (idleIdx + 1) % idleUrls.length;
+                }
+            }
+            if (startUrls.length) drawFrame(startUrls[0]);
+            else if (idleUrls.length) { drawFrame(idleUrls[0]); isStart = false; }
+            interval = setInterval(nextFrame, frameDelay);
+            window.addEventListener('beforeunload', () => clearInterval(interval));
+        }
+
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
 
         // ===== ФОНОВЫЕ ЧАСТИЦЫ =====
@@ -1167,7 +1435,7 @@
                     r: Math.random() * 2 + 0.5,
                     vx: (Math.random() - 0.5) * 0.2,
                     vy: (Math.random() - 0.5) * 0.15 + 0.05,
-                    color: 'rgba(100, 255, 100, ' + (Math.random() * 0.25 + 0.05) + ')'
+                    color: `rgba(100, 255, 100, ${Math.random() * 0.25 + 0.05})`
                 };
             }
             function init(count = 100) { particles = Array.from({ length: count }, createParticle); }
@@ -1277,11 +1545,29 @@
         (function initCustomScrollbar() {
             const scrollbarContainer = document.createElement('div');
             scrollbarContainer.id = 'custom-scrollbar';
-            scrollbarContainer.style.cssText = 'position: fixed; top: 0; right: 0; width: 8px; height: 100%; z-index: 9999; pointer-events: none; background: transparent;';
+            scrollbarContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 8px;
+                height: 100%;
+                z-index: 9999;
+                pointer-events: none;
+                background: transparent;
+            `;
             document.body.appendChild(scrollbarContainer);
             const thumb = document.createElement('div');
             thumb.id = 'custom-scrollbar-thumb';
-            thumb.style.cssText = 'position: absolute; right: 2px; width: 6px; border-radius: 0; background: var(--border-color); pointer-events: auto; cursor: pointer; transition: background 0.2s;';
+            thumb.style.cssText = `
+                position: absolute;
+                right: 2px;
+                width: 6px;
+                border-radius: 0;
+                background: var(--border-color);
+                pointer-events: auto;
+                cursor: pointer;
+                transition: background 0.2s;
+            `;
             scrollbarContainer.appendChild(thumb);
             function updateThumb() {
                 const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -1325,20 +1611,20 @@
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         initAudioContext();
-        document.addEventListener('DOMContentLoaded', async function() {
-            const back = document.getElementById('back-link');
-            if (back) back.addEventListener('click', function(e) { e.preventDefault(); smoothTransition('index.html'); });
-            if (window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '') {
-                await fetchModels();
-                if (allModels.length > 0) {
-                    currentSort = 'random';
-                    renderTagFilters();
-                    setupSearch();
-                    setupSort();
-                    setupPagination();
-                    applyFilters();
-                } else {
-                    document.getElementById('models-grid').innerHTML = '<div class="loading">НЕТ ДАННЫХ</div>';
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchModels();
+            if (allModels.length > 0) {
+                currentSort = 'random';
+                renderTagFilters();
+                setupSearch();
+                setupSort();
+                setupPagination();
+                applyFilters();
+                // Обработка параметра ?model= (для ссылок)
+                const params = new URLSearchParams(window.location.search);
+                const modelParam = params.get('model');
+                if (modelParam) {
+                    showModelDetail(modelParam);
                 }
             }
         });
