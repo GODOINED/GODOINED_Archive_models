@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" style="background: #0a0f0a;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +7,25 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <meta property="og:title" content="Архив 3D моделей — ретро портфолио">
     <meta property="og:description" content="Мой архив 3D моделей с анимацией, поиском и ретро-стилем.">
-    <meta property="og:image" content="https://yourusername.github.io/your-repo/social-preview.png">
-    <meta property="og:url" content="https://yourusername.github.io/your-repo/">
+    <meta property="og:image" content="https://ваш-сайт/social-preview.png">
+    <meta property="og:url" content="https://ваш-сайт/">
     <meta property="og:type" content="website">
+
     <script src="version.js"></script>
     <script>
-        // Загрузка CSS с версией
+        // Принудительное применение темы и фона ДО загрузки CSS
+        (function() {
+            const savedTheme = localStorage.getItem('retro-theme');
+            if (savedTheme && savedTheme !== 'green') {
+                document.documentElement.classList.add('theme-' + savedTheme);
+            } else {
+                document.documentElement.classList.add('theme-green');
+            }
+            document.documentElement.style.backgroundColor = '#0a0f0a';
+            document.body.style.backgroundColor = '#0a0f0a';
+        })();
+    </script>
+    <script>
         (function() {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -21,80 +34,132 @@
         })();
     </script>
 </head>
-<body>
-    <canvas id="bg-canvas" class="bg-canvas"></canvas>
-    <canvas id="particles-canvas"></canvas>
-    <div class="transition-overlay" id="transition-overlay"></div>
+<body style="background: #0a0f0a; margin:0; padding:0;">
 
-    <header>
-        <h1>АРХИВ<span class="cursor">█</span></h1>
-        <p>По приколу мой архив всяких моих работ 3D</p>
-    </header>
+    <!-- ===== ЗАГРУЗОЧНЫЙ ЭКРАН ===== -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="terminal-fullscreen">
+            <div class="terminal-output" id="terminal-output"></div>
+            <div class="terminal-input-line">
+                <span class="terminal-prompt">></span>
+                <span class="terminal-cursor">█</span>
+            </div>
+            <div class="terminal-status" id="terminal-status">>> ИНИЦИАЛИЗАЦИЯ...</div>
+        </div>
+    </div>
 
-    <main>
-        <section class="description">
-            <h2>> О сайте</h2>
-            <p>Сделал я этот сайт специально для того чтобы хранить свои 3D модели, так же будут разные пополнения или типа того, МОЙ АРХИИИИИИИИВ!!</p>
-        </section>
+    <!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
+    <div id="page-content" style="position: relative; z-index: 1;">
+        <canvas id="bg-canvas" class="bg-canvas"></canvas>
+        <canvas id="particles-canvas"></canvas>
+        <div class="transition-overlay" id="transition-overlay"></div>
 
-        <section class="gallery">
-            <h2>> ДОСТУПНЫЕ МОДЕЛИ</h2>
-            <div class="info-bar">
-                <span id="model-count">Всего: 0</span>
-            </div>
-            <div id="tag-filters" class="tag-filters"></div>
-            <div class="sort-bar">
-                <label for="sort-select">Сортировка:</label>
-                <select id="sort-select" class="sort-select">
-                    <option value="random" selected>Случайно</option>
-                    <option value="default">Без сортировки</option>
-                    <option value="name-asc">По имени (А→Я)</option>
-                    <option value="name-desc">По имени (Я→А)</option>
-                </select>
-            </div>
-            <div class="search-bar">
-                <input type="text" id="search-input" placeholder="🔍 ПОИСК ПО НАЗВАНИЮ ИЛИ ОПИСАНИЮ..." class="search-input">
-                <button id="clear-search" class="clear-search">✕</button>
-            </div>
-            <div id="models-grid" class="models-grid">
-                <div class="loading">ЗАГРУЗКА ДАННЫХ...</div>
-            </div>
-            <div id="pagination-controls" class="pagination-controls">
-                <button id="prev-page" class="pagination-btn" disabled>◀</button>
-                <span id="page-info">Страница 1 из 1</span>
-                <button id="next-page" class="pagination-btn" disabled>▶</button>
-            </div>
-        </section>
-    </main>
+        <header id="main-header">
+            <h1>АРХИВ<span class="cursor">█</span></h1>
+            <p>По приколу мой архив всяких моих работ 3D</p>
+        </header>
 
-    <header>
-        <h1>>Прочитайте</h1>
-        <p>Все доступные модели вы можете скачать если сам автор или владелец разрешил их вам скачивать через сам сайт, пожалуйста уважайте чужое творчество, так же будут оставлены ссылки на автора персонажа или модели</p>
-    </header>
+        <div id="gallery-container">
+            <main>
+                <section class="description">
+                    <h2>> О сайте</h2>
+                    <p>Сделал я этот сайт специально для того чтобы хранить свои 3D модели, так же будут разные пополнения или типа того, МОЙ АРХИИИИИИИИВ!!</p>
+                </section>
 
-    <div class="theme-switcher">
-        <button class="theme-btn theme-green" data-theme="green" style="background:#3eff6e;"></button>
-        <button class="theme-btn theme-amber" data-theme="amber" style="background:#ffb347;"></button>
-        <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
+                <section class="gallery">
+                    <h2>> ДОСТУПНЫЕ МОДЕЛИ</h2>
+                    <div class="info-bar">
+                        <span id="model-count">Всего: 0</span>
+                    </div>
+                    <div id="tag-filters" class="tag-filters"></div>
+                    <div class="sort-bar">
+                        <label for="sort-select">Сортировка:</label>
+                        <select id="sort-select" class="sort-select">
+                            <option value="random" selected>Случайно</option>
+                            <option value="default">Без сортировки</option>
+                            <option value="name-asc">По имени (А→Я)</option>
+                            <option value="name-desc">По имени (Я→А)</option>
+                        </select>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="search-input" placeholder="🔍 ПОИСК ПО НАЗВАНИЮ ИЛИ ОПИСАНИЮ..." class="search-input">
+                        <button id="clear-search" class="clear-search">✕</button>
+                    </div>
+                    <div id="models-grid" class="models-grid">
+                        <div class="loading">ЗАГРУЗКА ДАННЫХ...</div>
+                    </div>
+                    <div id="pagination-controls" class="pagination-controls">
+                        <button id="prev-page" class="pagination-btn" disabled>◀</button>
+                        <span id="page-info">Страница 1 из 1</span>
+                        <button id="next-page" class="pagination-btn" disabled>▶</button>
+                    </div>
+                </section>
+            </main>
+
+            <header>
+                <h1>>Прочитайте</h1>
+                <p>Все доступные модели вы можете скачать если сам автор или владелец разрешил их вам скачивать через сам сайт, пожалуйста уважайте чужое творчество, так же будут оставлены ссылки на автора персонажа или модели</p>
+            </header>
+        </div>
+
+        <div id="detail-container" class="detail-container">
+            <div class="model-detail-wrapper">
+                <div class="model-detail-header">
+                    <div class="detail-nav">
+                        <button id="back-to-gallery" class="back-link">← Назад в галерею</button>
+                    </div>
+                    <h1 id="detail-title">ЗАГРУЗКА МОДЕЛИ...</h1>
+                </div>
+                <div class="model-detail-content">
+                    <div class="animation-area">
+                        <canvas id="animation-canvas" width="400" height="400"></canvas>
+                        <div id="frame-loader" class="frame-loader" style="display: none;">
+                            <span>ЗАГРУЗКА КАДРОВ</span>
+                            <div class="loader-progress"><div class="loader-fill"></div></div>
+                            <span id="loader-percent">0%</span>
+                        </div>
+                    </div>
+                    <div class="info-area">
+                        <h2 id="model-name"></h2>
+                        <div id="model-tags" class="tags"></div>
+                        <p id="model-description" class="description-text"></p>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                            <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
+                            <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
+                        </div>
+                        <div id="share-message" class="share-message" style="display: none;">Ссылка скопирована!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="theme-switcher">
+            <button class="theme-btn theme-green" data-theme="green" style="background:#3eff6e;"></button>
+            <button class="theme-btn theme-amber" data-theme="amber" style="background:#ffb347;"></button>
+            <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
+        </div>
     </div>
 
     <script>
-        // Загрузка script.js с версией и вызов initApp после загрузки
+        // Применяем тему к body после загрузки DOM (для надёжности)
         (function() {
-            const script = document.createElement('script');
-            script.src = 'script.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : Date.now());
-            script.onload = function() {
-                if (typeof initApp === 'function') {
-                    initApp();
-                } else {
-                    console.warn('initApp не определена. Проверьте, что script.js содержит функцию initApp.');
-                }
-            };
-            script.onerror = function() {
-                console.error('Не удалось загрузить script.js');
-            };
-            document.body.appendChild(script);
+            const savedTheme = localStorage.getItem('retro-theme');
+            if (savedTheme && savedTheme !== 'green') {
+                document.body.classList.add('theme-' + savedTheme);
+                document.documentElement.classList.add('theme-' + savedTheme);
+                document.documentElement.classList.remove('theme-green');
+                document.body.classList.remove('theme-green');
+            } else {
+                document.body.classList.add('theme-green');
+                document.documentElement.classList.add('theme-green');
+                document.body.classList.remove('theme-amber', 'theme-blue');
+                document.documentElement.classList.remove('theme-amber', 'theme-blue');
+            }
+            document.body.style.backgroundColor = '';
+            document.documentElement.style.backgroundColor = '';
         })();
     </script>
+
+    <script src="script.js"></script>
 </body>
 </html>

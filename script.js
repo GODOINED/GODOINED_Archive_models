@@ -1,53 +1,290 @@
-// ===== ОПРЕДЕЛЕНИЕ СТРАНИЦЫ =====
-const isIndex = window.location.pathname === '/' || 
-                window.location.pathname === '/index.html' || 
-                window.location.pathname.endsWith('/') ||
-                window.location.pathname.includes('index.html');
-const isModel = window.location.pathname.includes('model.html');
+// ============================================================
+//  ЗАГРУЗОЧНЫЙ ЭКРАН (ТЕРМИНАЛ С ПРОПУСКОМ)
+// ============================================================
+(function initTerminal() {
+    const screen = document.getElementById('loading-screen');
+    const output = document.getElementById('terminal-output');
+    const statusElem = document.getElementById('terminal-status');
 
-console.log('Текущая страница:', isIndex ? 'Главная' : isModel ? 'Модель' : 'Другая');
+    const lines = [
+        '> INITIALIZING SYSTEM...',
+        '> LOADING KERNEL... [OK]',
+        '> MOUNTING FILESYSTEM... [OK]',
+        '> STARTING SERVICES...',
+        '>   - NETWORK SERVICE... [OK]',
+        '>   - DISPLAY SERVICE... [OK]',
+        '>   - AUDIO SERVICE... [OK]',
+        '> LOADING MODULES...',
+        '>   - MODEL ARCHIVE... [OK]',
+        '>   - SEARCH ENGINE... [OK]',
+        '>   - THEME MANAGER... [OK]',
+        '> SYSTEM READY.',
+        '> ВВЕДИТЕ КОМАНДУ: _'
+    ];
 
+    let lineIndex = 0;
+    let charIndex = 0;
+    let typeTimer = null;
+    let statusMessages = [
+        '>> ИНИЦИАЛИЗАЦИЯ...',
+        '>> ЗАГРУЗКА МОДУЛЕЙ...',
+        '>> ПРОВЕРКА СИСТЕМ...',
+        '>> КАЛИБРОВКА ДИСПЛЕЯ...',
+        '>> УСТАНОВКА СВЯЗИ...',
+        '>> СИСТЕМА ГОТОВА!'
+    ];
+
+    let isTerminalFinished = false;
+
+    // ---------- ЗВУКИ ----------
+    let fanBuffer = null;
+    let fanSource = null;
+    let fanGainNode = null;
+    let fanAudioCtx = null;
+    let fanStarted = false;
+
+    function initFanSound() {
+        if (fanStarted) return;
+        try {
+            fanAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            fetch('sounds/ui_hacking_fanhum_lp.wav')
+                .then(res => res.arrayBuffer())
+                .then(buffer => fanAudioCtx.decodeAudioData(buffer))
+                .then(decoded => {
+                    fanBuffer = decoded;
+                    playFanLoop();
+                })
+                .catch(() => {});
+            fanStarted = true;
+        } catch(e) {}
+    }
+
+    function playFanLoop() {
+        if (!fanBuffer || !fanAudioCtx) return;
+        fanSource = fanAudioCtx.createBufferSource();
+        fanSource.buffer = fanBuffer;
+        fanSource.loop = true;
+        fanGainNode = fanAudioCtx.createGain();
+        fanGainNode.gain.value = 0.08;
+        fanSource.connect(fanGainNode);
+        fanGainNode.connect(fanAudioCtx.destination);
+        fanSource.start();
+    }
+
+    function stopFanSound() {
+        if (fanSource && fanGainNode) {
+            const startGain = fanGainNode.gain.value;
+            const fadeTime = 0.5;
+            const startTime = fanAudioCtx.currentTime;
+            fanGainNode.gain.setValueAtTime(startGain, startTime);
+            fanGainNode.gain.exponentialRampToValueAtTime(0.001, startTime + fadeTime);
+            setTimeout(() => {
+                try {
+                    fanSource.stop();
+                    fanSource.disconnect();
+                    fanGainNode.disconnect();
+                    fanSource = null;
+                    fanGainNode = null;
+                } catch(e) {}
+            }, fadeTime * 1000 + 100);
+        }
+    }
+
+    function playCharSound() {
+        try {
+            const audio = new Audio('sounds/ui_hacking_charscroll.wav');
+            audio.volume = 0.06;
+            audio.play().catch(() => {});
+        } catch(e) {}
+    }
+
+    function playLineSound() {
+        try {
+            const audio = new Audio('sounds/ui_hacking_charscroll_lp.wav');
+            audio.volume = 0.05;
+            audio.play().catch(() => {});
+        } catch(e) {}
+    }
+
+    setTimeout(initFanSound, 300);
+
+    // ---------- ЗАВЕРШЕНИЕ ----------
+    function finishTerminal() {
+        if (isTerminalFinished) return;
+        isTerminalFinished = true;
+
+        if (typeTimer) {
+            clearTimeout(typeTimer);
+            typeTimer = null;
+        }
+
+        stopFanSound();
+
+        try {
+            const audio = new Audio('sounds/ui_hacking_charscroll_lp.wav');
+            audio.volume = 0.04;
+            audio.play().catch(() => {});
+        } catch(e) {}
+
+        // Мгновенный вывод всех строк
+        const outputContainer = document.getElementById('terminal-output');
+        if (outputContainer) {
+            outputContainer.innerHTML = '';
+            const allLines = lines.slice(0, lineIndex + 1);
+            allLines.forEach((line, idx) => {
+                const span = document.createElement('span');
+                span.className = 'line';
+                span.style.animation = 'none';
+                span.style.opacity = '1';
+                if (idx === lines.length - 1 && line.includes('_')) {
+                    span.innerHTML = line.replace('_', '') + '<span class="cursor-char">█</span>';
+                } else {
+                    span.textContent = line;
+                }
+                outputContainer.appendChild(span);
+            });
+            const statusElemLocal = document.getElementById('terminal-status');
+            if (statusElemLocal) {
+                statusElemLocal.innerHTML = '<span class="status-text">>> СИСТЕМА ГОТОВА!</span>';
+            }
+        }
+
+        setTimeout(() => {
+            screen.classList.add('fade-out');
+            setTimeout(() => {
+                screen.style.display = 'none';
+                if (typeof initApp === 'function' && !window._appStarted) {
+                    window._appStarted = true;
+                    initApp();
+                }
+            }, 800);
+        }, 500);
+    }
+
+    // ---------- ПРОПУСК ----------
+    function handleSkip(e) {
+        if (e.type === 'keydown') {
+            if (e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift' || e.key === 'Meta') return;
+        }
+        if (!isTerminalFinished) {
+            finishTerminal();
+        }
+    }
+
+    document.addEventListener('keydown', handleSkip);
+    document.addEventListener('click', handleSkip);
+    document.addEventListener('touchstart', handleSkip);
+
+    // ---------- ПЕЧАТЬ ----------
+    function typeLine() {
+        if (isTerminalFinished) return;
+
+        if (lineIndex >= lines.length) {
+            finishTerminal();
+            return;
+        }
+
+        const currentLine = lines[lineIndex];
+        if (currentLine.includes('_') && charIndex >= currentLine.length - 1) {
+            const lineWithoutUnderscore = currentLine.replace('_', '');
+            const span = document.createElement('span');
+            span.className = 'line';
+            span.innerHTML = lineWithoutUnderscore + '<span class="cursor-char">█</span>';
+            output.appendChild(span);
+            updateStatus();
+            lineIndex++;
+            charIndex = 0;
+            playLineSound();
+            typeTimer = setTimeout(typeLine, 400);
+            return;
+        }
+
+        if (charIndex === 0) {
+            const span = document.createElement('span');
+            span.className = 'line';
+            span.dataset.line = lineIndex;
+            output.appendChild(span);
+            updateStatus();
+            playLineSound();
+        }
+
+        const currentSpan = output.querySelector(`[data-line="${lineIndex}"]`);
+        if (!currentSpan) return;
+
+        const char = currentLine[charIndex];
+        currentSpan.textContent += char;
+        charIndex++;
+        output.scrollTop = output.scrollHeight;
+
+        if (charIndex < currentLine.length && char !== ' ') {
+            playCharSound();
+        }
+
+        if (charIndex < currentLine.length) {
+            typeTimer = setTimeout(typeLine, 25);
+        } else {
+            lineIndex++;
+            charIndex = 0;
+            typeTimer = setTimeout(typeLine, 100);
+        }
+    }
+
+    function updateStatus() {
+        const idx = Math.min(Math.floor(lineIndex / 2), statusMessages.length - 1);
+        statusElem.innerHTML = `<span class="status-text">${statusMessages[idx]}</span>`;
+    }
+
+    typeTimer = setTimeout(typeLine, 500);
+})();
+
+
+// ============================================================
+//  ОСНОВНАЯ ЛОГИКА
+// ============================================================
 let allModels = [];
-let audioCtx = null;
-let soundsEnabled = true;
+let currentFilteredModels = [];
 let currentSort = 'random';
 let currentFilterTag = null;
 let currentPage = 1;
 const itemsPerPage = 12;
+let audioCtx = null;
+let soundsEnabled = true;
+let currentModelName = null;
+let animationInterval = null;
+let currentLoadId = 0;
 
-// ===== АКТИВАЦИЯ АУДИО ПРИ ПЕРВОМ КЛИКЕ =====
-function activateAudioOnFirstClick() {
-    if (audioCtx && audioCtx.state === 'suspended') {
-        const resume = () => {
-            audioCtx.resume().then(() => {
-                document.removeEventListener('click', resume);
-                document.removeEventListener('touchstart', resume);
-                console.log('🔊 Аудио активировано');
-            }).catch(e => console.warn('Не удалось активировать аудио', e));
-        };
-        document.addEventListener('click', resume);
-        document.addEventListener('touchstart', resume);
+// ---------- АКТИВАЦИЯ АУДИО ----------
+(function ensureAudio() {
+    function resumeAudio() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) {}
+        }
+        document.removeEventListener('click', resumeAudio);
+        document.removeEventListener('touchstart', resumeAudio);
     }
-}
+    document.addEventListener('click', resumeAudio);
+    document.addEventListener('touchstart', resumeAudio);
+})();
 
-// ===== ПРЕДВАРИТЕЛЬНОЕ СОЗДАНИЕ АУДИОКОНТЕКСТА =====
+// ---------- ЗВУКИ ЭЛЕМЕНТОВ ----------
 function initAudioContext() {
     if (audioCtx) return audioCtx;
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        activateAudioOnFirstClick();
         return audioCtx;
     } catch(e) { soundsEnabled = false; return null; }
 }
-initAudioContext();
-
-// ===== ЗВУКИ =====
-function playRetroClick() {
+function playSound(freq, duration, type = 'square', volume = 0.12) {
     if (!soundsEnabled) return;
-    const ctx = audioCtx || initAudioContext();
+    const ctx = initAudioContext();
     if (!ctx) return;
     if (ctx.state === 'suspended') {
-        ctx.resume().catch(()=>{});
+        ctx.resume().catch(() => {});
         return;
     }
     const now = ctx.currentTime;
@@ -55,83 +292,37 @@ function playRetroClick() {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.12, now);
-    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.08);
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.00001, now + duration);
     osc.start();
-    osc.stop(now + 0.08);
+    osc.stop(now + duration);
 }
-function playRetroHover() {
-    if (!soundsEnabled) return;
-    const ctx = audioCtx || initAudioContext();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') {
-        ctx.resume().catch(()=>{});
-        return;
-    }
+function playClickSound() { playSound(880, 0.08, 'square', 0.10); }
+function playBackSound() { playSound(660, 0.1, 'sine', 0.08); }
+function playShareSound() { playSound(1200, 0.06, 'square', 0.06); }
+function playDownloadSound() {
+    playSound(580, 0.12, 'square', 0.10);
+    const ctx = initAudioContext();
+    if (!ctx || ctx.state === 'suspended') return;
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = 660;
-    gain.gain.setValueAtTime(0.08, now);
-    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.1);
-    osc.start();
-    osc.stop(now + 0.1);
-}
-function playWipeSound() {
-    if (!soundsEnabled) return;
-    const ctx = audioCtx || initAudioContext();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') {
-        ctx.resume().catch(()=>{});
-        return;
-    }
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.value = 580;
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.12);
-    osc.start();
-    osc.stop(now + 0.12);
     const bufferSize = 512;
     const noise = ctx.createScriptProcessor(bufferSize, 1, 1);
     noise.onaudioprocess = (e) => {
         const out = e.outputBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) out[i] = (Math.random() - 0.5) * 0.3;
+        for (let i = 0; i < bufferSize; i++) out[i] = (Math.random() - 0.5) * 0.2;
     };
     const noiseGain = ctx.createGain();
     noise.connect(noiseGain);
     noiseGain.connect(ctx.destination);
-    noiseGain.gain.setValueAtTime(0.1, now);
+    noiseGain.gain.setValueAtTime(0.08, now);
     noiseGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.08);
     setTimeout(() => noise.disconnect(), 100);
 }
-function playClick() { playRetroClick(); }
-function playHover() { playRetroHover(); }
+function playHoverSound() { playSound(660, 0.08, 'sine', 0.05); }
 
-// ===== ПЕРЕХОД =====
-function smoothTransition(url) {
-    const overlay = document.getElementById('transition-overlay');
-    if (!overlay) { window.location.href = url; return; }
-    playClick();
-    playWipeSound();
-    const scrollY = window.scrollY;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    overlay.classList.add('active');
-    setTimeout(() => { window.location.href = url; }, 250);
-}
-
-// ===== СКАЧИВАНИЕ =====
+// ---------- СКАЧИВАНИЕ ----------
 function downloadWithEffect(downloadUrl) {
     const overlay = document.createElement('div');
     overlay.id = 'download-overlay';
@@ -167,11 +358,10 @@ function downloadWithEffect(downloadUrl) {
             document.body.removeChild(link);
         }, 300);
     }, 1200);
-    playClick();
-    playWipeSound();
+    playDownloadSound();
 }
 
-// ===== ЗАГРУЗКА МОДЕЛЕЙ =====
+// ---------- ЗАГРУЗКА МОДЕЛЕЙ ----------
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
@@ -180,26 +370,19 @@ async function fetchModels() {
         const data = await response.json();
         if (Array.isArray(data) && data.length) {
             allModels = data;
-            console.log('✅ Модели загружены из models_list.json');
             return allModels;
         } else {
-            throw new Error('Файл models_list.json пуст или имеет неверный формат');
+            throw new Error('Файл models_list.json пуст');
         }
-    } catch (e) {
-        console.error('Ошибка загрузки моделей:', e);
+    } catch(e) {
+        console.error(e);
         const grid = document.getElementById('models-grid');
-        if (grid) {
-            grid.innerHTML = `<div class="loading" style="color: var(--text-secondary); border-color: var(--border-color);">
-                ❌ ОШИБКА ЗАГРУЗКИ<br>
-                <span style="font-size:0.8rem; opacity:0.7;">${e.message}</span><br>
-                <span style="font-size:0.7rem; opacity:0.5;">Проверьте наличие и формат models_list.json</span>
-            </div>`;
-        }
+        if (grid) grid.innerHTML = `<div class="loading">❌ ОШИБКА ЗАГРУЗКИ</div>`;
         return [];
     }
 }
 
-// ===== ПЕРЕМЕШИВАНИЕ =====
+// ---------- СОРТИРОВКА ----------
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -208,8 +391,6 @@ function shuffleArray(array) {
     }
     return arr;
 }
-
-// ===== СОРТИРОВКА =====
 function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
@@ -220,7 +401,7 @@ function sortModels(models, sortType) {
     }
 }
 
-// ===== ФИЛЬТРЫ =====
+// ---------- ФИЛЬТРЫ ----------
 function getFilteredModels() {
     let result = [...allModels];
     if (currentFilterTag) {
@@ -243,13 +424,12 @@ function getFilteredModels() {
 }
 
 function applyFilters() {
-    const filtered = getFilteredModels();
-    renderModelsGrid(filtered);
+    currentFilteredModels = getFilteredModels();
+    renderModelsGrid(currentFilteredModels);
 }
 
-// ===== ОТРИСОВКА СЕТКИ (только для index.html) =====
+// ---------- ОТРИСОВКА СЕТКИ ----------
 function renderModelsGrid(models) {
-    if (!isIndex) return;
     const grid = document.getElementById('models-grid');
     if (!grid) return;
     if (!models.length) {
@@ -268,10 +448,10 @@ function renderModelsGrid(models) {
         const card = document.createElement('div');
         card.className = 'model-card';
         card.addEventListener('click', () => {
-            playClick();
-            smoothTransition(`model.html?name=${encodeURIComponent(model.name)}`);
+            playClickSound();
+            showModelDetail(model.name);
         });
-        card.addEventListener('mouseenter', playHover);
+        card.addEventListener('mouseenter', playHoverSound);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
         let previewUrl = model.preview || `models/${model.name}/start_0.webp`;
         if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/idle_0.webp`;
@@ -311,7 +491,7 @@ function renderModelsGrid(models) {
     updatePaginationControls(totalPages);
 }
 
-// ===== ПАГИНАЦИЯ =====
+// ---------- ПАГИНАЦИЯ ----------
 function updatePaginationControls(totalPages) {
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
@@ -321,7 +501,6 @@ function updatePaginationControls(totalPages) {
     nextBtn.disabled = currentPage >= totalPages || totalPages === 0;
     pageInfo.textContent = totalPages > 0 ? `Страница ${currentPage} из ${totalPages}` : 'Нет моделей';
 }
-
 function setupPagination() {
     document.getElementById('prev-page')?.addEventListener('click', () => {
         if (currentPage > 1) { currentPage--; applyFilters(); }
@@ -332,7 +511,7 @@ function setupPagination() {
     });
 }
 
-// ===== ТЕГИ-ФИЛЬТРЫ =====
+// ---------- ТЕГИ-ФИЛЬТРЫ ----------
 function getUniqueTags() {
     const tagSet = new Set();
     allModels.forEach(m => {
@@ -343,9 +522,7 @@ function getUniqueTags() {
     });
     return [...tagSet].sort();
 }
-
 function renderTagFilters() {
-    if (!isIndex) return;
     const container = document.getElementById('tag-filters');
     if (!container) return;
     const tags = getUniqueTags();
@@ -357,7 +534,7 @@ function renderTagFilters() {
     container.innerHTML = html;
     container.querySelectorAll('.tag-filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            playClick();
+            playClickSound();
             const tag = btn.dataset.tag;
             currentFilterTag = tag === 'all' ? null : tag;
             currentPage = 1;
@@ -368,9 +545,8 @@ function renderTagFilters() {
     });
 }
 
-// ===== ПОИСК =====
+// ---------- ПОИСК ----------
 function setupSearch() {
-    if (!isIndex) return;
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-search');
     if (!searchInput) return;
@@ -385,9 +561,8 @@ function setupSearch() {
     });
 }
 
-// ===== СОРТИРОВКА =====
+// ---------- СОРТИРОВКА ----------
 function setupSort() {
-    if (!isIndex) return;
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
     sortSelect.value = currentSort;
@@ -395,25 +570,26 @@ function setupSort() {
         currentSort = e.target.value;
         currentPage = 1;
         applyFilters();
-        playClick();
+        playClickSound();
     });
 }
 
-// ===== ЧАСТИЦЫ =====
+// ---------- ЧАСТИЦЫ ----------
 function createParticles(e, card) {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
         const angle = Math.random() * Math.PI * 2;
         const dist = Math.random() * 40 + 10;
+        const size = Math.random() * 3 + 2;
         particle.style.left = (x + Math.cos(angle) * dist) + 'px';
         particle.style.top = (y + Math.sin(angle) * dist) + 'px';
         particle.style.position = 'absolute';
-        particle.style.width = '3px';
-        particle.style.height = '3px';
+        particle.style.width = size + 'px';
+        particle.style.height = size + 'px';
         particle.style.background = `rgba(100, 255, 100, ${Math.random() * 0.8 + 0.2})`;
         particle.style.boxShadow = '0 0 2px #3eff6e';
         card.appendChild(particle);
@@ -421,7 +597,7 @@ function createParticles(e, card) {
     }
 }
 
-// ===== PARSE BBCODE =====
+// ---------- BBCODE ----------
 function parseBBCode(text) {
     if (!text) return '';
     let safe = escapeHtml(text);
@@ -518,96 +694,153 @@ function parseBBCode(text) {
     }
     return safe;
 }
-
-// ===== СТРАНИЦА МОДЕЛИ (для model.html) =====
-async function loadModelDetail(modelName) {
-    if (!isModel) return;
-    try {
-        const models = await fetchModels();
-        const model = models.find(m => m.name === modelName);
-        if (!model) throw new Error('Модель не найдена');
-        
-        document.title = `${model.displayName} — 3D модель`;
-        document.getElementById('model-title').innerHTML = parseBBCode(model.displayName);
-        document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
-        document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
-        
-        const tagsHtml = (model.tags || []).map(tag => {
-            let tagName, tagColor;
-            if (typeof tag === 'string') {
-                tagName = tag;
-                tagColor = null;
-            } else {
-                tagName = tag.name || '';
-                tagColor = tag.color || null;
-            }
-            let colorStyle = '';
-            let extraClass = '';
-            if (tagColor === 'rainbow') {
-                extraClass = 'rainbow-text';
-            } else if (tagColor) {
-                colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
-            }
-            return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
-        }).join('');
-        document.getElementById('model-tags').innerHTML = tagsHtml;
-        
-        const downloadBtn = document.getElementById('download-btn');
-        if (model.downloadable && model.downloadFile) {
-            downloadBtn.style.display = 'inline-block';
-            downloadBtn.onclick = () => {
-                const downloadUrl = `models/${model.name}/${model.downloadFile}`;
-                downloadWithEffect(downloadUrl);
-            };
-        } else {
-            downloadBtn.style.display = 'none';
-        }
-        
-        const shareBtn = document.getElementById('share-btn');
-        const shareMsg = document.getElementById('share-message');
-        shareBtn.onclick = () => {
-            playClick();
-            navigator.clipboard.writeText(window.location.href);
-            shareMsg.style.display = 'inline-block';
-            setTimeout(() => shareMsg.style.display = 'none', 2000);
-        };
-        
-        const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
-        const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
-        
-        if (model.startFrames === 0 && model.idleFrames === 0) {
-            const canvas = document.getElementById('animation-canvas');
-            const ctx = canvas.getContext('2d');
-            const iconUrl = model.preview || `models/${model.name}/icon.webp`;
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-                document.getElementById('frame-loader').style.display = 'none';
-            };
-            img.onerror = () => {
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#fff';
-                ctx.font = '16px RetroFont';
-                ctx.textAlign = 'center';
-                ctx.fillText('Нет изображения', canvas.width/2, canvas.height/2);
-                document.getElementById('frame-loader').style.display = 'none';
-            };
-            img.src = iconUrl;
-            return;
-        }
-        await preloadFramesWithIndicator(startUrls, idleUrls);
-    } catch(e) {
-        console.error(e);
-        document.querySelector('.model-container').innerHTML = '<div class="loading">ОШИБКА ЗАГРУЗКИ МОДЕЛИ</div>';
-    }
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 }
 
-// ===== ПРЕДЗАГРУЗКА КАДРОВ =====
+// ---------- ПЕРЕКЛЮЧЕНИЕ ГАЛЕРЕЯ/ДЕТАЛИ ----------
+function showGallery() {
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+    playBackSound();
+    const gallery = document.getElementById('gallery-container');
+    const detail = document.getElementById('detail-container');
+    const header = document.getElementById('main-header');
+    if (detail.classList.contains('visible')) {
+        detail.classList.remove('visible');
+        detail.classList.add('closing');
+        setTimeout(() => {
+            detail.classList.remove('closing');
+            gallery.classList.remove('hidden');
+            header.classList.remove('hidden');
+            document.body.style.overflow = '';
+            window.scrollTo(0, 0);
+        }, 400);
+    } else {
+        gallery.classList.remove('hidden');
+        header.classList.remove('hidden');
+        document.body.style.overflow = '';
+        window.scrollTo(0, 0);
+    }
+    if (window.location.search.includes('model=')) {
+        const url = new URL(window.location);
+        url.searchParams.delete('model');
+        window.history.pushState({}, '', url);
+    }
+    currentModelName = null;
+    const canvas = document.getElementById('animation-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    document.title = 'Архив моделей';
+}
+
+function showModelDetail(modelName) {
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+
+    const gallery = document.getElementById('gallery-container');
+    const detail = document.getElementById('detail-container');
+    const header = document.getElementById('main-header');
+    const url = new URL(window.location);
+    url.searchParams.set('model', modelName);
+    window.history.pushState({ model: modelName }, '', url);
+    document.title = `${modelName} — 3D модель`;
+
+    const model = allModels.find(m => m.name === modelName);
+    if (!model) return;
+
+    document.getElementById('detail-title').textContent = model.displayName;
+    document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
+    document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
+    const tagsHtml = (model.tags || []).map(tag => {
+        let tagName, tagColor;
+        if (typeof tag === 'string') {
+            tagName = tag;
+            tagColor = null;
+        } else {
+            tagName = tag.name || '';
+            tagColor = tag.color || null;
+        }
+        let colorStyle = '';
+        let extraClass = '';
+        if (tagColor === 'rainbow') {
+            extraClass = 'rainbow-text';
+        } else if (tagColor) {
+            colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor}; background: rgba(0,0,0,0.5);"`;
+        }
+        return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
+    }).join('');
+    document.getElementById('model-tags').innerHTML = tagsHtml;
+
+    const downloadBtn = document.getElementById('download-btn');
+    if (model.downloadable && model.downloadFile) {
+        downloadBtn.style.display = 'inline-block';
+        downloadBtn.onclick = () => {
+            const downloadUrl = `models/${model.name}/${model.downloadFile}`;
+            downloadWithEffect(downloadUrl);
+        };
+    } else {
+        downloadBtn.style.display = 'none';
+    }
+
+    const shareBtn = document.getElementById('share-btn');
+    const shareMsg = document.getElementById('share-message');
+    shareBtn.onclick = () => {
+        playShareSound();
+        navigator.clipboard.writeText(window.location.href);
+        shareMsg.style.display = 'inline-block';
+        setTimeout(() => shareMsg.style.display = 'none', 2000);
+    };
+
+    gallery.classList.add('hidden');
+    header.classList.add('hidden');
+    detail.classList.remove('closing');
+    requestAnimationFrame(() => {
+        detail.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+        window.scrollTo(0, 0);
+    });
+
+    const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
+    const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
+
+    if (model.startFrames === 0 && model.idleFrames === 0) {
+        const canvas = document.getElementById('animation-canvas');
+        const ctx = canvas.getContext('2d');
+        const iconUrl = model.preview || `models/${model.name}/icon.webp`;
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            document.getElementById('frame-loader').style.display = 'none';
+        };
+        img.onerror = () => {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px RetroFont';
+            ctx.textAlign = 'center';
+            ctx.fillText('Нет изображения', canvas.width/2, canvas.height/2);
+            document.getElementById('frame-loader').style.display = 'none';
+        };
+        img.src = iconUrl;
+        return;
+    }
+    preloadFramesWithIndicator(startUrls, idleUrls);
+}
+
+// ---------- ПРЕДЗАГРУЗКА КАДРОВ ----------
 async function preloadFramesWithIndicator(startUrls, idleUrls) {
+    const loadId = ++currentLoadId;
     const loaderDiv = document.getElementById('frame-loader');
     const fillDiv = document.querySelector('.loader-fill');
     const percentSpan = document.getElementById('loader-percent');
@@ -616,69 +849,90 @@ async function preloadFramesWithIndicator(startUrls, idleUrls) {
     loaderDiv.style.display = 'flex';
     let loaded = 0;
     const startTime = Date.now();
-    const promises = allUrls.map(url => new Promise(resolve => {
+
+    const images = [];
+    for (const url of allUrls) {
         const img = new Image();
-        img.onload = () => { loaded++; update(); resolve(); };
-        img.onerror = () => { loaded++; update(); resolve(); };
-        img.src = url;
-        function update() {
-            const p = (loaded / allUrls.length) * 100;
-            if (fillDiv) fillDiv.style.width = p + '%';
-            if (percentSpan) percentSpan.innerText = Math.floor(p) + '%';
-        }
-    }));
-    await Promise.all(promises);
+        await new Promise(resolve => {
+            img.onload = () => {
+                if (loadId === currentLoadId) {
+                    loaded++;
+                    const p = (loaded / allUrls.length) * 100;
+                    if (fillDiv) fillDiv.style.width = p + '%';
+                    if (percentSpan) percentSpan.innerText = Math.floor(p) + '%';
+                }
+                resolve();
+            };
+            img.onerror = () => {
+                if (loadId === currentLoadId) {
+                    loaded++;
+                    const p = (loaded / allUrls.length) * 100;
+                    if (fillDiv) fillDiv.style.width = p + '%';
+                    if (percentSpan) percentSpan.innerText = Math.floor(p) + '%';
+                }
+                resolve();
+            };
+            img.src = url;
+        });
+        images.push(img);
+        if (loadId !== currentLoadId) return;
+    }
+
+    if (loadId !== currentLoadId) return;
+
     const elapsed = Date.now() - startTime;
     if (elapsed < 500) await new Promise(r => setTimeout(r, 500 - elapsed));
     loaderDiv.style.display = 'none';
-    startAnimation(startUrls, idleUrls);
+
+    startAnimation(images, startUrls.length, idleUrls.length);
 }
 
-function startAnimation(startUrls, idleUrls) {
+function startAnimation(images, startCount, idleCount) {
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
     const canvas = document.getElementById('animation-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let startIdx = 0, idleIdx = 0, isStart = true;
-    let interval;
+    let startIdx = 0, idleIdx = 0;
+    let isStart = startCount > 0;
     const frameDelay = 120;
-    function drawFrame(url) {
-        const img = new Image();
-        img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-        };
-        img.src = url;
+
+    function drawFrame(img) {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
     }
+
     function nextFrame() {
         if (isStart) {
-            if (startIdx < startUrls.length) {
-                drawFrame(startUrls[startIdx]);
+            if (startIdx < startCount) {
+                drawFrame(images[startIdx]);
                 startIdx++;
-            } else if (idleUrls.length) {
+            } else if (idleCount > 0) {
                 isStart = false;
                 idleIdx = 0;
-                drawFrame(idleUrls[idleIdx]);
-                idleIdx = (idleIdx + 1) % idleUrls.length;
+                drawFrame(images[startCount + idleIdx]);
+                idleIdx = (idleIdx + 1) % idleCount;
             }
-        } else if (idleUrls.length) {
-            drawFrame(idleUrls[idleIdx]);
-            idleIdx = (idleIdx + 1) % idleUrls.length;
+        } else if (idleCount > 0) {
+            drawFrame(images[startCount + idleIdx]);
+            idleIdx = (idleIdx + 1) % idleCount;
         }
     }
-    if (startUrls.length) drawFrame(startUrls[0]);
-    else if (idleUrls.length) { drawFrame(idleUrls[0]); isStart = false; }
-    interval = setInterval(nextFrame, frameDelay);
-    window.addEventListener('beforeunload', () => clearInterval(interval));
+
+    if (startCount > 0) drawFrame(images[0]);
+    else if (idleCount > 0) { drawFrame(images[0]); isStart = false; }
+
+    animationInterval = setInterval(nextFrame, frameDelay);
+    window.addEventListener('beforeunload', () => {
+        if (animationInterval) clearInterval(animationInterval);
+    });
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-}
-
-// ===== ФОНОВЫЕ ЧАСТИЦЫ =====
+// ---------- ФОНОВЫЕ ЧАСТИЦЫ ----------
 (function initParticles() {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
@@ -719,7 +973,7 @@ function escapeHtml(str) {
     window.addEventListener('beforeunload', () => cancelAnimationFrame(animId));
 })();
 
-// ===== ШАХМАТНЫЙ ФОН =====
+// ---------- ШАХМАТНЫЙ ФОН ----------
 (function initPulsingCheckerboard() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
@@ -786,20 +1040,36 @@ function escapeHtml(str) {
     window.addEventListener('beforeunload', () => { if (animFrame) cancelAnimationFrame(animFrame); });
 })();
 
-// ===== ТЕМЫ =====
+// ---------- ТЕМЫ ----------
 function applyTheme(theme) {
-    document.body.classList.remove('theme-amber', 'theme-blue');
-    if (theme === 'amber') document.body.classList.add('theme-amber');
-    else if (theme === 'blue') document.body.classList.add('theme-blue');
+    document.body.classList.remove('theme-amber', 'theme-blue', 'theme-green');
+    document.documentElement.classList.remove('theme-amber', 'theme-blue', 'theme-green');
+    if (theme === 'amber') {
+        document.body.classList.add('theme-amber');
+        document.documentElement.classList.add('theme-amber');
+    } else if (theme === 'blue') {
+        document.body.classList.add('theme-blue');
+        document.documentElement.classList.add('theme-blue');
+    } else if (theme === 'green') {
+        document.body.classList.add('theme-green');
+        document.documentElement.classList.add('theme-green');
+    }
     localStorage.setItem('retro-theme', theme);
 }
 document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => { playClick(); applyTheme(e.target.dataset.theme); });
+    btn.addEventListener('click', (e) => {
+        playClickSound();
+        applyTheme(e.target.dataset.theme);
+    });
 });
 const savedTheme = localStorage.getItem('retro-theme');
-if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
+if (savedTheme) {
+    applyTheme(savedTheme);
+} else {
+    applyTheme('green');
+}
 
-// ===== КАСТОМНЫЙ СКРОЛЛБАР =====
+// ---------- КАСТОМНЫЙ СКРОЛЛБАР ----------
 (function initCustomScrollbar() {
     const scrollbarContainer = document.createElement('div');
     scrollbarContainer.id = 'custom-scrollbar';
@@ -810,7 +1080,7 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
         width: 8px;
         height: 100%;
         z-index: 9999;
-        pointer-events: none;
+        pointer-events: auto;
         background: transparent;
     `;
     document.body.appendChild(scrollbarContainer);
@@ -867,41 +1137,53 @@ if (savedTheme && savedTheme !== 'green') applyTheme(savedTheme);
     });
 })();
 
-// ===== ФУНКЦИЯ ИНИЦИАЛИЗАЦИИ (вызывается из HTML) =====
+// ---------- НАВИГАЦИЯ ----------
+function setupNavigation() {
+    const backBtn = document.getElementById('back-to-gallery');
+    if (backBtn) {
+        backBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showGallery();
+            const url = new URL(window.location);
+            url.searchParams.delete('model');
+            window.history.pushState({}, '', url);
+        });
+    }
+    window.addEventListener('popstate', (event) => {
+        const params = new URLSearchParams(window.location.search);
+        const model = params.get('model');
+        if (model) {
+            showModelDetail(model);
+        } else {
+            showGallery();
+        }
+    });
+}
+
+// ---------- ИНИЦИАЛИЗАЦИЯ ----------
 function initApp() {
-    console.log('🚀 Инициализация приложения');
+    const savedTheme = localStorage.getItem('retro-theme');
+    if (savedTheme) applyTheme(savedTheme);
+    else applyTheme('green');
+
     fetchModels().then(() => {
-        if (isIndex) {
-            console.log('Главная страница: инициализация галереи');
-            window.focus();
-            if (document.activeElement) document.activeElement.blur();
-            window.scrollTo(0, 0);
-            currentSort = 'random';
-            renderTagFilters();
-            setupSearch();
-            setupSort();
-            setupPagination();
-            applyFilters();
+        window.focus();
+        if (document.activeElement) document.activeElement.blur();
+        window.scrollTo(0, 0);
+        currentSort = 'random';
+        renderTagFilters();
+        setupSearch();
+        setupSort();
+        setupPagination();
+        applyFilters();
+        setupNavigation();
+
+        const params = new URLSearchParams(window.location.search);
+        const modelParam = params.get('model');
+        if (modelParam) {
+            setTimeout(() => showModelDetail(modelParam), 100);
+        } else {
+            showGallery();
         }
-        if (isModel) {
-            console.log('Страница модели');
-            window.focus();
-            if (document.activeElement) document.activeElement.blur();
-            const backLink = document.getElementById('back-link');
-            if (backLink) {
-                backLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    playClick();
-                    smoothTransition('index.html');
-                });
-            }
-            const params = new URLSearchParams(window.location.search);
-            const modelName = params.get('name');
-            if (modelName) {
-                loadModelDetail(modelName);
-            } else {
-                document.querySelector('.model-container').innerHTML = '<div class="loading">МОДЕЛЬ НЕ УКАЗАНА</div>';
-            }
-        }
-    }).catch(e => console.error('Ошибка инициализации:', e));
+    }).catch(e => console.error(e));
 }
