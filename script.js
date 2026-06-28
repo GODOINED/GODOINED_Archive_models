@@ -1123,10 +1123,18 @@ function showModelDetail(modelName) {
                 renderThumbnails.appendChild(thumb);
             });
 
+            // ---------- ИСПРАВЛЕННАЯ ПОДСКАЗКА ----------
+            // Удаляем старую подсказку, если есть
+            const oldHint = renderThumbnails.parentNode.querySelector('.render-hint');
+            if (oldHint) oldHint.remove();
+
             const hint = document.createElement('p');
+            hint.className = 'render-hint';
             hint.style.cssText = 'font-size:0.7rem; color:var(--text-secondary); margin-top:0.3rem; letter-spacing:1px;';
             hint.textContent = '>> Кликните по миниатюре для просмотра';
             renderThumbnails.parentNode.insertBefore(hint, renderThumbnails.nextSibling);
+            // --------------------------------------------
+
         } else {
             renderGallery.style.display = 'none';
         }
