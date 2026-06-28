@@ -21,7 +21,7 @@
             { "name": "gift", "color": "#ffaa44" },
             { "name": "Dandy's world", "color": "rainbow" }
         ],
-        "downloadable": false,
+        "downloadable": true,
         "downloadFile": "beez_blender.zip",
         "startFrames": 0,
         "idleFrames": 0,
@@ -35,7 +35,7 @@
             { "name": "gift", "color": "#ffaa44" },
             { "name": "Dandy's world", "color": "rainbow" }
         ],
-        "downloadable": false,
+        "downloadable": true,
         "downloadFile": "Eliot.blend",
         "startFrames": 0,
         "idleFrames": 0,
