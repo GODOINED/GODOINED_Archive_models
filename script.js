@@ -1,6 +1,8 @@
 // ============================================================
 //  ЗАГРУЗОЧНЫЙ ЭКРАН (ТЕРМИНАЛ С ПРОПУСКОМ)
 // ============================================================
+
+
 (function initTerminal() {
     const screen = document.getElementById('loading-screen');
     const output = document.getElementById('terminal-output');
@@ -35,8 +37,6 @@
     ];
 
     let isTerminalFinished = false;
-
-    // ---------- ЗВУКИ ----------
     let fanBuffer = null;
     let fanSource = null;
     let fanGainNode = null;
@@ -108,25 +108,20 @@
 
     setTimeout(initFanSound, 300);
 
-    // ---------- ЗАВЕРШЕНИЕ ----------
     function finishTerminal() {
         if (isTerminalFinished) return;
         isTerminalFinished = true;
-
         if (typeTimer) {
             clearTimeout(typeTimer);
             typeTimer = null;
         }
-
         stopFanSound();
-
         try {
             const audio = new Audio('sounds/ui_hacking_charscroll_lp.wav');
             audio.volume = 0.04;
             audio.play().catch(() => {});
         } catch(e) {}
 
-        // Мгновенный вывод всех строк
         const outputContainer = document.getElementById('terminal-output');
         if (outputContainer) {
             outputContainer.innerHTML = '';
@@ -161,7 +156,6 @@
         }, 500);
     }
 
-    // ---------- ПРОПУСК ----------
     function handleSkip(e) {
         if (e.type === 'keydown') {
             if (e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift' || e.key === 'Meta') return;
@@ -175,15 +169,12 @@
     document.addEventListener('click', handleSkip);
     document.addEventListener('touchstart', handleSkip);
 
-    // ---------- ПЕЧАТЬ ----------
     function typeLine() {
         if (isTerminalFinished) return;
-
         if (lineIndex >= lines.length) {
             finishTerminal();
             return;
         }
-
         const currentLine = lines[lineIndex];
         if (currentLine.includes('_') && charIndex >= currentLine.length - 1) {
             const lineWithoutUnderscore = currentLine.replace('_', '');
@@ -198,7 +189,6 @@
             typeTimer = setTimeout(typeLine, 400);
             return;
         }
-
         if (charIndex === 0) {
             const span = document.createElement('span');
             span.className = 'line';
@@ -207,19 +197,15 @@
             updateStatus();
             playLineSound();
         }
-
         const currentSpan = output.querySelector(`[data-line="${lineIndex}"]`);
         if (!currentSpan) return;
-
         const char = currentLine[charIndex];
         currentSpan.textContent += char;
         charIndex++;
         output.scrollTop = output.scrollHeight;
-
         if (charIndex < currentLine.length && char !== ' ') {
             playCharSound();
         }
-
         if (charIndex < currentLine.length) {
             typeTimer = setTimeout(typeLine, 25);
         } else {
@@ -237,7 +223,6 @@
     typeTimer = setTimeout(typeLine, 500);
 })();
 
-
 // ============================================================
 //  ОСНОВНАЯ ЛОГИКА
 // ============================================================
@@ -253,7 +238,15 @@ let currentModelName = null;
 let animationInterval = null;
 let currentLoadId = 0;
 
-// ---------- АКТИВАЦИЯ АУДИО ----------
+// Переменные для модалки рендеров
+let modalMediaItems = [];
+let modalCurrentIndex = 0;
+let modalIsOpen = false;
+
+// Переменные для плеера
+let currentVideoElement = null;
+let playerInterval = null;
+
 (function ensureAudio() {
     function resumeAudio() {
         if (audioCtx && audioCtx.state === 'suspended') {
@@ -271,7 +264,6 @@ let currentLoadId = 0;
     document.addEventListener('touchstart', resumeAudio);
 })();
 
-// ---------- ЗВУКИ ЭЛЕМЕНТОВ ----------
 function initAudioContext() {
     if (audioCtx) return audioCtx;
     try {
@@ -279,6 +271,7 @@ function initAudioContext() {
         return audioCtx;
     } catch(e) { soundsEnabled = false; return null; }
 }
+
 function playSound(freq, duration, type = 'square', volume = 0.12) {
     if (!soundsEnabled) return;
     const ctx = initAudioContext();
@@ -299,9 +292,11 @@ function playSound(freq, duration, type = 'square', volume = 0.12) {
     osc.start();
     osc.stop(now + duration);
 }
+
 function playClickSound() { playSound(880, 0.08, 'square', 0.10); }
 function playBackSound() { playSound(660, 0.1, 'sine', 0.08); }
 function playShareSound() { playSound(1200, 0.06, 'square', 0.06); }
+
 function playDownloadSound() {
     playSound(580, 0.12, 'square', 0.10);
     const ctx = initAudioContext();
@@ -320,9 +315,9 @@ function playDownloadSound() {
     noiseGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.08);
     setTimeout(() => noise.disconnect(), 100);
 }
+
 function playHoverSound() { playSound(660, 0.08, 'sine', 0.05); }
 
-// ---------- СКАЧИВАНИЕ ----------
 function downloadWithEffect(downloadUrl) {
     const overlay = document.createElement('div');
     overlay.id = 'download-overlay';
@@ -361,7 +356,6 @@ function downloadWithEffect(downloadUrl) {
     playDownloadSound();
 }
 
-// ---------- ЗАГРУЗКА МОДЕЛЕЙ ----------
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
@@ -382,7 +376,6 @@ async function fetchModels() {
     }
 }
 
-// ---------- СОРТИРОВКА ----------
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -391,6 +384,7 @@ function shuffleArray(array) {
     }
     return arr;
 }
+
 function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
@@ -401,7 +395,6 @@ function sortModels(models, sortType) {
     }
 }
 
-// ---------- ФИЛЬТРЫ ----------
 function getFilteredModels() {
     let result = [...allModels];
     if (currentFilterTag) {
@@ -428,7 +421,6 @@ function applyFilters() {
     renderModelsGrid(currentFilteredModels);
 }
 
-// ---------- ОТРИСОВКА СЕТКИ ----------
 function renderModelsGrid(models) {
     const grid = document.getElementById('models-grid');
     if (!grid) return;
@@ -491,7 +483,6 @@ function renderModelsGrid(models) {
     updatePaginationControls(totalPages);
 }
 
-// ---------- ПАГИНАЦИЯ ----------
 function updatePaginationControls(totalPages) {
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
@@ -501,6 +492,7 @@ function updatePaginationControls(totalPages) {
     nextBtn.disabled = currentPage >= totalPages || totalPages === 0;
     pageInfo.textContent = totalPages > 0 ? `Страница ${currentPage} из ${totalPages}` : 'Нет моделей';
 }
+
 function setupPagination() {
     document.getElementById('prev-page')?.addEventListener('click', () => {
         if (currentPage > 1) { currentPage--; applyFilters(); }
@@ -511,7 +503,6 @@ function setupPagination() {
     });
 }
 
-// ---------- ТЕГИ-ФИЛЬТРЫ ----------
 function getUniqueTags() {
     const tagSet = new Set();
     allModels.forEach(m => {
@@ -522,6 +513,7 @@ function getUniqueTags() {
     });
     return [...tagSet].sort();
 }
+
 function renderTagFilters() {
     const container = document.getElementById('tag-filters');
     if (!container) return;
@@ -545,7 +537,6 @@ function renderTagFilters() {
     });
 }
 
-// ---------- ПОИСК ----------
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-search');
@@ -561,7 +552,6 @@ function setupSearch() {
     });
 }
 
-// ---------- СОРТИРОВКА ----------
 function setupSort() {
     const sortSelect = document.getElementById('sort-select');
     if (!sortSelect) return;
@@ -574,7 +564,6 @@ function setupSort() {
     });
 }
 
-// ---------- ЧАСТИЦЫ ----------
 function createParticles(e, card) {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -597,7 +586,6 @@ function createParticles(e, card) {
     }
 }
 
-// ---------- BBCODE ----------
 function parseBBCode(text) {
     if (!text) return '';
     let safe = escapeHtml(text);
@@ -694,12 +682,12 @@ function parseBBCode(text) {
     }
     return safe;
 }
+
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 }
 
-// ---------- ПЕРЕКЛЮЧЕНИЕ ГАЛЕРЕЯ/ДЕТАЛИ ----------
 function showGallery() {
     if (animationInterval) {
         clearInterval(animationInterval);
@@ -737,8 +725,254 @@ function showGallery() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     document.title = 'Архив моделей';
+    closeModal();
 }
 
+// ============================================================
+//  МОДАЛЬНОЕ ОКНО ДЛЯ РЕНДЕРОВ (ИЗОБРАЖЕНИЯ + ВИДЕО)
+// ============================================================
+function openModal(mediaArray, startIndex = 0) {
+    if (!mediaArray || mediaArray.length === 0) return;
+    modalMediaItems = mediaArray;
+    modalCurrentIndex = Math.max(0, Math.min(startIndex, mediaArray.length - 1));
+    modalIsOpen = true;
+    const modal = document.getElementById('render-modal');
+    const wrapper = document.getElementById('modal-media-wrapper');
+    const counter = document.getElementById('modal-counter');
+    const prevBtn = document.getElementById('modal-prev');
+    const nextBtn = document.getElementById('modal-next');
+
+    if (!modal) return;
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+
+    renderModalMedia(modalCurrentIndex);
+    counter.textContent = `${modalCurrentIndex + 1} / ${mediaArray.length}`;
+    prevBtn.style.display = mediaArray.length > 1 ? 'block' : 'none';
+    nextBtn.style.display = mediaArray.length > 1 ? 'block' : 'none';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('render-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modalIsOpen = false;
+    // Останавливаем видео и очищаем плеер
+    if (currentVideoElement) {
+        currentVideoElement.pause();
+        currentVideoElement = null;
+    }
+    if (playerInterval) {
+        clearInterval(playerInterval);
+        playerInterval = null;
+    }
+    const playerContainer = document.getElementById('custom-player');
+    if (playerContainer) playerContainer.style.display = 'none';
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+        const wrapper = document.getElementById('modal-media-wrapper');
+        if (wrapper) wrapper.innerHTML = '';
+        document.body.style.overflow = '';
+    }, 300);
+}
+
+// ===== КАСТОМНЫЙ ПЛЕЕР =====
+function initPlayer(video) {
+    const playBtn = document.getElementById('player-play');
+    const timeDisplay = document.getElementById('player-time');
+    const progressFill = document.getElementById('player-progress-fill');
+    const progressBar = document.getElementById('player-progress');
+    const volumeSlider = document.getElementById('player-volume-slider');
+    const volumeBtn = document.getElementById('player-volume-btn');
+
+    if (!video || !playBtn) return;
+
+    // Убираем старые обработчики, чтобы не было дублирования
+    const newPlayBtn = playBtn.cloneNode(true);
+    playBtn.parentNode.replaceChild(newPlayBtn, playBtn);
+    const newVolumeBtn = volumeBtn.cloneNode(true);
+    volumeBtn.parentNode.replaceChild(newVolumeBtn, volumeBtn);
+
+    // Переназначаем переменные
+    const newPlayBtnRef = document.getElementById('player-play');
+    const newVolumeBtnRef = document.getElementById('player-volume-btn');
+
+    // Функция обновления времени и прогресса
+    function updateTime() {
+        if (!video || video.duration === Infinity || isNaN(video.duration)) return;
+        const current = video.currentTime || 0;
+        const duration = video.duration || 0;
+        const percent = duration ? (current / duration) * 100 : 0;
+        progressFill.style.width = percent + '%';
+        timeDisplay.textContent = formatTime(current) + ' / ' + formatTime(duration);
+    }
+
+    // События
+    video.addEventListener('loadedmetadata', updateTime);
+    video.addEventListener('timeupdate', updateTime);
+    video.addEventListener('ended', () => {
+        newPlayBtnRef.textContent = '▶';
+    });
+
+    // Play/Pause
+    newPlayBtnRef.addEventListener('click', () => {
+        if (video.paused) {
+            video.play().catch(() => {});
+            newPlayBtnRef.textContent = '⏸';
+        } else {
+            video.pause();
+            newPlayBtnRef.textContent = '▶';
+        }
+    });
+
+    // Прогресс-бар
+    progressBar.addEventListener('click', (e) => {
+        const rect = progressBar.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        if (video.duration) {
+            video.currentTime = x * video.duration;
+        }
+    });
+
+    // Громкость (по умолчанию 0.5)
+    video.volume = 0.5;
+    volumeSlider.value = 0.5;
+    newVolumeBtnRef.textContent = '🔊';
+
+    volumeSlider.addEventListener('input', () => {
+        const val = parseFloat(volumeSlider.value);
+        video.volume = val;
+        newVolumeBtnRef.textContent = val === 0 ? '🔇' : (val < 0.5 ? '🔉' : '🔊');
+    });
+
+    newVolumeBtnRef.addEventListener('click', () => {
+        if (video.volume > 0) {
+            video.volume = 0;
+            volumeSlider.value = 0;
+            newVolumeBtnRef.textContent = '🔇';
+        } else {
+            video.volume = 0.5;
+            volumeSlider.value = 0.5;
+            newVolumeBtnRef.textContent = '🔊';
+        }
+    });
+
+    // Обновляем состояние кнопки play
+    if (!video.paused) {
+        newPlayBtnRef.textContent = '⏸';
+    }
+    video.addEventListener('pause', () => {
+        newPlayBtnRef.textContent = '▶';
+    });
+    video.addEventListener('play', () => {
+        newPlayBtnRef.textContent = '⏸';
+    });
+
+    // Сохраняем ссылку на видео
+    currentVideoElement = video;
+}
+
+function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+function renderModalMedia(index) {
+    const wrapper = document.getElementById('modal-media-wrapper');
+    const counter = document.getElementById('modal-counter');
+    const playerContainer = document.getElementById('custom-player');
+    if (!wrapper || !modalMediaItems.length) return;
+
+    const item = modalMediaItems[index];
+    wrapper.innerHTML = '';
+    if (playerContainer) playerContainer.style.display = 'none';
+    if (currentVideoElement) {
+        currentVideoElement.pause();
+        currentVideoElement = null;
+    }
+    if (playerInterval) {
+        clearInterval(playerInterval);
+        playerInterval = null;
+    }
+
+    if (item.type === 'video') {
+        const video = document.createElement('video');
+        video.src = item.src;
+        video.controls = false;
+        video.autoplay = true;
+        video.loop = false;
+        video.style.maxWidth = '100%';
+        video.style.maxHeight = '100%';
+        video.style.border = '2px solid var(--border-color)';
+        video.style.background = '#000';
+        if (item.poster) {
+            video.poster = item.poster;
+        }
+        video.volume = 0.5;
+        wrapper.appendChild(video);
+        currentVideoElement = video;
+        if (playerContainer) {
+            playerContainer.style.display = 'block';
+            initPlayer(video);
+        }
+        video.play().catch(() => {});
+    } else {
+        const img = document.createElement('img');
+        img.src = item.src;
+        img.alt = `Рендер ${index + 1}`;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.border = '2px solid var(--border-color)';
+        img.style.background = '#000';
+        wrapper.appendChild(img);
+    }
+    if (counter) {
+        counter.textContent = `${index + 1} / ${modalMediaItems.length}`;
+    }
+}
+
+function navigateModal(direction) {
+    if (!modalMediaItems.length) return;
+    const newIndex = modalCurrentIndex + direction;
+    if (newIndex < 0 || newIndex >= modalMediaItems.length) return;
+    modalCurrentIndex = newIndex;
+    renderModalMedia(modalCurrentIndex);
+    const counter = document.getElementById('modal-counter');
+    if (counter) {
+        counter.textContent = `${modalCurrentIndex + 1} / ${modalMediaItems.length}`;
+    }
+    playClickSound();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('render-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal || e.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (!modalIsOpen) return;
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'ArrowLeft') navigateModal(-1);
+            if (e.key === 'ArrowRight') navigateModal(1);
+        });
+        document.getElementById('modal-close')?.addEventListener('click', closeModal);
+        document.getElementById('modal-prev')?.addEventListener('click', () => navigateModal(-1));
+        document.getElementById('modal-next')?.addEventListener('click', () => navigateModal(1));
+    }
+});
+
+// ============================================================
+//  ПОКАЗ ДЕТАЛЕЙ МОДЕЛИ
+// ============================================================
 function showModelDetail(modelName) {
     if (animationInterval) {
         clearInterval(animationInterval);
@@ -808,6 +1042,97 @@ function showModelDetail(modelName) {
         window.scrollTo(0, 0);
     });
 
+    // ===== ГАЛЕРЕЯ РЕНДЕРОВ (только миниатюры) =====
+    const renders = model.renders || [];
+    const videos = model.videos || [];
+    const renderGallery = document.getElementById('render-gallery');
+    const renderThumbnails = document.getElementById('render-thumbnails');
+
+    const allMedia = [];
+    renders.forEach(src => {
+        allMedia.push({ type: 'image', src: src });
+    });
+    videos.forEach(src => {
+        allMedia.push({ type: 'video', src: src });
+    });
+
+    function openModalWithMedia(index) {
+        if (allMedia.length === 0) return;
+        openModal(allMedia, index);
+    }
+
+    if (renderGallery && renderThumbnails) {
+        if (renders.length > 0 || videos.length > 0) {
+            renderGallery.style.display = 'block';
+            renderThumbnails.innerHTML = '';
+
+            renders.forEach((url, index) => {
+                const thumb = document.createElement('img');
+                thumb.className = 'render-thumbnail';
+                thumb.src = url;
+                thumb.alt = `Рендер ${index + 1}`;
+                thumb.loading = 'lazy';
+                thumb.addEventListener('click', () => {
+                    playClickSound();
+                    openModalWithMedia(index);
+                });
+                thumb.addEventListener('error', () => {
+                    thumb.style.display = 'none';
+                });
+                renderThumbnails.appendChild(thumb);
+            });
+
+            videos.forEach((url, vidIndex) => {
+                const globalIndex = renders.length + vidIndex;
+                const thumb = document.createElement('div');
+                thumb.className = 'render-thumbnail video-thumbnail';
+                thumb.style.position = 'relative';
+                thumb.style.display = 'flex';
+                thumb.style.alignItems = 'center';
+                thumb.style.justifyContent = 'center';
+                thumb.style.background = '#111';
+                thumb.style.border = '2px solid var(--border-color)';
+                thumb.style.cursor = 'pointer';
+                thumb.style.overflow = 'hidden';
+                thumb.style.aspectRatio = '1/1';
+
+                const icon = document.createElement('span');
+                icon.textContent = '▶';
+                icon.style.fontSize = '24px';
+                icon.style.color = 'var(--accent)';
+                icon.style.textShadow = '0 0 20px var(--accent)';
+                icon.style.position = 'absolute';
+                icon.style.zIndex = '2';
+                thumb.appendChild(icon);
+
+                const posterUrl = url.replace(/\.(mp4|webm|mov)$/i, '.webp');
+                const posterImg = document.createElement('img');
+                posterImg.src = posterUrl;
+                posterImg.alt = `Видео ${vidIndex + 1}`;
+                posterImg.style.width = '100%';
+                posterImg.style.height = '100%';
+                posterImg.style.objectFit = 'cover';
+                posterImg.style.opacity = '0.6';
+                posterImg.onerror = () => { posterImg.style.display = 'none'; };
+                thumb.appendChild(posterImg);
+
+                thumb.addEventListener('click', () => {
+                    playClickSound();
+                    openModalWithMedia(globalIndex);
+                });
+                renderThumbnails.appendChild(thumb);
+            });
+
+            const hint = document.createElement('p');
+            hint.style.cssText = 'font-size:0.7rem; color:var(--text-secondary); margin-top:0.3rem; letter-spacing:1px;';
+            hint.textContent = '>> Кликните по миниатюре для просмотра';
+            renderThumbnails.parentNode.insertBefore(hint, renderThumbnails.nextSibling);
+        } else {
+            renderGallery.style.display = 'none';
+        }
+    }
+
+    // ===== АНИМАЦИЯ (кадры) =====
     const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
     const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
 
@@ -838,7 +1163,6 @@ function showModelDetail(modelName) {
     preloadFramesWithIndicator(startUrls, idleUrls);
 }
 
-// ---------- ПРЕДЗАГРУЗКА КАДРОВ ----------
 async function preloadFramesWithIndicator(startUrls, idleUrls) {
     const loadId = ++currentLoadId;
     const loaderDiv = document.getElementById('frame-loader');
@@ -932,7 +1256,9 @@ function startAnimation(images, startCount, idleCount) {
     });
 }
 
-// ---------- ФОНОВЫЕ ЧАСТИЦЫ ----------
+// ============================================================
+//  ФОНОВЫЕ ЧАСТИЦЫ
+// ============================================================
 (function initParticles() {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
@@ -973,7 +1299,9 @@ function startAnimation(images, startCount, idleCount) {
     window.addEventListener('beforeunload', () => cancelAnimationFrame(animId));
 })();
 
-// ---------- ШАХМАТНЫЙ ФОН ----------
+// ============================================================
+//  ШАХМАТНЫЙ ФОН (ИСПРАВЛЕННЫЙ)
+// ============================================================
 (function initPulsingCheckerboard() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
@@ -985,12 +1313,14 @@ function startAnimation(images, startCount, idleCount) {
     let time = 0;
     let animFrame = null;
     let patternCanvas = null;
+
     function getColors() {
         const style = getComputedStyle(document.body);
         const dark = style.getPropertyValue('--checker-dark').trim() || '#000000';
         const light = style.getPropertyValue('--checker-light').trim() || '#ffffff';
         return { dark, light };
     }
+
     function updatePattern() {
         const { dark, light } = getColors();
         patternCanvas = document.createElement('canvas');
@@ -1002,12 +1332,15 @@ function startAnimation(images, startCount, idleCount) {
         pCtx.fillStyle = light;
         pCtx.fillRect(CELL_SIZE, 0, CELL_SIZE, CELL_SIZE);
         pCtx.fillRect(0, CELL_SIZE, CELL_SIZE, CELL_SIZE);
-        pCtx.fillRect(0, CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        pCtx.fillStyle = dark;
+        pCtx.fillRect(CELL_SIZE, CELL_SIZE, CELL_SIZE, CELL_SIZE);
     }
+
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
+
     function draw() {
         if (!ctx || !patternCanvas) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1031,6 +1364,7 @@ function startAnimation(images, startCount, idleCount) {
         offsetY = (offsetY + 0.15) % PATTERN_SIZE;
         animFrame = requestAnimationFrame(draw);
     }
+
     const observer = new MutationObserver(() => { updatePattern(); });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     window.addEventListener('resize', () => { resizeCanvas(); });
@@ -1040,7 +1374,9 @@ function startAnimation(images, startCount, idleCount) {
     window.addEventListener('beforeunload', () => { if (animFrame) cancelAnimationFrame(animFrame); });
 })();
 
-// ---------- ТЕМЫ ----------
+// ============================================================
+//  ТЕМЫ
+// ============================================================
 function applyTheme(theme) {
     document.body.classList.remove('theme-amber', 'theme-blue', 'theme-green');
     document.documentElement.classList.remove('theme-amber', 'theme-blue', 'theme-green');
@@ -1056,12 +1392,14 @@ function applyTheme(theme) {
     }
     localStorage.setItem('retro-theme', theme);
 }
+
 document.querySelectorAll('.theme-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         playClickSound();
         applyTheme(e.target.dataset.theme);
     });
 });
+
 const savedTheme = localStorage.getItem('retro-theme');
 if (savedTheme) {
     applyTheme(savedTheme);
@@ -1069,7 +1407,9 @@ if (savedTheme) {
     applyTheme('green');
 }
 
-// ---------- КАСТОМНЫЙ СКРОЛЛБАР ----------
+// ============================================================
+//  КАСТОМНЫЙ СКРОЛЛБАР
+// ============================================================
 (function initCustomScrollbar() {
     const scrollbarContainer = document.createElement('div');
     scrollbarContainer.id = 'custom-scrollbar';
@@ -1137,7 +1477,9 @@ if (savedTheme) {
     });
 })();
 
-// ---------- НАВИГАЦИЯ ----------
+// ============================================================
+//  НАВИГАЦИЯ
+// ============================================================
 function setupNavigation() {
     const backBtn = document.getElementById('back-to-gallery');
     if (backBtn) {
@@ -1160,7 +1502,9 @@ function setupNavigation() {
     });
 }
 
-// ---------- ИНИЦИАЛИЗАЦИЯ ----------
+// ============================================================
+//  ИНИЦИАЛИЗАЦИЯ
+// ============================================================
 function initApp() {
     const savedTheme = localStorage.getItem('retro-theme');
     if (savedTheme) applyTheme(savedTheme);

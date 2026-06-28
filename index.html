@@ -13,7 +13,6 @@
 
     <script src="version.js"></script>
     <script>
-        // Принудительное применение темы и фона ДО загрузки CSS
         (function() {
             const savedTheme = localStorage.getItem('retro-theme');
             if (savedTheme && savedTheme !== 'green') {
@@ -123,6 +122,13 @@
                         <h2 id="model-name"></h2>
                         <div id="model-tags" class="tags"></div>
                         <p id="model-description" class="description-text"></p>
+
+                        <!-- ГАЛЕРЕЯ РЕНДЕРОВ (только миниатюры) -->
+                        <div id="render-gallery" class="render-gallery" style="display: none;">
+                            <h3 style="font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">>> РЕНДЕРЫ</h3>
+                            <div id="render-thumbnails" class="render-thumbnails"></div>
+                        </div>
+
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
                             <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
                             <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
@@ -140,8 +146,35 @@
         </div>
     </div>
 
+    <!-- ===== МОДАЛЬНОЕ ОКНО ДЛЯ РЕНДЕРОВ ===== -->
+    <div id="render-modal" class="render-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close">✕</button>
+            <button class="modal-nav modal-prev" id="modal-prev">◀</button>
+            <button class="modal-nav modal-next" id="modal-next">▶</button>
+            <div class="modal-media-wrapper" id="modal-media-wrapper">
+                <!-- сюда вставляется img или video -->
+            </div>
+            <!-- КАСТОМНЫЙ ПЛЕЕР (скрыт по умолчанию, показывается для видео) -->
+            <div class="custom-player" id="custom-player" style="display: none;">
+                <div class="player-controls">
+                    <button class="player-btn" id="player-play">▶</button>
+                    <span class="player-time" id="player-time">0:00 / 0:00</span>
+                    <div class="player-progress" id="player-progress">
+                        <div class="player-progress-fill" id="player-progress-fill" style="width:0%;"></div>
+                    </div>
+                    <div class="player-volume">
+                        <button class="player-btn" id="player-volume-btn">🔊</button>
+                        <input type="range" class="player-volume-slider" id="player-volume-slider" min="0" max="1" step="0.01" value="0.5">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-counter" id="modal-counter">1 / 1</div>
+        </div>
+    </div>
+
     <script>
-        // Применяем тему к body после загрузки DOM (для надёжности)
         (function() {
             const savedTheme = localStorage.getItem('retro-theme');
             if (savedTheme && savedTheme !== 'green') {
@@ -159,7 +192,6 @@
             document.documentElement.style.backgroundColor = '';
         })();
     </script>
-
     <script src="script.js"></script>
 </body>
 </html>

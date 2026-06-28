@@ -11,7 +11,9 @@
         "downloadFile": "model.zip",
         "startFrames": 2,
         "idleFrames": 3,
-        "preview": "models/Helix/icon.webp"
+        "preview": "models/Helix/icon.webp",
+        "renders": [],
+        "videos": []
     },
     {
         "name": "Beez",
@@ -25,7 +27,16 @@
         "downloadFile": "beez_blender.zip",
         "startFrames": 0,
         "idleFrames": 0,
-        "preview": "models/Beez/icon.webp"
+        "preview": "models/Beez/icon.webp",
+        "renders": [
+            "models/Beez/render_1.png",
+            "models/Beez/render_2.png",
+            "models/Beez/render_3.png",
+            "models/Beez/render_4.png"
+        ],
+        "videos": [
+            "models/Beez/better_call_beez.mp4"
+        ]
     },
     {
         "name": "Eliot",
@@ -39,7 +50,9 @@
         "downloadFile": "Eliot.blend",
         "startFrames": 0,
         "idleFrames": 0,
-        "preview": "models/Eliot/icon.webp"
+        "preview": "models/Eliot/icon.webp",
+        "renders": [],
+        "videos": []
     },
     {
         "name": "Jess",
@@ -53,6 +66,8 @@
         "downloadFile": "model.blend",
         "startFrames": 0,
         "idleFrames": 0,
-        "preview": "models/Jess/icon.webp"
+        "preview": "models/Jess/icon.webp",
+        "renders": [],
+        "videos": []
     }
 ]
