@@ -805,6 +805,14 @@ main {
     background-clip: text;
     color: transparent;
     animation: rainbowMove 4s linear infinite;
+    /* ⭐ Добавляем свечение (тень прозрачная, но с анимацией через псевдоэлемент или фильтр) */
+    filter: drop-shadow(0 0 8px currentColor);
+}
+/* Но так как color: transparent, currentColor не работает. Поэтому делаем через псевдоэлемент или дублируем текст. 
+   Проще оставить без свечения или сделать через box-shadow на родителе. 
+   Можно просто добавить text-shadow: 0 0 10px rgba(255,255,255,0.3) для лёгкого эффекта. */
+.rainbow-text {
+    text-shadow: 0 0 10px rgba(255,255,255,0.2), 0 0 20px rgba(255,255,255,0.1);
 }
 @keyframes rainbowMove {
     0% { background-position: 0% 50%; }
@@ -1349,3 +1357,10 @@ main {
         padding: 2px 4px;
     }
 }
+/* Убираем глобальное свечение для цветных bbcode-строк */
+.bb-color {
+    text-shadow: none !important;
+}
+/* Если нужно всё же какое-то свечение, но своего цвета, можно добавить отдельно,
+   но проще убрать. Если хотите оставить свечение, но цветное, то можно через filter,
+   но это сложнее. Поэтому оставляем без свечения. */

@@ -642,7 +642,9 @@ function parseBBCode(text) {
         if (colorMatch) {
             const color = colorMatch[1].trim();
             const content = colorMatch[2];
-            const replacement = `<span style="color: ${color};">${parseBBCode(content)}</span>`;
+            // Мягкое свечение — регулируй цифры 2 и 6 под свой вкус
+            const glow = `text-shadow: 0 0 2px ${color}, 0 0 6px ${color};`;
+            const replacement = `<span style="color: ${color}; ${glow} display:inline-block;">${parseBBCode(content)}</span>`;
             safe = safe.substring(0, colorMatch.index) + replacement + safe.substring(colorMatch.index + colorMatch[0].length);
             changed = true;
             continue;
@@ -650,7 +652,8 @@ function parseBBCode(text) {
         let rainbowMatch = /\[rainbow\]([\s\S]*?)\[\/rainbow\]/i.exec(safe);
         if (rainbowMatch) {
             const content = rainbowMatch[1];
-            const replacement = `<span class="rainbow-text">${parseBBCode(content)}</span>`;
+            // ⭐ Радужное свечение — используем currentColor + анимацию
+            const replacement = `<span class="rainbow-text" style="display:inline-block;">${parseBBCode(content)}</span>`;
             safe = safe.substring(0, rainbowMatch.index) + replacement + safe.substring(rainbowMatch.index + rainbowMatch[0].length);
             changed = true;
             continue;
