@@ -11,7 +11,9 @@
     <meta property="og:url" content="https://ваш-сайт/">
     <meta property="og:type" content="website">
 
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="version.js"></script>
+
     <script>
         (function() {
             const savedTheme = localStorage.getItem('retro-theme');
@@ -188,8 +190,6 @@
                 <input type="hidden" name="_subject" value="Godoined Archive новая заявка">
                 <input type="hidden" name="_replyto" value="goodmopsreset@gmail.com">
                 <input type="hidden" name="_captcha" value="false">
-                <input type="hidden" name="_template" value="table">
-                <input type="hidden" name="_blacklist" value="spam@example.com, bad@domain.com">
 
                 <div class="order-form-group">
                     <label for="order-name">Ваше имя (необязательно)</label>
@@ -202,9 +202,15 @@
                 <div class="order-form-group">
                     <label for="order-files">Прикрепите фото/референсы (можно несколько)</label>
                     <input type="file" id="order-files" name="attachment" accept="image/*" multiple class="order-file-input">
-                    <small style="color: var(--text-secondary);">Поддерживаются JPG, PNG, WEBP</small>
+                    <small style="color: var(--text-secondary);">Поддерживаются JPG, PNG, WEBP (макс. 5 МБ суммарно)</small>
                 </div>
-                <button type="submit" class="order-submit-btn">ОТПРАВИТЬ ЗАЯВКУ</button>
+
+                <!-- Основная кнопка отправки -->
+                <button type="submit" id="main-send-btn" class="order-submit-btn">📨 ОТПРАВИТЬ ЗАЯВКУ</button>
+
+                <!-- Альтернативная кнопка (появляется при ошибке) -->
+                <button type="button" id="alt-send-btn" class="order-submit-btn alt-send-btn" style="display: none; margin-top: 0.5rem;">📧 АЛЬТЕРНАТИВНАЯ ОТПРАВКА</button>
+
                 <div id="order-status" class="order-status" style="display: none;"></div>
             </form>
         </div>

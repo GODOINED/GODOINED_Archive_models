@@ -1539,3 +1539,17 @@ main {
         padding: 0.3rem 0.8rem;
     }
 }
+
+/* ===== КНОПКА АЛЬТЕРНАТИВНОЙ ОТПРАВКИ ===== */
+.alt-send-btn {
+    background: var(--bg-card) !important;
+    border-color: var(--text-secondary) !important;
+    color: var(--text-secondary) !important;
+    box-shadow: none !important;
+}
+.alt-send-btn:hover {
+    background: var(--text-secondary) !important;
+    color: var(--bg-dark) !important;
+    border-color: var(--text-secondary) !important;
+    box-shadow: 0 0 15px var(--text-secondary) !important;
+}
