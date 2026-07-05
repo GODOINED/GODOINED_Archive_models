@@ -1542,3 +1542,130 @@ function initApp() {
         }
     }).catch(e => console.error(e));
 }
+
+// ============================================================
+//  МОДАЛЬНОЕ ОКНО ЗАКАЗА 3D-ГИФТ
+// ============================================================
+(function initOrderModal() {
+    const modal = document.getElementById('order-modal');
+    const openBtn = document.getElementById('order-btn');
+    const closeBtn = document.getElementById('order-modal-close');
+    const form = document.getElementById('order-form');
+    const statusDiv = document.getElementById('order-status');
+
+    // Элементы для сообщения об отключённых заказах
+    const disabledOverlay = document.getElementById('orders-disabled-overlay');
+    const disabledClose = document.getElementById('orders-disabled-close');
+    const disabledOk = document.getElementById('orders-disabled-ok');
+
+    if (!modal || !openBtn || !closeBtn || !form) return;
+
+    // Проверяем глобальную переменную из version.js
+    const ordersEnabled = typeof ENABLE_ORDERS !== 'undefined' ? ENABLE_ORDERS : true;
+
+    // Если заказы отключены — делаем кнопку неактивной и показываем уведомление
+    if (!ordersEnabled) {
+        openBtn.disabled = true;
+        openBtn.title = 'Заказы временно не принимаются';
+
+        // Функция показа уведомления
+        function showDisabledMessage() {
+            if (!disabledOverlay) return;
+            disabledOverlay.style.display = 'flex';
+            requestAnimationFrame(() => disabledOverlay.classList.add('active'));
+            playBackSound();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideDisabledMessage() {
+            if (!disabledOverlay) return;
+            disabledOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => { disabledOverlay.style.display = 'none'; }, 300);
+            playClickSound();
+        }
+
+        openBtn.addEventListener('click', showDisabledMessage);
+        if (disabledClose) disabledClose.addEventListener('click', hideDisabledMessage);
+        if (disabledOk) disabledOk.addEventListener('click', hideDisabledMessage);
+        if (disabledOverlay) {
+            disabledOverlay.addEventListener('click', (e) => {
+                if (e.target === disabledOverlay || e.target.classList.contains('modal-overlay')) {
+                    hideDisabledMessage();
+                }
+            });
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && disabledOverlay && disabledOverlay.style.display === 'flex') {
+                hideDisabledMessage();
+            }
+        });
+        return; // Выходим, чтобы форма не работала
+    }
+
+    // Далее — только если заказы включены
+    function openModal() {
+        modal.style.display = 'flex';
+        requestAnimationFrame(() => modal.classList.add('active'));
+        playClickSound();
+        document.body.style.overflow = 'hidden';
+        statusDiv.style.display = 'none';
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+        playBackSound();
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.classList.contains('modal-overlay')) {
+            closeModal();
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            closeModal();
+        }
+    });
+
+    // Отправка формы
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = form.querySelector('.order-submit-btn');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'ОТПРАВКА...';
+        submitBtn.disabled = true;
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'order-status';
+        statusDiv.textContent = '⏳ Отправка...';
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('https://formsubmit.co/goodmopsreset@gmail.com?fromname=Godoined+Archive', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                statusDiv.className = 'order-status success';
+                statusDiv.textContent = '✅ Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.';
+                form.reset();
+                setTimeout(() => {
+                    closeModal();
+                }, 3000);
+            } else {
+                throw new Error('Ошибка сервера');
+            }
+        } catch (error) {
+            statusDiv.className = 'order-status error';
+            statusDiv.textContent = '❌ Не удалось отправить. Попробуйте позже или напишите напрямую на почту.';
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+})();

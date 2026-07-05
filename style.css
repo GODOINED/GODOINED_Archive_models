@@ -1364,3 +1364,178 @@ main {
 /* Если нужно всё же какое-то свечение, но своего цвета, можно добавить отдельно,
    но проще убрать. Если хотите оставить свечение, но цветное, то можно через filter,
    но это сложнее. Поэтому оставляем без свечения. */
+
+   /* ===== КНОПКА ЗАКАЗА В ШАПКЕ ===== */
+.order-btn {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem 1.2rem;
+    font-family: 'RetroFont', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    box-shadow: 3px 3px 0 var(--shadow);
+}
+.order-btn:hover {
+    background: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px var(--accent);
+    transform: translate(-2px, -2px);
+}
+
+/* ===== МОДАЛКА ЗАКАЗА ===== */
+.order-modal-content {
+    max-width: 600px;
+    width: 90%;
+    background: var(--bg-panel);
+    border: 3px solid var(--border-color);
+    padding: 2rem;
+    box-shadow: 8px 8px 0 var(--shadow);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.order-form-group {
+    margin-bottom: 1.2rem;
+}
+.order-form-group label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.3rem;
+}
+.order-input, .order-textarea, .order-file-input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 2px solid var(--border-color);
+    padding: 0.6rem 0.8rem;
+    color: var(--text-primary);
+    font-family: 'RetroFont', monospace;
+    font-size: 0.9rem;
+    outline: none;
+    box-sizing: border-box;
+}
+.order-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+.order-file-input {
+    padding: 0.4rem;
+    background: var(--bg-dark);
+    border: 1px dashed var(--border-color);
+}
+.order-submit-btn {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.7rem 2rem;
+    font-family: 'RetroFont', monospace;
+    font-size: 1rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+.order-submit-btn:hover {
+    background: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 20px var(--accent);
+}
+.order-status {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+}
+.order-status.success {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.order-status.error {
+    border-color: #ff4444;
+    color: #ff4444;
+}
+@media (max-width: 700px) {
+    .order-modal-content {
+        padding: 1.2rem;
+    }
+}
+
+/* ===== СОСТОЯНИЕ ОТКЛЮЧЕННЫХ ЗАКАЗОВ ===== */
+.order-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+    border-color: #666;
+    box-shadow: none;
+}
+.order-btn.disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===== ЦЕНТРОВКА ЗАГОЛОВКА ===== */
+.header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+}
+.header-title {
+    margin: 0;
+    text-align: center;
+    flex: 1;
+}
+.order-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem 1.2rem;
+    font-family: 'RetroFont', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    box-shadow: 3px 3px 0 var(--shadow);
+    white-space: nowrap;
+}
+.order-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px var(--accent);
+    transform: translateY(-50%) translate(-2px, -2px);
+}
+.order-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+    box-shadow: none;
+}
+@media (max-width: 700px) {
+    .header-container {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .order-btn {
+        position: static;
+        transform: none;
+        margin-top: 0.5rem;
+        font-size: 0.7rem;
+        padding: 0.3rem 0.8rem;
+    }
+}

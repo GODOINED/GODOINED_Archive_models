@@ -54,7 +54,10 @@
         <div class="transition-overlay" id="transition-overlay"></div>
 
         <header id="main-header">
-            <h1>АРХИВ<span class="cursor">█</span></h1>
+            <div class="header-container">
+                <h1 class="header-title">АРХИВ<span class="cursor">█</span></h1>
+                <button id="order-btn" class="order-btn">ЗАКАЗАТЬ 3D-ГИФТ</button>
+            </div>
             <p>По приколу мой архив всяких моих работ 3D</p>
         </header>
 
@@ -171,6 +174,50 @@
                 </div>
             </div>
             <div class="modal-counter" id="modal-counter">1 / 1</div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛЬНОЕ ОКНО ЗАКАЗА 3D-ГИФТ ===== -->
+    <div id="order-modal" class="render-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content order-modal-content">
+            <button class="modal-close" id="order-modal-close">✕</button>
+            <h2 style="color: var(--text-primary); text-align: center; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">>> ЗАКАЗ 3D-ГИФТ</h2>
+            <form id="order-form" enctype="multipart/form-data">
+                <!-- Скрытые поля для FormSubmit -->
+                <input type="hidden" name="_subject" value="Godoined Archive новая заявка">
+                <input type="hidden" name="_replyto" value="goodmopsreset@gmail.com">
+                <input type="hidden" name="_captcha" value="false">
+                <input type="hidden" name="_template" value="table">
+                <input type="hidden" name="_blacklist" value="spam@example.com, bad@domain.com">
+
+                <div class="order-form-group">
+                    <label for="order-name">Ваше имя (необязательно)</label>
+                    <input type="text" id="order-name" name="name" placeholder="Имя или никнейм" class="order-input">
+                </div>
+                <div class="order-form-group">
+                    <label for="order-message">Описание модели *</label>
+                    <textarea id="order-message" name="message" placeholder="Опишите, какую модель вы хотите, её особенности, цвет, стиль..." required class="order-textarea"></textarea>
+                </div>
+                <div class="order-form-group">
+                    <label for="order-files">Прикрепите фото/референсы (можно несколько)</label>
+                    <input type="file" id="order-files" name="attachment" accept="image/*" multiple class="order-file-input">
+                    <small style="color: var(--text-secondary);">Поддерживаются JPG, PNG, WEBP</small>
+                </div>
+                <button type="submit" class="order-submit-btn">ОТПРАВИТЬ ЗАЯВКУ</button>
+                <div id="order-status" class="order-status" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Сообщение о временном отключении заказов (показывается при клике на кнопку, если заказы отключены) -->
+    <div id="orders-disabled-overlay" class="render-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content order-modal-content" style="max-width: 400px; text-align: center;">
+            <button class="modal-close" id="orders-disabled-close">✕</button>
+            <h2 style="color: var(--text-primary); text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem;">⛔ ЗАКАЗЫ ВРЕМЕННО НЕ ПРИНИМАЮТСЯ</h2>
+            <p style="color: var(--text-secondary); margin-top: 1rem;">Приносим извинения, но сейчас мы не принимаем новые заявки. Загляните позже!</p>
+            <button id="orders-disabled-ok" class="order-submit-btn" style="margin-top: 1.5rem;">ПОНЯТНО</button>
         </div>
     </div>
 
