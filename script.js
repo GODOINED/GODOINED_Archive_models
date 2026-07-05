@@ -1544,31 +1544,35 @@ function initApp() {
 }
 
 // ============================================================
-//  МОДАЛЬНОЕ ОКНО ЗАКАЗА 3D-ГИФТ
+//  МОДАЛЬНОЕ ОКНО ЗАКАЗА 3D-ГИФТ (исправленная версия)
 // ============================================================
 (function initOrderModal() {
+    // Проверяем наличие всех элементов
     const modal = document.getElementById('order-modal');
     const openBtn = document.getElementById('order-btn');
     const closeBtn = document.getElementById('order-modal-close');
     const form = document.getElementById('order-form');
     const statusDiv = document.getElementById('order-status');
 
-    // Элементы для сообщения об отключённых заказах
+    // Элементы для сообщения об отключении (могут отсутствовать — проверяем)
     const disabledOverlay = document.getElementById('orders-disabled-overlay');
     const disabledClose = document.getElementById('orders-disabled-close');
     const disabledOk = document.getElementById('orders-disabled-ok');
 
-    if (!modal || !openBtn || !closeBtn || !form) return;
+    // Если нет основных элементов — выходим
+    if (!modal || !openBtn || !closeBtn || !form) {
+        console.warn('Не найдены элементы модалки заказа');
+        return;
+    }
 
-    // Проверяем глобальную переменную из version.js
+    // Проверяем, включены ли заказы
     const ordersEnabled = typeof ENABLE_ORDERS !== 'undefined' ? ENABLE_ORDERS : true;
 
-    // Если заказы отключены — делаем кнопку неактивной и показываем уведомление
+    // ---- Если заказы отключены ----
     if (!ordersEnabled) {
         openBtn.disabled = true;
         openBtn.title = 'Заказы временно не принимаются';
 
-        // Функция показа уведомления
         function showDisabledMessage() {
             if (!disabledOverlay) return;
             disabledOverlay.style.display = 'flex';
@@ -1586,6 +1590,7 @@ function initApp() {
         }
 
         openBtn.addEventListener('click', showDisabledMessage);
+
         if (disabledClose) disabledClose.addEventListener('click', hideDisabledMessage);
         if (disabledOk) disabledOk.addEventListener('click', hideDisabledMessage);
         if (disabledOverlay) {
@@ -1595,21 +1600,29 @@ function initApp() {
                 }
             });
         }
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && disabledOverlay && disabledOverlay.style.display === 'flex') {
                 hideDisabledMessage();
             }
         });
-        return; // Выходим, чтобы форма не работала
+
+        return; // Выходим, форма не работает
     }
 
-    // Далее — только если заказы включены
+    // ---- Если заказы включены ----
     function openModal() {
         modal.style.display = 'flex';
         requestAnimationFrame(() => modal.classList.add('active'));
         playClickSound();
         document.body.style.overflow = 'hidden';
+        // Сбрасываем состояние
         statusDiv.style.display = 'none';
+        const submitBtn = form.querySelector('.order-submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'ОТПРАВИТЬ ЗАЯВКУ';
+        }
     }
 
     function closeModal() {
@@ -1621,20 +1634,64 @@ function initApp() {
 
     openBtn.addEventListener('click', openModal);
     closeBtn.addEventListener('click', closeModal);
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.classList.contains('modal-overlay')) {
             closeModal();
         }
     });
+
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.style.display === 'flex') {
             closeModal();
         }
     });
 
-    // Отправка формы
+    // ---- Валидация и отправка ----
+    const fileInput = document.getElementById('order-files');
+    const MAX_TOTAL_SIZE = 5 * 1024 * 1024; // 5 МБ (для надёжности)
+
+    // Функция для отправки с повторными попытками
+    async function sendFormWithRetry(formData, retries = 2) {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                const response = await fetch('https://formsubmit.co/goodmopsreset@gmail.com?fromname=Godoined+Archive', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    return { success: true, status: response.status };
+                } else {
+                    // Если статус не 2xx, пробуем ещё
+                    if (attempt < retries) continue;
+                    return { success: false, status: response.status, error: `HTTP ${response.status}` };
+                }
+            } catch (err) {
+                // Сетевая ошибка
+                if (attempt < retries) continue;
+                return { success: false, error: err.message || 'Сетевая ошибка' };
+            }
+        }
+        return { success: false, error: 'Не удалось отправить после нескольких попыток' };
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Проверка файлов
+        if (fileInput && fileInput.files.length > 0) {
+            let totalSize = 0;
+            for (let f of fileInput.files) {
+                totalSize += f.size;
+            }
+            if (totalSize > MAX_TOTAL_SIZE) {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'order-status error';
+                statusDiv.textContent = `❌ Общий размер файлов превышает 5 МБ (сейчас ${(totalSize / 1024 / 1024).toFixed(1)} МБ). Пожалуйста, уменьшите размер или количество файлов.`;
+                return;
+            }
+        }
+
         const submitBtn = form.querySelector('.order-submit-btn');
         const originalText = submitBtn.textContent;
         submitBtn.textContent = 'ОТПРАВКА...';
@@ -1645,27 +1702,35 @@ function initApp() {
 
         const formData = new FormData(form);
 
-        try {
-            const response = await fetch('https://formsubmit.co/goodmopsreset@gmail.com?fromname=Godoined+Archive', {
-                method: 'POST',
-                body: formData
-            });
-            if (response.ok) {
-                statusDiv.className = 'order-status success';
-                statusDiv.textContent = '✅ Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.';
-                form.reset();
-                setTimeout(() => {
-                    closeModal();
-                }, 3000);
-            } else {
-                throw new Error('Ошибка сервера');
-            }
-        } catch (error) {
+        // Пробуем отправить с повторными попытками
+        const result = await sendFormWithRetry(formData, 3);
+
+        if (result.success) {
+            statusDiv.className = 'order-status success';
+            statusDiv.textContent = '✅ Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.';
+            form.reset();
+            setTimeout(() => {
+                closeModal();
+            }, 3000);
+        } else {
+            console.error('Ошибка отправки:', result.error);
             statusDiv.className = 'order-status error';
-            statusDiv.textContent = '❌ Не удалось отправить. Попробуйте позже или напишите напрямую на почту.';
-        } finally {
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
+
+            // Формируем mailto ссылку как запасной вариант
+            const name = document.getElementById('order-name')?.value || 'Аноним';
+            const message = document.getElementById('order-message')?.value || '';
+            const subject = 'Godoined%20Archive%20новая%20заявка';
+            const body = `Имя:%20${encodeURIComponent(name)}%0A%0AОписание:%20${encodeURIComponent(message)}%0A%0A(Пожалуйста,%20приложите%20фото%20в%20ответном%20письме)`;
+            const mailtoLink = `mailto:goodmopsreset@gmail.com?subject=${subject}&body=${body}`;
+
+            statusDiv.innerHTML = `
+                ❌ Не удалось отправить через форму (${result.error || 'неизвестная ошибка'}). 
+                <br>Пожалуйста, <a href="${mailtoLink}" target="_blank" style="color: var(--accent); text-decoration: underline;">отправьте письмо вручную</a> или попробуйте позже.
+                <br><button class="order-submit-btn" style="margin-top: 0.5rem; width: auto; padding: 0.3rem 1rem;" onclick="window.open('${mailtoLink}','_blank')">📧 Открыть почту</button>
+            `;
         }
+
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     });
 })();
