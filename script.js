@@ -445,8 +445,9 @@ function renderModelsGrid(models) {
         });
         card.addEventListener('mouseenter', playHoverSound);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
-        let previewUrl = model.preview || `models/${model.name}/start_0.webp`;
-        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/idle_0.webp`;
+        // Путь для превью с новой структурой
+        let previewUrl = model.preview || `models/${model.name}/frames/start/0001.webp`;
+        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/frames/idle/0001.webp`;
         if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `models/${model.name}/icon.webp`;
         const img = document.createElement('img');
         img.className = 'preview';
@@ -642,7 +643,6 @@ function parseBBCode(text) {
         if (colorMatch) {
             const color = colorMatch[1].trim();
             const content = colorMatch[2];
-            // Мягкое свечение — регулируй цифры 2 и 6 под свой вкус
             const glow = `text-shadow: 0 0 2px ${color}, 0 0 6px ${color};`;
             const replacement = `<span style="color: ${color}; ${glow} display:inline-block;">${parseBBCode(content)}</span>`;
             safe = safe.substring(0, colorMatch.index) + replacement + safe.substring(colorMatch.index + colorMatch[0].length);
@@ -652,7 +652,6 @@ function parseBBCode(text) {
         let rainbowMatch = /\[rainbow\]([\s\S]*?)\[\/rainbow\]/i.exec(safe);
         if (rainbowMatch) {
             const content = rainbowMatch[1];
-            // ⭐ Радужное свечение — используем currentColor + анимацию
             const replacement = `<span class="rainbow-text" style="display:inline-block;">${parseBBCode(content)}</span>`;
             safe = safe.substring(0, rainbowMatch.index) + replacement + safe.substring(rainbowMatch.index + rainbowMatch[0].length);
             changed = true;
@@ -763,7 +762,6 @@ function closeModal() {
     if (!modal) return;
     modal.classList.remove('active');
     modalIsOpen = false;
-    // Останавливаем видео и очищаем плеер
     if (currentVideoElement) {
         currentVideoElement.pause();
         currentVideoElement = null;
@@ -794,17 +792,14 @@ function initPlayer(video) {
 
     if (!video || !playBtn) return;
 
-    // Убираем старые обработчики, чтобы не было дублирования
     const newPlayBtn = playBtn.cloneNode(true);
     playBtn.parentNode.replaceChild(newPlayBtn, playBtn);
     const newVolumeBtn = volumeBtn.cloneNode(true);
     volumeBtn.parentNode.replaceChild(newVolumeBtn, volumeBtn);
 
-    // Переназначаем переменные
     const newPlayBtnRef = document.getElementById('player-play');
     const newVolumeBtnRef = document.getElementById('player-volume-btn');
 
-    // Функция обновления времени и прогресса
     function updateTime() {
         if (!video || video.duration === Infinity || isNaN(video.duration)) return;
         const current = video.currentTime || 0;
@@ -814,14 +809,12 @@ function initPlayer(video) {
         timeDisplay.textContent = formatTime(current) + ' / ' + formatTime(duration);
     }
 
-    // События
     video.addEventListener('loadedmetadata', updateTime);
     video.addEventListener('timeupdate', updateTime);
     video.addEventListener('ended', () => {
         newPlayBtnRef.textContent = '▶';
     });
 
-    // Play/Pause
     newPlayBtnRef.addEventListener('click', () => {
         if (video.paused) {
             video.play().catch(() => {});
@@ -832,7 +825,6 @@ function initPlayer(video) {
         }
     });
 
-    // Прогресс-бар
     progressBar.addEventListener('click', (e) => {
         const rect = progressBar.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width;
@@ -841,7 +833,6 @@ function initPlayer(video) {
         }
     });
 
-    // Громкость (по умолчанию 0.5)
     video.volume = 0.5;
     volumeSlider.value = 0.5;
     newVolumeBtnRef.textContent = '🔊';
@@ -864,7 +855,6 @@ function initPlayer(video) {
         }
     });
 
-    // Обновляем состояние кнопки play
     if (!video.paused) {
         newPlayBtnRef.textContent = '⏸';
     }
@@ -875,7 +865,6 @@ function initPlayer(video) {
         newPlayBtnRef.textContent = '⏸';
     });
 
-    // Сохраняем ссылку на видео
     currentVideoElement = video;
 }
 
@@ -974,7 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
-//  ПОКАЗ ДЕТАЛЕЙ МОДЕЛИ
+//  ПОКАЗ ДЕТАЛЕЙ МОДЕЛИ (с поддержкой FPS из JSON)
 // ============================================================
 function showModelDetail(modelName) {
     if (animationInterval) {
@@ -1045,7 +1034,7 @@ function showModelDetail(modelName) {
         window.scrollTo(0, 0);
     });
 
-    // ===== ГАЛЕРЕЯ РЕНДЕРОВ (только миниатюры) =====
+    // ===== ГАЛЕРЕЯ РЕНДЕРОВ =====
     const renders = model.renders || [];
     const videos = model.videos || [];
     const renderGallery = document.getElementById('render-gallery');
@@ -1126,8 +1115,6 @@ function showModelDetail(modelName) {
                 renderThumbnails.appendChild(thumb);
             });
 
-            // ---------- ИСПРАВЛЕННАЯ ПОДСКАЗКА ----------
-            // Удаляем старую подсказку, если есть
             const oldHint = renderThumbnails.parentNode.querySelector('.render-hint');
             if (oldHint) oldHint.remove();
 
@@ -1136,16 +1123,23 @@ function showModelDetail(modelName) {
             hint.style.cssText = 'font-size:0.7rem; color:var(--text-secondary); margin-top:0.3rem; letter-spacing:1px;';
             hint.textContent = '>> Кликните по миниатюре для просмотра';
             renderThumbnails.parentNode.insertBefore(hint, renderThumbnails.nextSibling);
-            // --------------------------------------------
 
         } else {
             renderGallery.style.display = 'none';
         }
     }
 
-    // ===== АНИМАЦИЯ (кадры) =====
-    const startUrls = Array.from({ length: model.startFrames }, (_, i) => `models/${model.name}/start_${i}.webp`);
-    const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => `models/${model.name}/idle_${i}.webp`);
+    // ===== АНИМАЦИЯ (кадры) с поддержкой FPS =====
+    const startUrls = Array.from({ length: model.startFrames }, (_, i) => 
+        `models/${model.name}/frames/start/${String(i+1).padStart(4, '0')}.webp`
+    );
+    const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => 
+        `models/${model.name}/frames/idle/${String(i+1).padStart(4, '0')}.webp`
+    );
+
+    // Читаем FPS из модели (по умолчанию 24)
+    const fps = (model.fps && typeof model.fps === 'number' && model.fps > 0) ? model.fps : 24;
+    const frameDelay = 1000 / fps;
 
     if (model.startFrames === 0 && model.idleFrames === 0) {
         const canvas = document.getElementById('animation-canvas');
@@ -1171,10 +1165,11 @@ function showModelDetail(modelName) {
         img.src = iconUrl;
         return;
     }
-    preloadFramesWithIndicator(startUrls, idleUrls);
+    preloadFramesWithIndicator(startUrls, idleUrls, frameDelay);
 }
 
-async function preloadFramesWithIndicator(startUrls, idleUrls) {
+// ===== ПРЕДЗАГРУЗКА С ИНДИКАТОРОМ =====
+async function preloadFramesWithIndicator(startUrls, idleUrls, frameDelay) {
     const loadId = ++currentLoadId;
     const loaderDiv = document.getElementById('frame-loader');
     const fillDiv = document.querySelector('.loader-fill');
@@ -1219,10 +1214,11 @@ async function preloadFramesWithIndicator(startUrls, idleUrls) {
     if (elapsed < 500) await new Promise(r => setTimeout(r, 500 - elapsed));
     loaderDiv.style.display = 'none';
 
-    startAnimation(images, startUrls.length, idleUrls.length);
+    startAnimation(images, startUrls.length, idleUrls.length, frameDelay);
 }
 
-function startAnimation(images, startCount, idleCount) {
+// ===== ЗАПУСК АНИМАЦИИ =====
+function startAnimation(images, startCount, idleCount, frameDelay) {
     if (animationInterval) {
         clearInterval(animationInterval);
         animationInterval = null;
@@ -1232,7 +1228,6 @@ function startAnimation(images, startCount, idleCount) {
     const ctx = canvas.getContext('2d');
     let startIdx = 0, idleIdx = 0;
     let isStart = startCount > 0;
-    const frameDelay = 120;
 
     function drawFrame(img) {
         canvas.width = img.width;
@@ -1579,7 +1574,6 @@ function initApp() {
         playClickSound();
         document.body.style.overflow = 'hidden';
         statusDiv.style.display = 'none';
-        // Сбрасываем состояние кнопок
         mainSendBtn.style.display = 'block';
         altSendBtn.style.display = 'none';
         mainSendBtn.disabled = false;
@@ -1665,7 +1659,6 @@ function initApp() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Проверка файлов
         if (fileInput && fileInput.files.length > 0) {
             let totalSize = 0;
             for (let f of fileInput.files) {
@@ -1678,14 +1671,12 @@ function initApp() {
                     ❌ Общий размер файлов превышает 5 МБ (сейчас ${(totalSize / 1024 / 1024).toFixed(1)} МБ).
                     <br>Используйте <strong>альтернативную отправку</strong> (кнопка появится ниже).
                 `;
-                // Показываем альт-кнопку
                 mainSendBtn.style.display = 'none';
                 altSendBtn.style.display = 'block';
                 return;
             }
         }
 
-        // Проверка описания
         const message = document.getElementById('order-message')?.value?.trim();
         if (!message) {
             statusDiv.style.display = 'block';
@@ -1694,7 +1685,6 @@ function initApp() {
             return;
         }
 
-        // Отправка
         const formData = new FormData(form);
         mainSendBtn.disabled = true;
         mainSendBtn.textContent = 'ОТПРАВКА...';
@@ -1712,7 +1702,6 @@ function initApp() {
                 closeModal();
             }, 3000);
         } else {
-            // Ошибка — показываем альт-кнопку
             statusDiv.className = 'order-status error';
             statusDiv.innerHTML = `
                 ❌ Не удалось отправить через сайт (${result.error || 'неизвестная ошибка'}).
