@@ -2,18 +2,20 @@
     {
         "name": "Helix",
         "displayName": "Helix",
-        "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]\n\n[color=YELLOW][ В ПРОЦЕССЕ! ][/color]",
+        "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]",
         "tags": [
             { "name": "gift", "color": "#ffaa44" },
             { "name": "Dandy's world", "color": "rainbow" }
         ],
-        "downloadable": false,
-        "downloadFile": "model.zip",
+        "downloadable": true,
+        "downloadFile": "Helix.zip",
         "fps": 24,
         "startFrames": 2,
         "idleFrames": 48,
         "preview": "models/Helix/icon.webp",
-        "renders": [],
+        "renders": [
+            "models/Helix/render_01.webp"
+        ],
         "videos": []
     },
     {
