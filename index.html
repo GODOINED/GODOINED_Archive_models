@@ -1,18 +1,88 @@
 <!DOCTYPE html>
-<html lang="ru" style="background: #0a0f0a;">
+<html lang="ru" style="background: #050508;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Архив моделей</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%23050508'/><rect x='18' y='18' width='64' height='64' rx='6' fill='none' stroke='%233eff6e' stroke-width='6'/><rect x='38' y='18' width='24' height='18' fill='%233eff6e'/></svg>">
     <meta property="og:title" content="Архив 3D моделей — ретро портфолио">
     <meta property="og:description" content="Мой архив 3D моделей с анимацией, поиском и ретро-стилем.">
     <meta property="og:image" content="https://ваш-сайт/social-preview.png">
     <meta property="og:url" content="https://ваш-сайт/">
     <meta property="og:type" content="website">
 
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="version.js"></script>
+
+    <!-- ===== ДИАГНОСТИКА: пишем всё важное и в консоль, и на экран ===== -->
+    <script>
+        (function() {
+            'use strict';
+            var entries = [];
+            var errorCount = 0;
+            window.__SITE_ERRORS__ = [];
+            window.__SITE_LOG__ = entries;
+            function stamp() { return new Date().toISOString().slice(11, 19); }
+            function toText(a) {
+                if (typeof a === 'string') return a;
+                if (a && a.stack) return a.stack.split('\n')[0] + ' ' + (a.message || '');
+                try { return JSON.stringify(a); } catch (e) { return String(a); }
+            }
+            function render() {
+                var out = document.getElementById('console-output');
+                if (!out) return;
+                out.textContent = '';
+                var frag = document.createDocumentFragment();
+                entries.slice(-60).forEach(function(en) {
+                    var div = document.createElement('div');
+                    div.className = 'clog clog-' + en.level;
+                    div.textContent = '[' + en.time + '] ' + en.text;
+                    frag.appendChild(div);
+                });
+                out.appendChild(frag);
+                out.scrollTop = out.scrollHeight;
+            }
+            window.__CONSOLE_RENDER__ = render;
+            function addEntry(level, text) {
+                entries.push({ level: level, time: stamp(), text: text });
+                if (entries.length > 200) entries.shift();
+                if (level === 'error') {
+                    errorCount++;
+                    window.__SITE_ERRORS__.push(text);
+                }
+                render();
+                // при ошибке на старте сразу показываем панель
+                if (level === 'error' && errorCount === 1) {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var p = document.getElementById('console-panel');
+                        if (p) p.classList.add('visible', 'flash');
+                    });
+                }
+            }
+            window.__CONSOLE_ADD__ = addEntry;
+            ['log', 'warn', 'error'].forEach(function(level) {
+                var orig = console[level] ? console[level].bind(console) : function() {};
+                console[level] = function() {
+                    try {
+                        addEntry(level === 'log' ? 'log' : level, Array.prototype.map.call(arguments, toText).join(' '));
+                    } catch (e) {}
+                    orig.apply(null, arguments);
+                };
+            });
+            window.addEventListener('error', function(e) {
+                addEntry('error', 'ОШИБКА: ' + e.message + ' → ' + (e.filename || '').split('/').pop() + ':' + e.lineno);
+            });
+            window.addEventListener('unhandledrejection', function(e) {
+                addEntry('error', 'ОТКЛОНЁННЫЙ PROMISE: ' + toText(e.reason));
+            });
+            addEntry('log', 'ДИАГНОСТИКА АКТИВНА — все сообщения дублируются на экран (кнопка КОНСОЛЬ в HUD)');
+            // панель появится только после разбора DOM — перерисовываем журнал
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', render);
+            } else {
+                render();
+            }
+        })();
+    </script>
 
     <script>
         (function() {
@@ -22,8 +92,15 @@
             } else {
                 document.documentElement.classList.add('theme-green');
             }
-            document.documentElement.style.backgroundColor = '#0a0f0a';
-            document.body.style.backgroundColor = '#0a0f0a';
+            document.documentElement.style.backgroundColor = '#050508';
+            // document.body в <head> ещё не существует — фон body наживём после разбора разметки
+            if (document.body) {
+                document.body.style.backgroundColor = '#050508';
+            } else {
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.style.backgroundColor = '#050508';
+                });
+            }
         })();
     </script>
     <script>
@@ -35,7 +112,7 @@
         })();
     </script>
 </head>
-<body style="background: #0a0f0a; margin:0; padding:0;">
+<body style="background: #050508; margin:0; padding:0;">
 
     <!-- ===== ЗАГРУЗОЧНЫЙ ЭКРАН ===== -->
     <div id="loading-screen" class="loading-screen">
@@ -49,6 +126,34 @@
         </div>
     </div>
 
+    <!-- ===== ВЕРХНЯЯ HUD-ПАНЕЛЬ ===== -->
+    <div class="hud" id="hud">
+        <div class="hud-left">
+            <span class="hud-rec"><span class="rec-dot"></span>REC</span>
+            <span class="hud-clock" id="hud-clock">--:--:--</span>
+        </div>
+        <div class="hud-ticker" id="hud-ticker">
+            <div class="ticker-track" id="ticker-track">
+                <span class="ticker-seg">ИНИЦИАЛИЗАЦИЯ АРХИВА...</span>
+                <span class="ticker-seg">ИНИЦИАЛИЗАЦИЯ АРХИВА...</span>
+            </div>
+        </div>
+        <div class="hud-right">
+            <span class="hud-fps" id="hud-fps">-- FPS</span>
+            <button class="hud-btn" id="console-toggle" title="Показать / скрыть системный журнал">КОНСОЛЬ</button>
+            <button class="hud-btn" id="sound-toggle" title="Включить / выключить звук">🔊</button>
+        </div>
+    </div>
+
+    <!-- ===== ЭКРАННЫЙ СИСТЕМНЫЙ ЖУРНАЛ ===== -->
+    <div id="console-panel" class="console-panel" aria-live="polite">
+        <div class="console-panel-head">
+            <span class="console-panel-title">> СИСТЕМНЫЙ ЖУРНАЛ</span>
+            <button class="hud-btn" id="console-close">✕</button>
+        </div>
+        <div id="console-output" class="console-output"></div>
+    </div>
+
     <!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
     <div id="page-content" style="position: relative; z-index: 1;">
         <canvas id="bg-canvas" class="bg-canvas"></canvas>
@@ -57,7 +162,7 @@
 
         <header id="main-header">
             <div class="header-container">
-                <h1 class="header-title">АРХИВ<span class="cursor">█</span></h1>
+                <h1 class="header-title glitch-title" data-text="АРХИВ">АРХИВ<span class="cursor">█</span></h1>
                 <button id="order-btn" class="order-btn">ЗАКАЗАТЬ 3D-ГИФТ</button>
             </div>
             <p>По приколу мой архив всяких моих работ 3D</p>
@@ -68,6 +173,41 @@
                 <section class="description">
                     <h2>> О сайте</h2>
                     <p>Сделал я этот сайт специально для того чтобы хранить свои 3D модели, так же будут разные пополнения или типа того, МОЙ АРХИИИИИИИИВ!!</p>
+                </section>
+
+                <!-- ===== ПАНЕЛЬ СТАТИСТИКИ (В СТИЛЕ CHECKPOINT) ===== -->
+                <section class="checkpoint-panel" id="checkpoint-panel">
+                    <div class="cp-head">
+                        <span class="cp-badge">CHECKPOINT</span>
+                        <h2 class="cp-title">> ТВОЙ АРХИВ ЗА ВСЁ ВРЕМЯ</h2>
+                    </div>
+                    <div class="cp-grid">
+                        <div class="cp-card">
+                            <span class="cp-num" id="stat-models">0</span>
+                            <span class="cp-label">МОДЕЛЕЙ</span>
+                        </div>
+                        <div class="cp-card">
+                            <span class="cp-num" id="stat-renders">0</span>
+                            <span class="cp-label">РЕНДЕРОВ</span>
+                        </div>
+                        <div class="cp-card">
+                            <span class="cp-num" id="stat-videos">0</span>
+                            <span class="cp-label">ВИДЕО</span>
+                        </div>
+                        <div class="cp-card">
+                            <span class="cp-num" id="stat-visits">0</span>
+                            <span class="cp-label">ТВОИХ ВИЗИТОВ</span>
+                        </div>
+                        <div class="cp-card">
+                            <span class="cp-num" id="stat-opens">0</span>
+                            <span class="cp-label">ОТКРЫТИЙ МОДЕЛЕЙ</span>
+                        </div>
+                    </div>
+                    <div class="cp-foot">
+                        <span class="cp-foot-item">>> СЕССИЯ АКТИВНА</span>
+                        <span class="cp-foot-item" id="cp-level">>> УРОВЕНЬ: НОВИЧОК</span>
+                        <span class="cp-foot-item" id="cp-next">>> СЛЕД. ЧЕКПОИНТ ЧЕРЕЗ 5 ОТКРЫТИЙ</span>
+                    </div>
                 </section>
 
                 <section class="gallery">
@@ -144,12 +284,35 @@
             </div>
         </div>
 
+        <!-- ===== РЕТРО-ФУТЕР ===== -->
+        <footer id="retro-footer">
+            <div class="footer-marquee">
+                <div class="footer-marquee-track">
+                    <span>★ GODOINED ARCHIVE ★ СПАСИБО ЗА ПОСЕЩЕНИЕ ★ НОВЫЕ МОДЕЛИ СКОРО ★ УВАЖАЙ ЧУЖОЕ ТВОРЧЕСТВО ★ СДЕЛАНО С ЛЮБОВЬЮ К РЕТРО ★ </span>
+                    <span>★ GODOINED ARCHIVE ★ СПАСИБО ЗА ПОСЕЩЕНИЕ ★ НОВЫЕ МОДЕЛИ СКОРО ★ УВАЖАЙ ЧУЖОЕ ТВОРЧЕСТВО ★ СДЕЛАНО С ЛЮБОВЬЮ К РЕТРО ★ </span>
+                </div>
+            </div>
+            <div class="footer-row">
+                <span id="footer-status">СИСТЕМА: В СЕТИ</span>
+                <span id="footer-uptime">АПТАЙМ: 00:00:00</span>
+                <span id="footer-version">ВЕРСИЯ: 2.4</span>
+            </div>
+        </footer>
+
         <div class="theme-switcher">
             <button class="theme-btn theme-green" data-theme="green" style="background:#3eff6e;"></button>
             <button class="theme-btn theme-amber" data-theme="amber" style="background:#ffb347;"></button>
             <button class="theme-btn theme-blue" data-theme="blue" style="background:#5bc0ff;"></button>
         </div>
+
+        <!-- ===== ОВЕРЛЕИ ЭФФЕКТОВ ===== -->
+        <div id="vhs-noise" aria-hidden="true"></div>
+        <div id="crt-scanline" aria-hidden="true"></div>
+        <div id="glitch-flash" aria-hidden="true"></div>
     </div>
+
+    <!-- ===== ТОСТЫ-ЧЕКПОИНТЫ ===== -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
     <!-- ===== МОДАЛЬНОЕ ОКНО ДЛЯ РЕНДЕРОВ ===== -->
     <div id="render-modal" class="render-modal" style="display: none;">

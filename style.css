@@ -1,6 +1,6 @@
 /* ===== ГЛОБАЛЬНЫЙ ФОН ===== */
 html {
-    background: #0a0f0a;
+    background: #050508;
 }
 
 @font-face {
@@ -224,7 +224,8 @@ body {
         0 0 5px var(--terminal-text),
         0 0 10px var(--terminal-text),
         0 0 20px var(--terminal-text);
-    animation: glowPulse 1.5s ease-in-out infinite alternate;
+    /* typeIn обязан идти первым: без него строка остаётся с opacity:0 и невидима */
+    animation: typeIn 0.12s steps(3) forwards, glowPulse 1.5s ease-in-out infinite alternate;
 }
 
 @keyframes glowPulse {
@@ -351,8 +352,8 @@ header h1, .description h2, .gallery h2 {
     background: var(--terminal-text);
 }
 .terminal-output .line {
-    opacity: 0;
-    animation: typeIn 0.05s steps(1) forwards;
+    opacity: 1;
+    animation: typeIn 0.12s steps(3) backwards;
     white-space: pre-wrap;
     word-break: break-word;
     margin: 0;
@@ -421,12 +422,13 @@ header h1, .description h2, .gallery h2 {
     left: 0;
     width: 100%;
     height: 100%;
-    background: black;
+    background: #000;
     z-index: 1001;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.25s ease-out;
 }
+/* РЕТРО-ПЕРЕХОД «КАНАЛ» — отключён по просьбе: экран без wipe-эффекта */
 .transition-overlay.active {
     opacity: 1;
 }
@@ -439,7 +441,10 @@ header h1, .description h2, .gallery h2 {
     height: 100%;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.4;
+    opacity: 0.85;
+    /* Фон рендерится в низком разрешении и растягивается «пикселями» */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 #particles-canvas {
     position: fixed;
@@ -637,10 +642,9 @@ main {
     position: relative;
 }
 .model-card:hover {
-    transform: translate(-2px, -2px);
+    transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translate(-2px, -2px);
     box-shadow: 8px 8px 0 var(--shadow);
     border-color: var(--accent-hover);
-    animation: borderGlow 1.5s ease-in-out infinite alternate;
 }
 @keyframes borderGlow {
     0% { border-color: var(--border-color); box-shadow: 0 0 5px var(--border-color), 5px 5px 0 var(--shadow); }
@@ -905,50 +909,149 @@ main {
     overflow-y: auto;
     pointer-events: none;
     opacity: 0;
-    transform: perspective(800px) rotateY(-30deg) scale(0.5) translateZ(-300px);
-    filter: blur(8px);
-    transition: none;
+    /* Контейнер лишь мягко проявляется — без blur и 3D-поворота
+       (на полноэкранном элементе это выглядело как расплывчатая плашка) */
+    transform: scale(0.985);
+    transition: opacity 0.28s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 #detail-container.visible {
     pointer-events: auto;
-    animation: depthAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-@keyframes depthAppear {
-    0% {
-        opacity: 0;
-        transform: perspective(800px) rotateY(-30deg) scale(0.5) translateZ(-300px);
-        filter: blur(8px);
-    }
-    50% {
-        opacity: 1;
-        transform: perspective(800px) rotateY(10deg) scale(0.9) translateZ(50px);
-        filter: blur(2px);
-    }
-    100% {
-        opacity: 1;
-        transform: perspective(800px) rotateY(0deg) scale(1) translateZ(0);
-        filter: blur(0);
-    }
+    opacity: 1;
+    transform: scale(1);
 }
 #detail-container.closing {
-    animation: depthClose 0.4s ease-in forwards;
-}
-@keyframes depthClose {
-    0% {
-        opacity: 1;
-        transform: perspective(800px) rotateY(0deg) scale(1) translateZ(0);
-        filter: blur(0);
-    }
-    100% {
-        opacity: 0;
-        transform: perspective(800px) rotateY(30deg) scale(0.5) translateZ(-300px);
-        filter: blur(8px);
-    }
+    opacity: 0;
+    transform: scale(0.985);
+    transition: opacity 0.25s ease, transform 0.25s ease;
 }
 .model-detail-wrapper {
     max-width: 1200px;
     margin: 0 auto;
 }
+
+/* ===== ПОЯВЛЕНИЕ БОЛЬШОЙ ПАНЕЛИ МОДЕЛИ =====
+   Сам контейнер почти не двигается (иначе расплывчатая плашка),
+   а «живую» анимацию получает содержимое: пружинный въезд,
+   вспышка неоновой рамки и пробегающий по панели скан-луч */
+#detail-container.visible .model-detail-wrapper {
+    animation: panelSpring 0.6s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
+@keyframes panelSpring {
+    0% {
+        opacity: 0;
+        transform: translateY(46px) scale(0.92);
+    }
+    55% {
+        opacity: 1;
+        transform: translateY(-6px) scale(1.015);
+    }
+    80% {
+        transform: translateY(2px) scale(0.998);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+#detail-container.closing .model-detail-wrapper {
+    animation: panelSink 0.25s ease forwards;
+}
+@keyframes panelSink {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(24px) scale(0.96); }
+}
+
+/* Вспышка неоновой рамки в момент открытия */
+#detail-container.visible .model-detail-content {
+    animation: frameFlash 0.9s ease-out 0.15s both;
+}
+@keyframes frameFlash {
+    0% {
+        border-color: #fff;
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0), 0 0 46px var(--accent), inset 0 0 34px var(--accent);
+    }
+    35% {
+        border-color: var(--accent-hover);
+        box-shadow: 8px 8px 0 var(--shadow), 0 0 30px var(--accent), inset 0 0 18px var(--accent);
+    }
+    100% {
+        border-color: var(--border-color);
+        box-shadow: 8px 8px 0 var(--shadow), 0 0 0 var(--accent), inset 0 0 0 var(--accent);
+    }
+}
+
+/* Скан-луч пробегает по панели один раз при открытии */
+#detail-container.visible .model-detail-content::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 34%;
+    background: linear-gradient(180deg,
+        transparent,
+        rgba(255, 255, 255, 0.07) 45%,
+        rgba(255, 255, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.07) 55%,
+        transparent);
+    pointer-events: none;
+    z-index: 4;
+    animation: panelScan 1s cubic-bezier(0.45, 0, 0.3, 1) 0.2s both;
+}
+@keyframes panelScan {
+    0% { transform: translateY(-110%); opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { transform: translateY(320%); opacity: 0; }
+}
+
+/* ===== ПОСЛОЙНОЕ ПОЯВЛЕНИЕ ЭЛЕМЕНТОВ МОДЕЛИ =====
+   Каждый блок въезжает отдельно с нарастающей задержкой */
+#detail-container .detail-nav,
+#detail-container .model-detail-header h1,
+#detail-container .animation-area,
+#detail-container .info-area > * {
+    opacity: 0;
+}
+#detail-container.visible .detail-nav { animation: layerUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards; }
+#detail-container.visible .model-detail-header h1 { animation: layerTitle 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards; }
+#detail-container.visible .animation-area { animation: layerLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards; }
+#detail-container.visible .info-area > *:nth-child(1) { animation: layerRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards; }
+#detail-container.visible .info-area > *:nth-child(2) { animation: layerRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.48s forwards; }
+#detail-container.visible .info-area > *:nth-child(3) { animation: layerRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.56s forwards; }
+#detail-container.visible .info-area > *:nth-child(4) { animation: layerRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.64s forwards; }
+#detail-container.visible .info-area > *:nth-child(5) { animation: layerRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.72s forwards; }
+#detail-container.visible .info-area > *:nth-child(6) { animation: layerRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.8s forwards; }
+#detail-container.visible .info-area > *:nth-child(n+7) { animation: layerRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.88s forwards; }
+#detail-container.closing .detail-nav,
+#detail-container.closing .model-detail-header h1,
+#detail-container.closing .animation-area,
+#detail-container.closing .info-area > * {
+    animation: layerOut 0.25s ease forwards !important;
+}
+@keyframes layerUp {
+    from { opacity: 0; transform: translateY(-22px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes layerTitle {
+    0% { opacity: 0; transform: scale(0.7); letter-spacing: 0.6em; filter: blur(6px); }
+    60% { opacity: 1; filter: blur(0); }
+    100% { opacity: 1; transform: scale(1); letter-spacing: normal; filter: blur(0); }
+}
+@keyframes layerLeft {
+    from { opacity: 0; transform: translateX(-60px) rotateY(14deg); }
+    to { opacity: 1; transform: translateX(0) rotateY(0); }
+}
+@keyframes layerRight {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes layerOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Угловые скобки убрали — визуально читались как дефекты */
 .model-detail-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -966,6 +1069,7 @@ main {
     margin: 0;
 }
 .model-detail-content {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     gap: 2rem;
@@ -973,6 +1077,7 @@ main {
     padding: 2rem;
     border: 2px solid var(--border-color);
     box-shadow: 8px 8px 0 var(--shadow);
+    overflow: hidden;
 }
 .model-detail-content .animation-area {
     flex: 1;
@@ -1552,4 +1657,780 @@ main {
     color: var(--bg-dark) !important;
     border-color: var(--text-secondary) !important;
     box-shadow: 0 0 15px var(--text-secondary) !important;
+}
+
+/* ============================================================
+   ЖИВОЙ РЕТРО-СЛОЙ: HUD, ЧЕКПОИНТЫ, ФУТЕР, ЭФФЕКТЫ
+   ============================================================ */
+
+:root {
+    --hud-h: 34px;
+}
+@media (max-width: 700px) {
+    :root { --hud-h: 30px; }
+}
+
+#page-content { padding-top: var(--hud-h); }
+
+/* ===== ВЕРХНЯЯ HUD-ПАНЕЛЬ ===== */
+.hud {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--hud-h);
+    z-index: 9994;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 12px;
+    background: rgba(0, 0, 0, 0.94);
+    border-bottom: 2px solid var(--border-color);
+    box-shadow: 0 0 12px var(--glow), inset 0 -1px 0 rgba(255,255,255,0.08);
+    font-family: 'RetroFont', 'Courier New', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    user-select: none;
+}
+.hud-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.hud-rec {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ff4d4d;
+    text-shadow: 0 0 8px rgba(255, 77, 77, 0.8);
+}
+.rec-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff3b3b;
+    box-shadow: 0 0 8px #ff3b3b;
+    animation: recBlink 1.1s steps(2, jump-none) infinite;
+}
+@keyframes recBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.15; }
+}
+.hud-clock {
+    color: var(--text-primary);
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 6px var(--accent);
+}
+.hud-ticker {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.ticker-track {
+    display: inline-flex;
+    animation: tickerScroll 26s linear infinite;
+    will-change: transform;
+}
+.hud-ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-seg {
+    padding-right: 48px;
+    color: var(--text-secondary);
+    text-shadow: 0 0 6px var(--accent);
+}
+.ticker-seg b { color: var(--accent); font-weight: normal; }
+@keyframes tickerScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+.hud-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.hud-fps {
+    color: var(--text-secondary);
+    min-width: 58px;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+.hud-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    line-height: 1.2;
+    padding: 2px 7px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s linear;
+}
+.hud-btn:hover {
+    background: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 10px var(--accent);
+}
+@media (max-width: 700px) {
+    .hud { gap: 8px; padding: 0 8px; font-size: 0.6rem; }
+    .hud-fps { display: none; }
+    .ticker-seg { padding-right: 24px; }
+}
+
+/* ===== ГЛИТЧ ЗАГОЛОВКА ===== */
+.glitch-title {
+    position: relative;
+    display: inline-block;
+}
+.glitch-title::before,
+.glitch-title::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    pointer-events: none;
+    opacity: 0;
+    text-shadow: none;
+}
+.glitch-title::before { color: #ff2a6d; }
+.glitch-title::after { color: #05d9e8; }
+.glitch-title.glitching::before {
+    opacity: 0.85;
+    animation: glitchShiftA 0.3s steps(2) both;
+    clip-path: inset(10% 0 55% 0);
+}
+.glitch-title.glitching::after {
+    opacity: 0.85;
+    animation: glitchShiftB 0.3s steps(2) both;
+    clip-path: inset(60% 0 8% 0);
+}
+@keyframes glitchShiftA {
+    0% { transform: translate(0, 0); }
+    33% { transform: translate(-5px, 2px); }
+    66% { transform: translate(4px, -2px); }
+    100% { transform: translate(0, 0); }
+}
+@keyframes glitchShiftB {
+    0% { transform: translate(0, 0); }
+    33% { transform: translate(5px, -2px); }
+    66% { transform: translate(-4px, 2px); }
+    100% { transform: translate(0, 0); }
+}
+
+/* ===== ПАНЕЛЬ ЧЕКПОИНТОВ ===== */
+.checkpoint-panel {
+    position: relative;
+    background: var(--bg-panel);
+    border: 2px solid var(--border-color);
+    box-shadow: 6px 6px 0 var(--shadow), inset 0 0 12px var(--overlay);
+    padding: 1.2rem 1.2rem 1rem;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+.checkpoint-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.06), transparent);
+    animation: panelSweep 6s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes panelSweep {
+    0%, 65% { left: -60%; }
+    100% { left: 120%; }
+}
+.cp-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    position: relative;
+}
+.cp-badge {
+    background: var(--accent);
+    color: var(--bg-dark);
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    box-shadow: 0 0 10px var(--accent);
+    animation: badgePulse 1.4s ease-in-out infinite alternate;
+}
+@keyframes badgePulse {
+    from { box-shadow: 0 0 4px var(--accent); }
+    to { box-shadow: 0 0 16px var(--accent), 0 0 30px var(--accent); }
+}
+.cp-title {
+    font-size: 1rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin: 0;
+    font-weight: normal;
+}
+.cp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    position: relative;
+}
+.cp-card {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 1rem 0.5rem 0.8rem;
+    text-align: center;
+    overflow: hidden;
+    box-shadow: 4px 4px 0 var(--shadow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cp-card::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--accent);
+    opacity: 0.5;
+    transform: scaleX(0.3);
+    transform-origin: left;
+    animation: cpBar 2.4s ease-in-out infinite alternate;
+}
+@keyframes cpBar {
+    from { transform: scaleX(0.15); opacity: 0.35; }
+    to { transform: scaleX(1); opacity: 1; }
+}
+.cp-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--shadow), 0 0 14px var(--accent);
+}
+.cp-num {
+    display: block;
+    font-size: 2.1rem;
+    line-height: 1.1;
+    color: var(--text-primary);
+    text-shadow: 0 0 10px var(--accent), 3px 3px 0 var(--shadow);
+    font-family: 'RetroFont', monospace;
+}
+.cp-label {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+}
+.cp-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin-top: 1rem;
+    padding-top: 0.7rem;
+    border-top: 1px dashed var(--border-color);
+    font-size: 0.62rem;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    position: relative;
+}
+.cp-foot-item { animation: footBlink 3s steps(2) infinite; }
+.cp-foot-item:nth-child(2) { animation-delay: 1s; }
+.cp-foot-item:nth-child(3) { animation-delay: 2s; }
+@keyframes footBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+/* ===== РЕТРО-ФУТЕР ===== */
+#retro-footer {
+    position: relative;
+    z-index: 1;
+    margin-top: 2.5rem;
+    background: var(--bg-panel);
+    border-top: 4px solid var(--border-color);
+    box-shadow: 0 -4px 12px var(--glow);
+}
+.footer-marquee {
+    overflow: hidden;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.45rem 0;
+}
+.footer-marquee-track {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: footerScroll 30s linear infinite;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    color: var(--text-secondary);
+    text-shadow: 0 0 6px var(--accent);
+}
+.footer-marquee:hover .footer-marquee-track { animation-play-state: paused; }
+.footer-marquee-track span { padding-right: 2rem; }
+@keyframes footerScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+.footer-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem 1.5rem;
+    flex-wrap: wrap;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+}
+#footer-status { color: var(--accent); text-shadow: 0 0 8px var(--accent); }
+
+/* ===== ОВЕРЛЕИ: VHS-ШУМ, СКАНЛАЙН, ГЛИЧ-ВСПЫШКА ===== */
+#vhs-noise {
+    position: fixed;
+    inset: -20px;
+    z-index: 9990;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>");
+    animation: noiseShift 0.5s steps(4) infinite;
+    mix-blend-mode: screen;
+}
+@keyframes noiseShift {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-8px, 5px); }
+    50% { transform: translate(6px, -7px); }
+    75% { transform: translate(-5px, -4px); }
+    100% { transform: translate(7px, 6px); }
+}
+#crt-scanline {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: -160px;
+    height: 160px;
+    z-index: 9991;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.05), transparent);
+    animation: scanSweep 8s linear infinite;
+}
+@keyframes scanSweep {
+    from { transform: translateY(0); }
+    to { transform: translateY(calc(100vh + 320px)); }
+}
+#glitch-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 9992;
+    pointer-events: none;
+    opacity: 0;
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 42, 109, 0.14) 0 2px, transparent 2px 7px),
+        repeating-linear-gradient(0deg, rgba(5, 217, 232, 0.12) 0 1px, transparent 1px 5px);
+    mix-blend-mode: screen;
+}
+#glitch-flash.active {
+    animation: glitchFlick 0.35s steps(3) 1;
+}
+@keyframes glitchFlick {
+    0% { opacity: 0; transform: translateX(0); }
+    25% { opacity: 1; transform: translateX(-8px); }
+    50% { opacity: 0.3; transform: translateX(6px); }
+    75% { opacity: 0.8; transform: translateX(-4px); }
+    100% { opacity: 0; transform: translateX(0); }
+}
+
+/* ===== CRT-ВКЛЮЧЕНИЕ ===== */
+#page-content.power-on {
+    animation: powerOn 0.75s cubic-bezier(0.19, 1, 0.22, 1) 1;
+}
+@keyframes powerOn {
+    0% { transform: scaleY(0.004) scaleX(0.75); filter: brightness(8); opacity: 0.5; }
+    35% { transform: scaleY(0.03) scaleX(1); filter: brightness(4); opacity: 0.9; }
+    65% { transform: scaleY(1) scaleX(1); filter: brightness(2.2); }
+    100% { transform: none; filter: none; opacity: 1; }
+}
+
+/* ===== ПОЯВЛЕНИЕ КАРТОЧЕК + НАКЛОН ===== */
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(26px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.model-card {
+    animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--stagger, 0s);
+    transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+}
+.model-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.model-card:hover::after {
+    opacity: 1;
+    animation: borderGlowPulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes borderGlowPulse {
+    from { border-color: var(--border-color); box-shadow: inset 0 0 6px var(--border-color); }
+    50% { border-color: var(--accent); box-shadow: inset 0 0 14px var(--accent); }
+    to { border-color: var(--accent-hover); box-shadow: inset 0 0 22px var(--accent), 0 0 18px var(--accent); }
+}
+
+/* ===== ТОСТЫ-ЧЕКПОИНТЫ ===== */
+.toast-container {
+    position: fixed;
+    left: 16px;
+    bottom: 76px;
+    z-index: 9995;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 330px;
+    pointer-events: none;
+}
+.toast {
+    position: relative;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.55rem 0.8rem 0.55rem 1rem;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    line-height: 1.45;
+    box-shadow: 4px 4px 0 var(--shadow), 0 0 14px var(--glow);
+    animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.toast::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+}
+.toast-title {
+    display: block;
+    color: var(--accent);
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.15rem;
+    text-shadow: 0 0 8px var(--accent);
+}
+.toast.out { animation: toastOut 0.3s ease forwards; }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(-40px) skewX(-6deg); }
+    to { opacity: 1; transform: translateX(0) skewX(0); }
+}
+@keyframes toastOut {
+    to { opacity: 0; transform: translateX(-30px); }
+}
+
+/* ===== ПОДСВЕТКА КАРТОЧЕК ПРИ НАВЕДЕНИИ ===== */
+.cursor-pixel {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    pointer-events: none;
+    z-index: 9993;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: pixelFade 0.6s ease-out forwards;
+}
+@keyframes pixelFade {
+    from { opacity: 0.9; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.2) translateY(10px); }
+}
+
+/* ===== ДЕТАЛЬНЫЙ ЭКРАН: ОТСТУП ОТ HUD ===== */
+#detail-container { padding-top: calc(var(--hud-h) + 1.6rem); }
+
+/* Футер и шапка не должны проблёскивать за панелью модели */
+body.detail-open #retro-footer { display: none; }
+
+/* ===== УМЕНЬШЕННАЯ АНИМАЦИЯ ===== */
+@media (prefers-reduced-motion: reduce) {
+    .ticker-track,
+    .footer-marquee-track,
+    #vhs-noise,
+    #crt-scanline,
+    .checkpoint-panel::before,
+    .cp-card::after,
+    .cp-foot-item,
+    .rec-dot,
+    .cp-badge,
+    .model-card,
+    .transition-overlay.wipe,
+    .transition-overlay.wipe::after,
+    .order-btn:not(:disabled),
+    .description h2::after,
+    .gallery h2::after,
+    .cp-title::after,
+    .hud { animation: none !important; }
+    #detail-container.visible .detail-nav,
+    #detail-container.visible .model-detail-header h1,
+    #detail-container.visible .animation-area,
+    #detail-container.visible .info-area > * {
+        animation: none !important;
+        opacity: 1;
+    }
+    .transition-overlay.wipe { opacity: 0; }
+    .model-card::before { display: none; }
+}
+
+/* ===== ЭКРАННЫЙ СИСТЕМНЫЙ ЖУРНАЛ ===== */
+.console-panel {
+    position: fixed;
+    top: calc(var(--hud-h) + 10px);
+    right: 12px;
+    width: min(460px, calc(100vw - 24px));
+    max-height: 45vh;
+    z-index: 9996;
+    background: rgba(0, 0, 0, 0.96);
+    border: 2px solid var(--border-color);
+    box-shadow: 6px 6px 0 var(--shadow), 0 0 18px var(--glow);
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.console-panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.console-panel.flash {
+    animation: consoleFlash 0.8s ease 3;
+}
+@keyframes consoleFlash {
+    0%, 100% { box-shadow: 6px 6px 0 var(--shadow), 0 0 18px var(--glow); }
+    50% { box-shadow: 6px 6px 0 var(--shadow), 0 0 34px var(--accent); border-color: var(--accent-hover); }
+}
+.console-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    flex-shrink: 0;
+}
+.console-panel-title {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text-primary);
+    text-shadow: 0 0 6px var(--accent);
+}
+.console-output {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+.console-output::-webkit-scrollbar { width: 6px; }
+.console-output::-webkit-scrollbar-thumb { background: var(--border-color); }
+.clog { word-break: break-word; }
+.clog-log { color: var(--text-secondary); }
+.clog-warn { color: #ffb347; }
+.clog-error { color: #ff5f5f; text-shadow: 0 0 6px rgba(255, 80, 80, 0.6); }
+#hud .hud-btn.console-on {
+    background: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+/* ===== УЛУЧШЕННЫЕ ПЕРЕХОДЫ ===== */
+/* Плавное появление страницы вместо резкого скрытия */
+#gallery-container.hidden {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.985);
+    filter: blur(3px);
+    transition: opacity 0.3s ease, transform 0.35s ease, filter 0.35s ease;
+}
+#gallery-container:not(.hidden) {
+    transition: opacity 0.45s ease 0.1s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s, filter 0.45s ease 0.1s;
+}
+#main-header.hidden {
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: opacity 0.25s ease, transform 0.4s cubic-bezier(0.6, -0.2, 0.7, 0.2);
+}
+#main-header:not(.hidden) {
+    transition: opacity 0.4s ease 0.15s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+}
+
+/* Карточки: мягкое появление контента */
+.model-info h3, .model-info p {
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+.model-card:hover .model-info h3 {
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent);
+}
+
+/* Кнопки: отклик при нажатии */
+.order-btn:active:not(:disabled),
+.back-link:active,
+.download-button:active,
+.share-button:active,
+.pagination-btn:active:not(:disabled),
+.order-submit-btn:active,
+.tag-filter-btn:active {
+    transform: scale(0.94);
+    transition: transform 0.06s ease;
+}
+.download-button:hover, .share-button:hover, .back-link:hover {
+    transform: translateY(-2px);
+    transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Модалка рендеров: мягкое появление */
+.render-modal .modal-media-wrapper img,
+.render-modal .modal-media-wrapper video {
+    animation: mediaIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes mediaIn {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Тосты: уже есть анимация входа, добавим лёгкий выход по свайпу мыши */
+.toast { transition: opacity 0.3s ease; }
+
+/* HUD-кнопки: мягче наведение */
+.hud-btn { transition: all 0.15s ease; }
+.hud-btn:active { transform: scale(0.92); }
+
+/* Плавное свечение фокуса для доступности */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ===== СВЕТОВОЙ БЛИК (SHINE SWEEP) ===== */
+/* Блик пробегает по карточке при появлении и при наведении */
+.model-card {
+    position: relative;
+    overflow: hidden;
+}
+.model-card::before {
+    content: "";
+    position: absolute;
+    top: -60%;
+    left: -80%;
+    width: 55%;
+    height: 220%;
+    background: linear-gradient(100deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.04) 35%,
+        rgba(255, 255, 255, 0.16) 50%,
+        rgba(255, 255, 255, 0.04) 65%,
+        transparent 100%);
+    transform: rotate(14deg) translateX(-140%);
+    pointer-events: none;
+    z-index: 3;
+}
+.model-card.reveal::before,
+.model-card:hover::before {
+    animation: shineSweep 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes shineSweep {
+    from { transform: rotate(14deg) translateX(-140%); }
+    to { transform: rotate(14deg) translateX(420%); }
+}
+/* Блик по кнопкам при наведении.
+   ВАЖНО: .order-btn здесь не трогаем — у него position: absolute
+   (если перебить на relative, кнопка вернётся в поток и сдвинет заголовок) */
+.download-button, .share-button, .back-link,
+.order-submit-btn, .pagination-btn, .hud-btn, .tag-filter-btn {
+    position: relative;
+    overflow: hidden;
+}
+.order-btn { overflow: hidden; }
+.order-btn::after, .download-button::after, .share-button::after,
+.order-submit-btn::after, .pagination-btn::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -110%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(100deg,
+        transparent,
+        rgba(255, 255, 255, 0.25),
+        transparent);
+    transform: skewX(-20deg);
+    pointer-events: none;
+    transition: none;
+}
+.order-btn:hover::after, .download-button:hover::after, .share-button:hover::after,
+.order-submit-btn:hover::after, .pagination-btn:hover:not(:disabled)::after {
+    animation: btnShine 0.6s ease forwards;
+}
+@keyframes btnShine {
+    from { left: -110%; }
+    to { left: 130%; }
+}
+
+/* ===== ЖИВОЕ СВЕЧЕНИЕ ЗАГОЛОВКОВ СЕКЦИЙ ===== */
+.description h2, .gallery h2, .cp-title {
+    position: relative;
+    display: inline-block;
+}
+.description h2::after, .gallery h2::after, .cp-title::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    transform-origin: left;
+    animation: underlineGlow 3s ease-in-out infinite;
+}
+@keyframes underlineGlow {
+    0%, 100% { transform: scaleX(0.25); opacity: 0.4; }
+    50% { transform: scaleX(1); opacity: 1; }
+}
+
+/* ===== ПУЛЬСАЦИЯ КНОПКИ ЗАКАЗА (привлекает внимание) ===== */
+.order-btn:not(:disabled) {
+    animation: orderPulse 2.6s ease-in-out infinite;
+}
+@keyframes orderPulse {
+    0%, 100% { box-shadow: 3px 3px 0 var(--shadow); }
+    50% { box-shadow: 3px 3px 0 var(--shadow), 0 0 18px var(--glow); }
+}
+.order-btn:hover { animation: none; }
+
+/* ===== ПОЯВЛЕНИЕ HUD ПРИ ЗАГРУЗКЕ ===== */
+.hud {
+    animation: hudDrop 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+}
+@keyframes hudDrop {
+    from { transform: translateY(-100%); box-shadow: none; }
+    to { transform: translateY(0); }
 }

@@ -124,20 +124,25 @@
 
         const outputContainer = document.getElementById('terminal-output');
         if (outputContainer) {
-            outputContainer.innerHTML = '';
+            // Перестраиваем вывод только при ПРОПУСКЕ (частр строк ещё не набрана).
+            // При обычном завершении строки уже на экране — их пересборка вызывала резкое мигание.
+            const typedCount = outputContainer.querySelectorAll('.line').length;
             const allLines = lines.slice(0, lineIndex + 1);
-            allLines.forEach((line, idx) => {
-                const span = document.createElement('span');
-                span.className = 'line';
-                span.style.animation = 'none';
-                span.style.opacity = '1';
-                if (idx === lines.length - 1 && line.includes('_')) {
-                    span.innerHTML = line.replace('_', '') + '<span class="cursor-char">█</span>';
-                } else {
-                    span.textContent = line;
-                }
-                outputContainer.appendChild(span);
-            });
+            if (typedCount < allLines.length) {
+                outputContainer.innerHTML = '';
+                allLines.forEach((line, idx) => {
+                    const span = document.createElement('span');
+                    span.className = 'line';
+                    span.style.animation = 'none';
+                    span.style.opacity = '1';
+                    if (idx === lines.length - 1 && line.includes('_')) {
+                        span.innerHTML = line.replace('_', '') + '<span class="cursor-char">█</span>';
+                    } else {
+                        span.textContent = line;
+                    }
+                    outputContainer.appendChild(span);
+                });
+            }
             const statusElemLocal = document.getElementById('terminal-status');
             if (statusElemLocal) {
                 statusElemLocal.innerHTML = '<span class="status-text">>> СИСТЕМА ГОТОВА!</span>';
@@ -146,6 +151,7 @@
 
         setTimeout(() => {
             screen.classList.add('fade-out');
+            try { document.getElementById('page-content').classList.add('power-on'); } catch(e) {}
             setTimeout(() => {
                 screen.style.display = 'none';
                 if (typeof initApp === 'function' && !window._appStarted) {
@@ -364,12 +370,13 @@ async function fetchModels() {
         const data = await response.json();
         if (Array.isArray(data) && data.length) {
             allModels = data;
+            console.log('[GODOINED ARCHIVE] Загружено моделей:', allModels.length);
             return allModels;
         } else {
             throw new Error('Файл models_list.json пуст');
         }
     } catch(e) {
-        console.error(e);
+        console.error('[GODOINED ARCHIVE] Ошибка загрузки моделей:', e.message);
         const grid = document.getElementById('models-grid');
         if (grid) grid.innerHTML = `<div class="loading">❌ ОШИБКА ЗАГРУЗКИ</div>`;
         return [];
@@ -388,11 +395,24 @@ function shuffleArray(array) {
 function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
-        case 'random': return shuffleArray(sorted);
+        case 'random':
+            // Перемешиваем один раз на «сессию» фильтра, а не на каждый символ в поиске
+            if (!randomOrderKey || randomOrderKey !== lastFilterSignature()) {
+                cachedRandomOrder = shuffleArray(sorted.map((_, i) => i));
+                randomOrderKey = lastFilterSignature();
+            }
+            return cachedRandomOrder.map(i => sorted[i]);
         case 'name-asc': return sorted.sort((a,b) => a.displayName.localeCompare(b.displayName));
         case 'name-desc': return sorted.sort((a,b) => b.displayName.localeCompare(a.displayName));
         default: return sorted;
     }
+}
+
+let cachedRandomOrder = null;
+let randomOrderKey = null;
+function lastFilterSignature() {
+    const q = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+    return (currentFilterTag || 'all') + '|' + q;
 }
 
 function getFilteredModels() {
@@ -417,34 +437,51 @@ function getFilteredModels() {
 }
 
 function applyFilters() {
-    currentFilteredModels = getFilteredModels();
+    currentFilteredModels = sortModels(getFilteredModels(), currentSort);
     renderModelsGrid(currentFilteredModels);
 }
 
 function renderModelsGrid(models) {
     const grid = document.getElementById('models-grid');
     if (!grid) return;
+    const countEl = document.getElementById('model-count');
+    if (countEl) countEl.textContent = `Всего: ${models.length}`;
     if (!models.length) {
         grid.innerHTML = '<div class="loading">НИЧЕГО НЕ НАЙДЕНО</div>';
         updatePaginationControls(0);
         return;
     }
-    const sortedModels = sortModels(models, currentSort);
+    // Сортировка применяется заранее в applyFilters (порядок стабилен между перерисовками)
+    const sortedModels = models;
     const totalPages = Math.ceil(sortedModels.length / itemsPerPage);
     if (currentPage > totalPages) currentPage = totalPages || 1;
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const pageItems = sortedModels.slice(start, end);
     grid.innerHTML = '';
-    pageItems.forEach(model => {
+    pageItems.forEach((model, idx) => {
         const card = document.createElement('div');
-        card.className = 'model-card';
+        card.className = 'model-card reveal';
+        card.style.setProperty('--stagger', (idx * 0.06).toFixed(2) + 's');
+        setTimeout(() => card.classList.remove('reveal'), 1200 + idx * 60);
         card.addEventListener('click', () => {
             playClickSound();
             showModelDetail(model.name);
         });
         card.addEventListener('mouseenter', playHoverSound);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
+        // Лёгкий 3D-наклон карточки за курсором
+        card.addEventListener('mousemove', (e) => {
+            const r = card.getBoundingClientRect();
+            const px = (e.clientX - r.left) / r.width - 0.5;
+            const py = (e.clientY - r.top) / r.height - 0.5;
+            card.style.setProperty('--ry', (px * 8).toFixed(2) + 'deg');
+            card.style.setProperty('--rx', (-py * 8).toFixed(2) + 'deg');
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.setProperty('--ry', '0deg');
+            card.style.setProperty('--rx', '0deg');
+        });
         // Путь для превью с новой структурой
         let previewUrl = model.preview || `models/${model.name}/frames/start/0001.webp`;
         if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/frames/idle/0001.webp`;
@@ -480,7 +517,6 @@ function renderModelsGrid(models) {
         card.appendChild(info);
         grid.appendChild(card);
     });
-    document.getElementById('model-count').textContent = `Всего: ${models.length}`;
     updatePaginationControls(totalPages);
 }
 
@@ -565,7 +601,12 @@ function setupSort() {
     });
 }
 
+let particleThrottle = 0;
 function createParticles(e, card) {
+    const now = performance.now();
+    if (now - particleThrottle < 60) return;
+    particleThrottle = now;
+    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#3eff6e';
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -580,8 +621,8 @@ function createParticles(e, card) {
         particle.style.position = 'absolute';
         particle.style.width = size + 'px';
         particle.style.height = size + 'px';
-        particle.style.background = `rgba(100, 255, 100, ${Math.random() * 0.8 + 0.2})`;
-        particle.style.boxShadow = '0 0 2px #3eff6e';
+        particle.style.background = accent;
+        particle.style.boxShadow = '0 0 2px ' + accent;
         card.appendChild(particle);
         setTimeout(() => particle.remove(), 600);
     }
@@ -687,7 +728,7 @@ function parseBBCode(text) {
 
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 }
 
 function showGallery() {
@@ -706,12 +747,15 @@ function showGallery() {
             detail.classList.remove('closing');
             gallery.classList.remove('hidden');
             header.classList.remove('hidden');
+            // Футер возвращаем только ПОСЛЕ закрытия панели, иначе он всплывает поверх детального экрана
+            document.body.classList.remove('detail-open');
             document.body.style.overflow = '';
             window.scrollTo(0, 0);
         }, 400);
     } else {
         gallery.classList.remove('hidden');
         header.classList.remove('hidden');
+        document.body.classList.remove('detail-open');
         document.body.style.overflow = '';
         window.scrollTo(0, 0);
     }
@@ -982,6 +1026,10 @@ function showModelDetail(modelName) {
     const model = allModels.find(m => m.name === modelName);
     if (!model) return;
 
+    if (window.RETRO && typeof window.RETRO.recordOpen === 'function') {
+        window.RETRO.recordOpen(model.displayName);
+    }
+
     document.getElementById('detail-title').textContent = model.displayName;
     document.getElementById('model-name').innerHTML = parseBBCode(model.displayName);
     document.getElementById('model-description').innerHTML = parseBBCode(model.description).replace(/\n/g, '<br>');
@@ -1027,6 +1075,7 @@ function showModelDetail(modelName) {
 
     gallery.classList.add('hidden');
     header.classList.add('hidden');
+    document.body.classList.add('detail-open');
     detail.classList.remove('closing');
     requestAnimationFrame(() => {
         detail.classList.add('visible');
@@ -1306,78 +1355,263 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
 })();
 
 // ============================================================
-//  ШАХМАТНЫЙ ФОН (ИСПРАВЛЕННЫЙ)
+//  ФОН В СТИЛЕ DISCORD CHECKPOINT:
+//  точечная сетка + перспективная проволочная сетка + wireframe-фигуры
 // ============================================================
-(function initPulsingCheckerboard() {
+(function initCheckpointBackground() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
-    let ctx = canvas.getContext('2d');
-    const CELL_SIZE = 64;
-    const PATTERN_SIZE = CELL_SIZE * 2;
-    let offsetX = 0;
-    let offsetY = 0;
-    let time = 0;
-    let animFrame = null;
-    let patternCanvas = null;
+    const ctx = canvas.getContext('2d');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let W = 0, H = 0, animFrame = null, time = 0;
 
-    function getColors() {
+    function themeColors() {
         const style = getComputedStyle(document.body);
-        const dark = style.getPropertyValue('--checker-dark').trim() || '#000000';
-        const light = style.getPropertyValue('--checker-light').trim() || '#ffffff';
-        return { dark, light };
+        return {
+            bg: style.getPropertyValue('--bg-dark').trim() || '#050508',
+            accent: style.getPropertyValue('--accent').trim() || '#3eff6e',
+            shadow: style.getPropertyValue('--shadow').trim() || '#1a4d1a'
+        };
     }
+    let colors = themeColors();
 
-    function updatePattern() {
-        const { dark, light } = getColors();
-        patternCanvas = document.createElement('canvas');
-        patternCanvas.width = PATTERN_SIZE;
-        patternCanvas.height = PATTERN_SIZE;
-        const pCtx = patternCanvas.getContext('2d');
-        pCtx.fillStyle = dark;
-        pCtx.fillRect(0, 0, CELL_SIZE, CELL_SIZE);
-        pCtx.fillStyle = light;
-        pCtx.fillRect(CELL_SIZE, 0, CELL_SIZE, CELL_SIZE);
-        pCtx.fillRect(0, CELL_SIZE, CELL_SIZE, CELL_SIZE);
-        pCtx.fillStyle = dark;
-        pCtx.fillRect(CELL_SIZE, CELL_SIZE, CELL_SIZE, CELL_SIZE);
-    }
+    // Фон рендерится в 1/3 разрешения и растягивается браузером
+    // крупными «пикселями» (image-rendering: pixelated в CSS)
+    const RENDER_SCALE = 3;
 
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = Math.max(2, Math.ceil(W / RENDER_SCALE));
+        canvas.height = Math.max(2, Math.ceil(H / RENDER_SCALE));
+        ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+        buildDotPattern();
+    }
+
+    // ---- статичная точечная сетка (как на фоне Checkpoint) ----
+    let dotPattern = null;
+    const DOT_GAP = 16;
+    function buildDotPattern() {
+        const pc = document.createElement('canvas');
+        pc.width = DOT_GAP;
+        pc.height = DOT_GAP;
+        const p = pc.getContext('2d');
+        p.fillStyle = colors.accent;
+        p.globalAlpha = 0.10;
+        p.beginPath();
+        p.arc(DOT_GAP / 2, DOT_GAP / 2, 1.1, 0, Math.PI * 2);
+        p.fill();
+        dotPattern = ctx.createPattern(pc, 'repeat');
+    }
+
+    // ---- wireframe-фигуры ----
+    function makeShape(i, total) {
+        const kinds = ['prism', 'star', 'ring', 'cube', 'gem'];
+        return {
+            kind: kinds[i % kinds.length],
+            x: Math.random(),
+            y: Math.random(),
+            size: 40 + Math.random() * 90,
+            rot: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.006,
+            tilt: Math.random() * Math.PI * 2,
+            tiltSpeed: (Math.random() - 0.5) * 0.004,
+            driftX: (Math.random() - 0.5) * 0.00006,
+            driftY: (Math.random() - 0.5) * 0.00005,
+            alpha: 0.16 + Math.random() * 0.2
+        };
+    }
+    const shapeCount = window.innerWidth < 700 ? 5 : 9;
+    const shapes = Array.from({ length: shapeCount }, (_, i) => makeShape(i, shapeCount));
+
+    function project(x, y, z) {
+        const f = 520;
+        const scale = f / (f + z);
+        return { x: W / 2 + x * scale, y: H / 2 + y * scale, s: scale };
+    }
+
+    function drawShape(sh) {
+        const cx = (sh.x - 0.5) * W * 1.15;
+        const cy = (sh.y - 0.5) * H * 1.15;
+        const r = sh.size;
+        ctx.save();
+        ctx.strokeStyle = colors.accent;
+        ctx.globalAlpha = sh.alpha;
+        ctx.lineWidth = 1.4;
+        ctx.shadowColor = colors.accent;
+        ctx.shadowBlur = 8;
+
+        const pts3d = [];
+        const seg = 14;
+        if (sh.kind === 'ring') {
+            for (let i = 0; i <= seg; i++) {
+                const a = (i / seg) * Math.PI * 2;
+                pts3d.push([Math.cos(a) * r, Math.sin(a) * r, 0]);
+            }
+        } else if (sh.kind === 'star') {
+            for (let i = 0; i <= 10; i++) {
+                const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+                const rr = i % 2 === 0 ? r : r * 0.45;
+                pts3d.push([Math.cos(a) * rr, Math.sin(a) * rr, 0]);
+            }
+        } else if (sh.kind === 'prism') {
+            for (let i = 0; i < seg; i++) {
+                const a = (i / seg) * Math.PI * 2;
+                pts3d.push([Math.cos(a) * r, Math.sin(a) * r * 0.45, -r * 0.5]);
+            }
+            for (let i = 0; i < seg; i++) {
+                const a = (i / seg) * Math.PI * 2;
+                pts3d.push([Math.cos(a) * r, Math.sin(a) * r * 0.45, r * 0.5]);
+            }
+        } else if (sh.kind === 'cube') {
+            const v = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+            v.forEach(p => pts3d.push([p[0]*r*0.7, p[1]*r*0.7, p[2]*r*0.7]));
+            const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+            ctx.beginPath();
+            edges.forEach(e => {
+                const a = rotY(rotX(pts3d[e[0]], sh.tilt), sh.rot);
+                const b = rotY(rotX(pts3d[e[1]], sh.tilt), sh.rot);
+                const pa = project(a[0] + cx, a[1] + cy, a[2]);
+                const pb = project(b[0] + cx, b[1] + cy, b[2]);
+                ctx.moveTo(pa.x, pa.y);
+                ctx.lineTo(pb.x, pb.y);
+            });
+            ctx.stroke();
+            ctx.restore();
+            return;
+        } else { // gem
+            const top = [0, -r, 0], bot = [0, r, 0];
+            for (let i = 0; i < seg; i++) {
+                const a = (i / seg) * Math.PI * 2;
+                pts3d.push([Math.cos(a) * r * 0.8, 0, Math.sin(a) * r * 0.8]);
+            }
+            ctx.beginPath();
+            for (let i = 0; i < seg; i++) {
+                const p = rotY(rotX(pts3d[i], sh.tilt), sh.rot);
+                const t = rotY(rotX(top, sh.tilt), sh.rot);
+                const b = rotY(rotX(bot, sh.tilt), sh.rot);
+                const pp = project(p[0] + cx, p[1] + cy, p[2]);
+                const tp = project(t[0] + cx, t[1] + cy, t[2]);
+                const bp = project(b[0] + cx, b[1] + cy, b[2]);
+                ctx.moveTo(tp.x, tp.y); ctx.lineTo(pp.x, pp.y);
+                ctx.moveTo(bp.x, bp.y); ctx.lineTo(pp.x, pp.y);
+            }
+            ctx.stroke();
+            ctx.restore();
+            return;
+        }
+
+        ctx.beginPath();
+        pts3d.forEach((p3, i) => {
+            const p = rotY(rotX(p3, sh.tilt), sh.rot);
+            const pr = project(p[0] + cx, p[1] + cy, p[2]);
+            if (i === 0) ctx.moveTo(pr.x, pr.y); else ctx.lineTo(pr.x, pr.y);
+        });
+        if (sh.kind === 'ring' || sh.kind === 'star') ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function rotX(p, a) {
+        const c = Math.cos(a), s = Math.sin(a);
+        return [p[0], p[1] * c - p[2] * s, p[1] * s + p[2] * c];
+    }
+    function rotY(p, a) {
+        const c = Math.cos(a), s = Math.sin(a);
+        return [p[0] * c + p[2] * s, p[1], -p[0] * s + p[2] * c];
+    }
+
+    // ---- перспективная сетка (пол/потолок) ----
+    function drawPerspectiveGrid() {
+        const vpx = W / 2, vpy = H / 2;
+        ctx.save();
+        ctx.strokeStyle = colors.accent;
+        ctx.globalAlpha = 0.10;
+        ctx.lineWidth = 1;
+
+        // линии к точке схода
+        const rays = 22;
+        for (let i = 0; i <= rays; i++) {
+            const t = i / rays;
+            const edgeX = t * W * 2.2 - W * 0.6;
+            ctx.beginPath();
+            ctx.moveTo(vpx, vpy);
+            ctx.lineTo(edgeX, -H * 0.2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(vpx, vpy);
+            ctx.lineTo(edgeX, H * 1.2);
+            ctx.stroke();
+        }
+        // расходящиеся кольца
+        const offset = (time * 0.0004) % 1;
+        for (let i = 0; i < 12; i++) {
+            const t = (i + offset) / 12;
+            const scale = Math.pow(t, 2.4) * 1.6 + 0.02;
+            const halfW = W * scale, halfH = H * scale;
+            ctx.globalAlpha = 0.10 * Math.min(1, t * 2.2);
+            ctx.strokeRect(vpx - halfW / 2, vpy - halfH / 2, halfW, halfH);
+        }
+        ctx.restore();
     }
 
     function draw() {
-        if (!ctx || !patternCanvas) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const waveX = Math.sin(time * 0.0008) * 128;
-        const driftX = time * 0.02;
-        const totalXShift = (offsetX + waveX + driftX) % PATTERN_SIZE;
-        const waveY = Math.sin(time * 0.0009 + 1.2) * 80;
-        const driftY = time * 0.01;
-        const totalYShift = (offsetY + waveY + driftY) % PATTERN_SIZE;
-        const startX = -PATTERN_SIZE - totalXShift;
-        const endX = canvas.width + PATTERN_SIZE;
-        const startY = -PATTERN_SIZE - totalYShift;
-        const endY = canvas.height + PATTERN_SIZE;
-        for (let x = startX; x < endX; x += PATTERN_SIZE) {
-            for (let y = startY; y < endY; y += PATTERN_SIZE) {
-                ctx.drawImage(patternCanvas, x, y);
-            }
+        if (!ctx) return;
+        colors = themeColors();
+        ctx.clearRect(0, 0, W, H);
+
+        // фоновая подложка (чуть светлее чёрного, как у Checkpoint)
+        ctx.fillStyle = colors.bg;
+        ctx.globalAlpha = 0.9;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+
+        drawPerspectiveGrid();
+
+        if (dotPattern) {
+            ctx.save();
+            ctx.fillStyle = dotPattern;
+            const shiftX = (time * 0.004) % DOT_GAP;
+            ctx.translate(-shiftX, 0);
+            ctx.fillRect(0, 0, W + DOT_GAP, H);
+            ctx.restore();
         }
-        time += 8;
-        offsetX = (offsetX + 0.2) % PATTERN_SIZE;
-        offsetY = (offsetY + 0.15) % PATTERN_SIZE;
+
+        shapes.forEach(sh => {
+            drawShape(sh);
+            if (!reducedMotion) {
+                sh.rot += sh.rotSpeed;
+                sh.tilt += sh.tiltSpeed;
+                sh.x += sh.driftX;
+                sh.y += sh.driftY;
+                if (sh.x < -0.1 || sh.x > 1.1) sh.driftX *= -1;
+                if (sh.y < -0.1 || sh.y > 1.1) sh.driftY *= -1;
+            }
+        });
+
+        // мягкое свечение в центре
+        const grad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.55);
+        grad.addColorStop(0, 'rgba(255,255,255,0.03)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        time += 16;
         animFrame = requestAnimationFrame(draw);
     }
 
-    const observer = new MutationObserver(() => { updatePattern(); });
+    // пересобрать точки при смене темы
+    const observer = new MutationObserver(() => {
+        colors = themeColors();
+        buildDotPattern();
+    });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    window.addEventListener('resize', () => { resizeCanvas(); });
-    updatePattern();
+    window.addEventListener('resize', resizeCanvas);
+
     resizeCanvas();
     draw();
     window.addEventListener('beforeunload', () => { if (animFrame) cancelAnimationFrame(animFrame); });
+    console.log('[GODOINED ARCHIVE] Checkpoint-фон инициализирован (' + shapeCount + ' wireframe-фигур)');
 })();
 
 // ============================================================
@@ -1535,7 +1769,8 @@ function initApp() {
         } else {
             showGallery();
         }
-    }).catch(e => console.error(e));
+        console.log('[GODOINED ARCHIVE] Приложение инициализировано, версия ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?'));
+    }).catch(e => console.error('[GODOINED ARCHIVE] initApp:', e));
 }
 
 // ============================================================
@@ -1715,4 +1950,281 @@ function initApp() {
         mainSendBtn.disabled = false;
         mainSendBtn.textContent = '📨 ОТПРАВИТЬ ЗАЯВКУ';
     });
+})();
+
+// ============================================================
+//  ЖИВОЙ РЕТРО-СЛОЙ (HUD, ТОСТЫ, СТАТИСТИКА, ГЛИТЧИ)
+// ============================================================
+window.RETRO = (function () {
+    const LS = {
+        visits: 'retro-visits',
+        opens: 'retro-opens',
+        openedNames: 'retro-opened-names',
+        sound: 'retro-sound'
+    };
+
+    function lsGet(key, fallback) {
+        try { const v = localStorage.getItem(key); return v === null ? fallback : v; } catch (e) { return fallback; }
+    }
+    function lsSet(key, value) {
+        try { localStorage.setItem(key, String(value)); } catch (e) {}
+    }
+    function lsGetJSON(key, fallback) {
+        try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; }
+    }
+    function lsSetJSON(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    }
+
+    // ---------- ТОСТЫ ----------
+    function toast(title, text) {
+        const box = document.getElementById('toast-container');
+        if (!box) return;
+        const el = document.createElement('div');
+        el.className = 'toast';
+        const t = document.createElement('span');
+        t.className = 'toast-title';
+        t.textContent = title;
+        const b = document.createElement('span');
+        b.textContent = text;
+        el.appendChild(t);
+        el.appendChild(b);
+        box.appendChild(el);
+        while (box.children.length > 4) box.removeChild(box.firstChild);
+        setTimeout(() => {
+            el.classList.add('out');
+            setTimeout(() => el.remove(), 320);
+        }, 4200);
+    }
+
+    // ---------- ЧАСЫ / FPS / АПТАЙМ ----------
+    const clockEl = document.getElementById('hud-clock');
+    const fpsEl = document.getElementById('hud-fps');
+    const uptimeEl = document.getElementById('footer-uptime');
+    const bootTime = Date.now();
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function tickClock() {
+        const d = new Date();
+        if (clockEl) clockEl.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        if (uptimeEl) {
+            const s = Math.floor((Date.now() - bootTime) / 1000);
+            uptimeEl.textContent = 'АПТАЙМ: ' + pad(Math.floor(s / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60);
+        }
+    }
+    setInterval(tickClock, 1000);
+    tickClock();
+
+    let frames = 0, lastFpsTs = performance.now();
+    (function fpsLoop(now) {
+        frames++;
+        if (now - lastFpsTs >= 1000) {
+            if (fpsEl) fpsEl.textContent = Math.round((frames * 1000) / (now - lastFpsTs)) + ' FPS';
+            frames = 0;
+            lastFpsTs = now;
+        }
+        requestAnimationFrame(fpsLoop);
+    })(performance.now());
+
+    // ---------- ЗВУК: ПЕРЕКЛЮЧАТЕЛЬ ----------
+    const soundBtn = document.getElementById('sound-toggle');
+    function applySoundState() {
+        if (!soundBtn) return;
+        soundBtn.textContent = soundsEnabled ? '🔊' : '🔇';
+        soundBtn.title = soundsEnabled ? 'Звук: вкл (нажми, чтобы выкл)' : 'Звук: выкл (нажми, чтобы вкл)';
+    }
+    if (lsGet(LS.sound, '1') === '0') soundsEnabled = false;
+    applySoundState();
+    if (soundBtn) {
+        soundBtn.addEventListener('click', () => {
+            soundsEnabled = !soundsEnabled;
+            lsSet(LS.sound, soundsEnabled ? '1' : '0');
+            applySoundState();
+            if (soundsEnabled) { playClickSound(); toast('ЗВУК', 'Звуковые эффекты включены'); }
+            else { toast('ЗВУК', 'Звуковые эффекты выключены'); }
+            updateTicker();
+        });
+    }
+
+    // ---------- СТАТИСТИКА АРХИВА ----------
+    function archiveStats() {
+        const models = allModels.length;
+        let renders = 0, videos = 0;
+        allModels.forEach(m => {
+            renders += (m.renders || []).length;
+            videos += (m.videos || []).length;
+        });
+        return { models, renders, videos };
+    }
+
+    function animateCount(el, target) {
+        if (!el) return;
+        const start = parseInt(el.textContent, 10) || 0;
+        if (start === target) { el.textContent = target; return; }
+        const dur = 900;
+        const t0 = performance.now();
+        (function step(now) {
+            const p = Math.min(1, (now - t0) / dur);
+            const eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = Math.round(start + (target - start) * eased);
+            if (p < 1) requestAnimationFrame(step);
+        })(t0);
+    }
+
+    const LEVELS = [
+        { min: 0, name: 'НОВИЧОК' },
+        { min: 5, name: 'ИССЛЕДОВАТЕЛЬ' },
+        { min: 15, name: 'ХРАНИТЕЛЬ АРХИВА' },
+        { min: 30, name: 'ЛЕГЕНДА АРХИВА' }
+    ];
+    function levelFor(opens) {
+        let cur = LEVELS[0];
+        LEVELS.forEach(l => { if (opens >= l.min) cur = l; });
+        const next = LEVELS.find(l => l.min > opens);
+        return { name: cur.name, next };
+    }
+
+    function refreshStats() {
+        const s = archiveStats();
+        const visits = parseInt(lsGet(LS.visits, '0'), 10) || 0;
+        const opens = parseInt(lsGet(LS.opens, '0'), 10) || 0;
+        animateCount(document.getElementById('stat-models'), s.models);
+        animateCount(document.getElementById('stat-renders'), s.renders);
+        animateCount(document.getElementById('stat-videos'), s.videos);
+        animateCount(document.getElementById('stat-visits'), visits);
+        animateCount(document.getElementById('stat-opens'), opens);
+        const lvl = levelFor(opens);
+        const lvlEl = document.getElementById('cp-level');
+        const nextEl = document.getElementById('cp-next');
+        if (lvlEl) lvlEl.textContent = '>> УРОВЕНЬ: ' + lvl.name;
+        if (nextEl) {
+            nextEl.textContent = lvl.next
+                ? '>> СЛЕД. ЧЕКПОИНТ: ' + lvl.next.name + ' ЧЕРЕЗ ' + (lvl.next.min - opens)
+                : '>> ВСЕ ЧЕКПОИНТЫ ПОЛУЧЕНЫ';
+        }
+        return s;
+    }
+
+    function recordOpen(name) {
+        const opens = (parseInt(lsGet(LS.opens, '0'), 10) || 0) + 1;
+        lsSet(LS.opens, opens);
+        let names = lsGetJSON(LS.openedNames, []);
+        const isNew = !names.includes(name);
+        if (isNew) { names.push(name); lsSetJSON(LS.openedNames, names); }
+        refreshStats();
+        const s = archiveStats();
+        if (opens === 1) {
+            toast('CHECKPOINT #1', 'Первое открытие модели — архив изучается!');
+        } else if (isNew && names.length >= s.models && s.models > 0) {
+            toast('ДОСТИЖЕНИЕ', 'Все модели архива просмотрены! Ты хранитель.');
+        } else if (opens % 10 === 0) {
+            toast('CHECKPOINT #' + opens, 'Моделей открыто: ' + opens + '. Продолжай в том же духе!');
+        }
+    }
+
+    // ---------- БЕГУЩАЯ СТРОКА ----------
+    const tickerTrack = document.getElementById('ticker-track');
+    function updateTicker() {
+        if (!tickerTrack) return;
+        const s = archiveStats();
+        const visits = lsGet(LS.visits, '0');
+        const sound = soundsEnabled ? 'ЗВУК ВКЛ' : 'ЗВУК ВЫКЛ';
+        const msg = 'АРХИВ 3D МОДЕЛЕЙ // В АРХИВЕ ' + s.models + ' МОДЕЛЕЙ, ' + s.renders + ' РЕНДЕРОВ И ' +
+            s.videos + ' ВИДЕО // ТЫ ЗДЕСЬ БЫЛ ' + visits + ' РАЗ // ' + sound + ' // НОВЫЕ МОДЕЛИ ДОБАВЛЯЮТСЯ // ';
+        tickerTrack.innerHTML = '';
+        for (let i = 0; i < 2; i++) {
+            const seg = document.createElement('span');
+            seg.className = 'ticker-seg';
+            seg.textContent = msg;
+            tickerTrack.appendChild(seg);
+        }
+    }
+
+    // ---------- ВИЗИТЫ ----------
+    const visits = (parseInt(lsGet(LS.visits, '0'), 10) || 0) + 1;
+    lsSet(LS.visits, visits);
+
+    // ---------- ЭКРАННЫЙ ЖУРНАЛ ----------
+    const consolePanel = document.getElementById('console-panel');
+    const consoleToggle = document.getElementById('console-toggle');
+    const consoleClose = document.getElementById('console-close');
+    function setConsoleVisible(visible) {
+        if (!consolePanel) return;
+        consolePanel.classList.toggle('visible', visible);
+        if (consoleToggle) consoleToggle.classList.toggle('console-on', visible);
+        if (visible && typeof window.__CONSOLE_RENDER__ === 'function') window.__CONSOLE_RENDER__();
+    }
+    if (consoleToggle) {
+        consoleToggle.addEventListener('click', () => {
+            playClickSound();
+            setConsoleVisible(!consolePanel.classList.contains('visible'));
+        });
+    }
+    if (consoleClose) consoleClose.addEventListener('click', () => setConsoleVisible(false));
+    // Если на старте уже были ошибки — журнал открыт сам (класс flash ставит диагностика)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '`' || e.key === 'ё' || e.key === '~') {
+            if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+            e.preventDefault();
+            playClickSound();
+            setConsoleVisible(!consolePanel.classList.contains('visible'));
+        }
+        if (e.key === 'Escape' && consolePanel && consolePanel.classList.contains('visible')) {
+            setConsoleVisible(false);
+        }
+    });
+
+    // ---------- ГЛИТЧИ ----------
+    const glitchEl = document.querySelector('.glitch-title');
+    const flashEl = document.getElementById('glitch-flash');
+    function randomGlitch() {
+        if (glitchEl) {
+            glitchEl.classList.add('glitching');
+            setTimeout(() => glitchEl.classList.remove('glitching'), 320);
+        }
+        if (flashEl && Math.random() < 0.6) {
+            flashEl.classList.add('active');
+            setTimeout(() => flashEl.classList.remove('active'), 380);
+        }
+        setTimeout(randomGlitch, 4000 + Math.random() * 7000);
+    }
+    setTimeout(randomGlitch, 3000);
+
+    // ---------- ПИКСЕЛЬНЫЙ СЛЕД КУРСОРА ----------
+    let lastPixel = 0;
+    document.addEventListener('mousemove', (e) => {
+        const now = performance.now();
+        if (now - lastPixel < 70) return;
+        lastPixel = now;
+        const p = document.createElement('div');
+        p.className = 'cursor-pixel';
+        p.style.left = (e.clientX - 3) + 'px';
+        p.style.top = (e.clientY - 3) + 'px';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 620);
+    }, { passive: true });
+
+    // ---------- ИНИЦИАЛИЗАЦИЯ ПОСЛЕ ЗАГРУЗКИ МОДЕЛЕЙ ----------
+    function onReady() {
+        refreshStats();
+        updateTicker();
+        toast('АРХИВ ЗАГРУЖЕН', 'В системе ' + allModels.length + ' моделей. Осмотрись!');
+    }
+    let readyFired = false;
+    let readyAttempts = 0;
+    (function waitModels() {
+        if (allModels.length > 0) {
+            if (!readyFired) { readyFired = true; onReady(); }
+        } else if (readyAttempts++ < 40) {
+            setTimeout(waitModels, 400);
+        } else {
+            console.warn('[GODOINED ARCHIVE] Модели не загрузились — панель статистики останется пустой');
+        }
+    })();
+
+    const verEl = document.getElementById('footer-version');
+    if (verEl && typeof APP_VERSION !== 'undefined') verEl.textContent = 'ВЕРСИЯ: ' + APP_VERSION;
+
+    return { toast, refreshStats, recordOpen, updateTicker };
 })();
