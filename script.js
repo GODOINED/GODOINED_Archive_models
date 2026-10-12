@@ -390,13 +390,141 @@ function playSound(freq, duration, type = 'square', volume = 0.12) {
 }
 
 function playClickSound() { playSound(880, 0.08, 'square', 0.10); }
-function playBackSound() { playSound(660, 0.1, 'sine', 0.08); }
 function playShareSound() { playSound(1200, 0.06, 'square', 0.06); }
 
-function playDownloadSound() {
-    playSound(580, 0.12, 'square', 0.10);
+// ---- СИНТЕЗ РЕТРО-ПОСЛЕДОВАТЕЛЬНОСТЕЙ ----
+// Проигрывает массив нот [{f, d, t, v}] с задержкой startDelay.
+// Нота — частота, длительность, тип осциллятора, громкость.
+function playSequence(notes, startDelay = 0) {
+    if (!soundsEnabled) return;
     const ctx = initAudioContext();
-    if (!ctx || ctx.state === 'suspended') return;
+    if (!ctx) return;
+    if (ctx.state !== 'running') {
+        ctx.resume().then(() => {
+            if (ctx.state === 'running' && soundsEnabled) playSequence(notes, startDelay);
+        }).catch(() => {});
+        return;
+    }
+    let offset = startDelay;
+    notes.forEach(n => {
+        const when = ctx.currentTime + offset;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = n.t || 'square';
+        osc.frequency.setValueAtTime(n.f, when);
+        if (n.glide) {
+            // плавный перелёт частоты (для «приветствия» и «загрузки»)
+            osc.frequency.exponentialRampToValueAtTime(n.glide, when + n.d);
+        }
+        gain.gain.setValueAtTime(n.v || 0.08, when);
+        gain.gain.exponentialRampToValueAtTime(0.00001, when + n.d);
+        osc.start(when);
+        osc.stop(when + n.d + 0.02);
+        offset += n.gap !== undefined ? n.gap : n.d;
+    });
+}
+
+// Открытие модели: восходящее арпеджио «доступ разрешён»
+function playOpenSound() {
+    playSequence([
+        { f: 523, d: 0.07, t: 'square', v: 0.07, gap: 0.06 },
+        { f: 659, d: 0.07, t: 'square', v: 0.07, gap: 0.06 },
+        { f: 784, d: 0.09, t: 'square', v: 0.08, gap: 0.07 },
+        { f: 1047, d: 0.14, t: 'triangle', v: 0.09 }
+    ]);
+}
+
+// Возврат в галерею: нисходящее арпеджио «закрытие меню»
+function playBackSound() {
+    playSequence([
+        { f: 784, d: 0.06, t: 'square', v: 0.06, gap: 0.05 },
+        { f: 587, d: 0.06, t: 'square', v: 0.06, gap: 0.05 },
+        { f: 440, d: 0.12, t: 'triangle', v: 0.07 }
+    ]);
+}
+
+// Чекпоинт/достижение: маленькая фанфара
+function playAchievementSound() {
+    playSequence([
+        { f: 659, d: 0.08, t: 'square', v: 0.07, gap: 0.09 },
+        { f: 659, d: 0.08, t: 'square', v: 0.07, gap: 0.09 },
+        { f: 784, d: 0.08, t: 'square', v: 0.08, gap: 0.09 },
+        { f: 1047, d: 0.22, t: 'square', v: 0.09 },
+        { f: 1319, d: 0.26, t: 'triangle', v: 0.08 }
+    ]);
+}
+
+// ---- ИНТЕРФЕЙСНЫЕ ЗВУКИ ----
+
+// Тихий одиночный «пик» (пи-пик) — база для мелких реакций интерфейса
+function playBlip(freq = 900, vol = 0.04) {
+    playSound(freq, 0.05, 'square', vol);
+}
+
+// Послойное появление панели модели: цепочка тихих пиков,
+// синхронизирована с задержками анимации слоёв
+function playLayerTicks() {
+    if (!soundsEnabled) return;
+    const delays = [150, 350, 400, 480, 560, 640]; // мс, как в CSS-задержках слоёв
+    const freqs = [740, 880, 980, 1080, 1180, 1280];
+    delays.forEach((ms, i) => {
+        setTimeout(() => playBlip(freqs[i], 0.028), ms);
+    });
+}
+
+// Открытие модалки (рендеры/видео): восходящий «бип-бип»
+function playModalOpenSound() {
+    playSequence([
+        { f: 660, d: 0.06, t: 'square', v: 0.05, gap: 0.06 },
+        { f: 990, d: 0.1, t: 'square', v: 0.06 }
+    ]);
+}
+
+// Закрытие модалки: нисходящий «бип-бип»
+function playModalCloseSound() {
+    playSequence([
+        { f: 990, d: 0.06, t: 'square', v: 0.05, gap: 0.06 },
+        { f: 660, d: 0.1, t: 'square', v: 0.06 }
+    ]);
+}
+
+// Уведомление-тост: короткий двойной щелчок
+function playToastSound() {
+    playSequence([
+        { f: 1100, d: 0.045, t: 'triangle', v: 0.045, gap: 0.09 },
+        { f: 1400, d: 0.08, t: 'triangle', v: 0.05 }
+    ]);
+}
+
+// Набор в поиске: едва слышный тик (троттлинг внутри)
+let lastSearchTick = 0;
+function playSearchTick() {
+    const now = performance.now();
+    if (now - lastSearchTick < 70) return;
+    lastSearchTick = now;
+    playBlip(1500 + Math.random() * 200, 0.018);
+}
+
+// Смена темы: мягкий свип вверх (фильтр+осциллятор через glide)
+function playThemeSwitchSound() {
+    playSequence([
+        { f: 400, glide: 1200, d: 0.25, t: 'sine', v: 0.05 },
+        { f: 1200, d: 0.12, t: 'triangle', v: 0.04 }
+    ]);
+}
+
+function playDownloadSound() {
+    // Классическая «передача данных»: пилообразный перелёт вниз + писк в конце
+    playSequence([
+        { f: 980, glide: 220, d: 0.5, t: 'sawtooth', v: 0.05 },
+        { f: 440, d: 0.06, t: 'square', v: 0.07, gap: 0.05 },
+        { f: 880, d: 0.06, t: 'square', v: 0.07, gap: 0.05 },
+        { f: 1320, d: 0.16, t: 'triangle', v: 0.09 }
+    ], 0.05);
+    const ctx = initAudioContext();
+    if (!ctx || ctx.state !== 'running') return;
     const now = ctx.currentTime;
     const bufferSize = 512;
     const noise = ctx.createScriptProcessor(bufferSize, 1, 1);
@@ -407,9 +535,9 @@ function playDownloadSound() {
     const noiseGain = ctx.createGain();
     noise.connect(noiseGain);
     noiseGain.connect(ctx.destination);
-    noiseGain.gain.setValueAtTime(0.08, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.08);
-    setTimeout(() => noise.disconnect(), 100);
+    noiseGain.gain.setValueAtTime(0.06, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.12);
+    setTimeout(() => noise.disconnect(), 140);
 }
 
 function playHoverSound() { playSound(660, 0.08, 'sine', 0.05); }
@@ -555,7 +683,7 @@ function renderModelsGrid(models) {
         card.style.setProperty('--stagger', (idx * 0.06).toFixed(2) + 's');
         setTimeout(() => card.classList.remove('reveal'), 1200 + idx * 60);
         card.addEventListener('click', () => {
-            playClickSound();
+            playOpenSound();
             showModelDetail(model.name);
         });
         card.addEventListener('mouseenter', playHoverSound);
@@ -622,11 +750,27 @@ function updatePaginationControls(totalPages) {
 
 function setupPagination() {
     document.getElementById('prev-page')?.addEventListener('click', () => {
-        if (currentPage > 1) { currentPage--; applyFilters(); }
+        if (currentPage > 1) {
+            currentPage--;
+            applyFilters();
+            // «перелистывание» назад — нисходящий щелчок
+            playSequence([
+                { f: 700, d: 0.05, t: 'square', v: 0.05, gap: 0.05 },
+                { f: 500, d: 0.08, t: 'square', v: 0.05 }
+            ]);
+        }
     });
     document.getElementById('next-page')?.addEventListener('click', () => {
         const total = Math.ceil(getFilteredModels().length / itemsPerPage);
-        if (currentPage < total) { currentPage++; applyFilters(); }
+        if (currentPage < total) {
+            currentPage++;
+            applyFilters();
+            // «перелистывание» вперёд — восходящий щелчок
+            playSequence([
+                { f: 500, d: 0.05, t: 'square', v: 0.05, gap: 0.05 },
+                { f: 700, d: 0.08, t: 'square', v: 0.05 }
+            ]);
+        }
     });
 }
 
@@ -672,7 +816,10 @@ function setupSearch() {
         currentPage = 1;
         applyFilters();
     };
-    searchInput.addEventListener('input', filter);
+    searchInput.addEventListener('input', () => {
+        playSearchTick();
+        filter();
+    });
     if (clearBtn) clearBtn.addEventListener('click', () => {
         searchInput.value = '';
         filter();
@@ -879,6 +1026,7 @@ function openModal(mediaArray, startIndex = 0) {
     const nextBtn = document.getElementById('modal-next');
 
     if (!modal) return;
+    playModalOpenSound();
     modal.style.display = 'flex';
     requestAnimationFrame(() => {
         modal.classList.add('active');
@@ -894,6 +1042,7 @@ function openModal(mediaArray, startIndex = 0) {
 function closeModal() {
     const modal = document.getElementById('render-modal');
     if (!modal) return;
+    if (modalIsOpen) playModalCloseSound();
     modal.classList.remove('active');
     modalIsOpen = false;
     if (currentVideoElement) {
@@ -1172,6 +1321,8 @@ function showModelDetail(modelName) {
         document.body.style.overflow = 'hidden';
         window.scrollTo(0, 0);
     });
+    // тихая цепочка пиков под слои панели (вызывается и при открытии по ссылке)
+    playLayerTicks();
 
     // ===== ГАЛЕРЕЯ РЕНДЕРОВ =====
     const renders = model.renders || [];
@@ -1494,25 +1645,61 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         dotPattern = ctx.createPattern(pc, 'repeat');
     }
 
-    // ---- wireframe-фигуры ----
+    // ---- wireframe-фигуры (вылетают из «портала» в центре) ----
     function makeShape(i, total) {
-        const kinds = ['prism', 'star', 'ring', 'cube', 'gem'];
+        const kinds = ['prism', 'star', 'ring', 'cube', 'gem', 'blender'];
+        const kind = kinds[i % kinds.length];
         return {
-            kind: kinds[i % kinds.length],
-            x: Math.random(),
-            y: Math.random(),
-            size: 40 + Math.random() * 90,
+            kind: kind,
+            // направление полёта из центра и текущая дистанция (0 = центр, 1 = край)
+            angle: Math.random() * Math.PI * 2,
+            dist: Math.random(),                       // стартуем в разных точках траектории
+            speed: 0.00016 + Math.random() * 0.00022,   // насколько быстро удаляется от центра
+            // логотип Blender делаем чуть крупнее, чтобы читался
+            size: kind === 'blender' ? (70 + Math.random() * 60) : (40 + Math.random() * 90),
             rot: Math.random() * Math.PI * 2,
             rotSpeed: (Math.random() - 0.5) * 0.006,
             tilt: Math.random() * Math.PI * 2,
             tiltSpeed: (Math.random() - 0.5) * 0.004,
-            driftX: (Math.random() - 0.5) * 0.00006,
-            driftY: (Math.random() - 0.5) * 0.00005,
+            wobble: Math.random() * Math.PI * 2,        // лёгкое боковое покачивание
+            wobbleSpeed: 0.0006 + Math.random() * 0.0008,
             alpha: 0.16 + Math.random() * 0.2
         };
     }
     const shapeCount = window.innerWidth < 700 ? 5 : 9;
     const shapes = Array.from({ length: shapeCount }, (_, i) => makeShape(i, shapeCount));
+
+    // Обновление «полёта из портала»: фигура рождается в центре мелкой,
+    // разлетается наружу, растёт (перспектива) и тает у края, затем respawn.
+    function updatePortalFlight(sh) {
+        sh.dist += sh.speed;
+        sh.wobble += sh.wobbleSpeed;
+        sh.rot += sh.rotSpeed;
+        sh.tilt += sh.tiltSpeed;
+        if (sh.dist >= 1) {
+            // вылетела за край — «перерождаем» из центра в новом направлении
+            sh.dist = 0;
+            sh.angle = Math.random() * Math.PI * 2;
+            sh.speed = 0.00016 + Math.random() * 0.00022;
+        }
+        // небольшое боковое покачивание, добавляемое к радиальному направлению
+        const wob = Math.sin(sh.wobble) * 0.06;
+        const d = sh.dist * 0.75 + wob * sh.dist;
+        sh.x = 0.5 + Math.cos(sh.angle) * d;
+        sh.y = 0.5 + Math.sin(sh.angle) * d;
+        // перспектива: ближе к краю — крупнее; затухание у края
+        sh.scale = 0.25 + sh.dist * 1.35;
+        sh.fade = sh.dist < 0.12
+            ? sh.dist / 0.12                       // появляется: 0 -> 1
+            : (sh.dist > 0.82 ? (1 - sh.dist) / 0.18 : 1); // тает: 1 -> 0
+    }
+
+    // Первичная инициализация координат, чтобы фигуры не стояли кучей в центре
+    shapes.forEach(sh => {
+        updatePortalFlight(sh);
+        sh.dist = 0.05 + Math.random() * 0.9;
+        updatePortalFlight(sh);
+    });
 
     function project(x, y, z) {
         const f = 520;
@@ -1523,17 +1710,24 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
     function drawShape(sh) {
         const cx = (sh.x - 0.5) * W * 1.15;
         const cy = (sh.y - 0.5) * H * 1.15;
-        const r = sh.size;
+        const r = sh.size * (sh.scale || 1);
+        const alpha = sh.alpha * (sh.fade !== undefined ? sh.fade : 1);
+        if (alpha <= 0.01) return;
         ctx.save();
         ctx.strokeStyle = colors.accent;
-        ctx.globalAlpha = sh.alpha;
+        ctx.globalAlpha = alpha;
         ctx.lineWidth = 1.4;
         ctx.shadowColor = colors.accent;
         ctx.shadowBlur = 8;
 
         const pts3d = [];
         const seg = 14;
-        if (sh.kind === 'ring') {
+        if (sh.kind === 'blender') {
+            // логотип Blender — рисуем сразу в экранных координатах центра фигуры
+            drawBlenderLogo(W / 2 + cx, H / 2 + cy, r, sh.rot, alpha);
+            ctx.restore();
+            return;
+        } else if (sh.kind === 'ring') {
             for (let i = 0; i <= seg; i++) {
                 const a = (i / seg) * Math.PI * 2;
                 pts3d.push([Math.cos(a) * r, Math.sin(a) * r, 0]);
@@ -1611,6 +1805,73 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         return [p[0] * c + p[2] * s, p[1], -p[0] * s + p[2] * c];
     }
 
+    // ---- ПЛАВАЮЩИЙ ЛОГОТИП BLENDER ----
+    // Точная геометрия знака (по референсу):
+    //  - толстое кольцо-тело (круг) справа;
+    //  - внутри него глаз: белый круг + зрачок;
+    //  - сверху острый «пик» (как горный вершиной вверх);
+    //  - от пика влево горизонтальный «клюв»;
+    //  - из-под клюва вниз-влево длинный загнутый хвост, сужающийся к концу.
+    // Рисуется контуром (wireframe) в цвете темы.
+    function drawBlenderLogo(cx, cy, r, rot, alpha) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rot * 0.25); // лёгкий наклон при вращении фигуры
+        ctx.strokeStyle = colors.accent;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.shadowColor = colors.accent;
+        ctx.shadowBlur = 6;
+        ctx.globalAlpha = alpha;
+
+        const bodyX = 0.1 * r, bodyY = 0.15 * r;   // центр тела
+        const bodyR = 0.5 * r;                       // радиус тела
+
+        // тело (круг)
+        ctx.beginPath();
+        ctx.arc(bodyX, bodyY, bodyR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // глаз (круг внутри тела)
+        ctx.beginPath();
+        ctx.arc(0.18 * r, 0.12 * r, 0.26 * r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // зрачок — залитая точка
+        ctx.beginPath();
+        ctx.arc(0.2 * r, 0.1 * r, 0.18 * r, 0, Math.PI * 2);
+        ctx.fillStyle = colors.accent;
+        ctx.globalAlpha = alpha * 0.45;
+        ctx.fill();
+        ctx.globalAlpha = alpha;
+
+        // острый пик сверху: от клюва вверх к вершине и вниз-вправо к телу
+        ctx.beginPath();
+        ctx.moveTo(-0.4 * r, -0.2 * r);   // левое основание пика (клюв)
+        ctx.lineTo(0.02 * r, -0.75 * r);  // вершина
+        ctx.lineTo(0.48 * r, -0.28 * r);  // правый склон, смыкается с телом
+        ctx.stroke();
+
+        // горизонтальный «клюв» влево
+        ctx.beginPath();
+        ctx.moveTo(-0.4 * r, -0.24 * r);
+        ctx.lineTo(-0.58 * r, -0.24 * r);
+        ctx.stroke();
+
+        // длинный хвост: от основания пика вниз-влево, сужаясь
+        ctx.beginPath();
+        ctx.moveTo(-0.32 * r, -0.08 * r);
+        ctx.quadraticCurveTo(-0.78 * r, 0.18 * r, -0.66 * r, 0.55 * r);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-0.46 * r, -0.02 * r);
+        ctx.quadraticCurveTo(-0.66 * r, 0.22 * r, -0.66 * r, 0.55 * r);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
     // ---- перспективная сетка (пол/потолок) ----
     function drawPerspectiveGrid() {
         const vpx = W / 2, vpy = H / 2;
@@ -1669,14 +1930,7 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
 
         shapes.forEach(sh => {
             drawShape(sh);
-            if (!reducedMotion) {
-                sh.rot += sh.rotSpeed;
-                sh.tilt += sh.tiltSpeed;
-                sh.x += sh.driftX;
-                sh.y += sh.driftY;
-                if (sh.x < -0.1 || sh.x > 1.1) sh.driftX *= -1;
-                if (sh.y < -0.1 || sh.y > 1.1) sh.driftY *= -1;
-            }
+            if (!reducedMotion) updatePortalFlight(sh);
         });
 
         // мягкое свечение в центре
@@ -1725,7 +1979,7 @@ function applyTheme(theme) {
 
 document.querySelectorAll('.theme-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-        playClickSound();
+        playThemeSwitchSound();
         applyTheme(e.target.dataset.theme);
     });
 });
@@ -2080,6 +2334,7 @@ window.RETRO = (function () {
         el.appendChild(t);
         el.appendChild(b);
         box.appendChild(el);
+        playToastSound();
         while (box.children.length > 4) box.removeChild(box.firstChild);
         setTimeout(() => {
             el.classList.add('out');
@@ -2204,12 +2459,18 @@ window.RETRO = (function () {
         if (isNew) { names.push(name); lsSetJSON(LS.openedNames, names); }
         refreshStats();
         const s = archiveStats();
+        // Фанфара достижения звучит с лёгкой паузой, чтобы не накладывалась
+        // на арпеджио открытия модели
+        const fanfare = () => { if (typeof playAchievementSound === 'function') playAchievementSound(); };
         if (opens === 1) {
             toast('CHECKPOINT #1', 'Первое открытие модели — архив изучается!');
+            setTimeout(fanfare, 350);
         } else if (isNew && names.length >= s.models && s.models > 0) {
             toast('ДОСТИЖЕНИЕ', 'Все модели архива просмотрены! Ты хранитель.');
+            setTimeout(fanfare, 350);
         } else if (opens % 10 === 0) {
             toast('CHECKPOINT #' + opens, 'Моделей открыто: ' + opens + '. Продолжай в том же духе!');
+            setTimeout(fanfare, 350);
         }
     }
 
@@ -2317,4 +2578,103 @@ window.RETRO = (function () {
     if (verEl && typeof APP_VERSION !== 'undefined') verEl.textContent = 'ВЕРСИЯ: ' + APP_VERSION;
 
     return { toast, refreshStats, recordOpen, updateTicker };
+})();
+
+// ============================================================
+//  HOT RELOAD: сайт сам следит за своими файлами и перезагружается
+//  при их изменении — без Ctrl+R. Проверяет содержимое исходников
+//  каждые пару секунд и дёргает location.reload() при расхождении.
+// ============================================================
+(function initHotReload() {
+    const FILES = ['index.html', 'style.css', 'script.js', 'models_list.json', 'version.js'];
+    const CHECK_MS = 2500;
+    let baseline = null;
+    let checking = false;
+
+    // ---- ГДЕ ВКЛЮЧЕН HOT-RELOAD ----
+    // Локально (localhost / 127.0.0.1 / file://) — всегда, это среда разработки.
+    // На проде (GitHub Pages и т.п.) — по умолчанию ВЫКЛЮЧЕН, чтобы не слать
+    // лишние запросы за каждым посетителем. Вручную включить: добавь ?dev
+    // в адрес (например https://site.ru/?dev).
+    const host = location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '' || location.protocol === 'file:';
+    const devOverride = /(?:\?|&)dev(?:[=&]|$)/.test(location.search);
+    if (!isLocal && !devOverride) {
+        console.log('[GODOINED ARCHIVE] Hot-reload выключен на проде (включить: ?dev в адресе)');
+        return;
+    }
+
+    // Хэш-сигнатура содержимого (FNV-1a): дёшево и достаточно для сравнения
+    function hashText(str) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = (h * 0x01000193) >>> 0;
+        }
+        return h.toString(16);
+    }
+
+    async function snapshot() {
+        const parts = [];
+        for (const file of FILES) {
+            try {
+                // cache: 'no-store' — всегда свежая копия с сервера
+                const res = await fetch(file + '?_t=' + Date.now(), { cache: 'no-store' });
+                parts.push(file + ':' + (res.ok ? hashText(await res.text()) : 'ERR' + res.status));
+            } catch (e) {
+                // file:// или сеть недоступны — фиксируем как неизменность
+                parts.push(file + ':NA');
+            }
+        }
+        return parts.join('|');
+    }
+
+    async function check() {
+        if (checking) return;
+        checking = true;
+        try {
+            const snap = await snapshot();
+            if (baseline === null) {
+                baseline = snap;
+            } else if (snap !== baseline) {
+                console.log('[GODOINED ARCHIVE] Обнаружены изменения в файлах — перезагрузка...');
+                if (window.RETRO && window.RETRO.toast) {
+                    window.RETRO.toast('ОБНОВЛЕНИЕ', 'Файлы изменились — страница перезагружается...');
+                }
+                // даём тосту мелькнуть, затем перезагружаем
+                setTimeout(() => location.reload(), 600);
+                return;
+            }
+        } catch (e) {
+            // тихо игнорируем сбои проверки — не мешаем работе сайта
+        } finally {
+            checking = false;
+        }
+    }
+
+    // Не мешаем, если открыта модалка или идёт ввод — перезагрузимся позже
+    function busy() {
+        const modal = document.getElementById('render-modal');
+        const order = document.getElementById('order-modal');
+        const active = document.activeElement;
+        const typing = active && /INPUT|TEXTAREA|SELECT/.test(active.tagName);
+        return (modal && modal.style.display === 'flex') ||
+               (order && order.style.display === 'flex') || typing;
+    }
+
+    async function tick() {
+        if (!busy()) await check();
+        setTimeout(tick, CHECK_MS);
+    }
+    setTimeout(tick, CHECK_MS);
+
+    // горячая клавиша: Ctrl+Alt+R — принудительная перезагрузка
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.altKey && (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К')) {
+            e.preventDefault();
+            location.reload();
+        }
+    });
+
+    console.log('[GODOINED ARCHIVE] Hot-reload активен: проверка каждые ' + (CHECK_MS / 1000) + 'с (Ctrl+Alt+R — принудительно)');
 })();
