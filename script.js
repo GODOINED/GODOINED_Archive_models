@@ -108,6 +108,68 @@
 
     setTimeout(initFanSound, 300);
 
+    // ---- ЗАПУСК ПОСЛЕ ЖЕСТА ----
+    // Браузеры запрещают аудио до первого клика/клавиши, поэтому загрузка
+    // ждёт «НАЖМИ ЧТОБЫ ЗАПУСТИТЬ» — жест разблокирует звук, и все
+    // эффекты (вентилятор, набор текста, старт-ап) звучат сразу.
+    let bootStarted = false;
+    let justStartedUntil = 0;
+
+    function showStartPrompt() {
+        if (!output) return;
+        output.innerHTML = '';
+        const span = document.createElement('span');
+        span.className = 'line';
+        span.style.opacity = '1';
+        span.innerHTML = '> СИСТЕМА ГОТОВА К ЗАПУСКУ... НАЖМИ ЛЮБУЮ КЛАВИШУ ИЛИ КЛИКНИ, ЧТОБЫ ЗАПУСТИТЬ И ВКЛЮЧИТЬ ЗВУК <span class="cursor-char">█</span>';
+        output.appendChild(span);
+        if (statusElem) {
+            statusElem.innerHTML = '<span class="status-text">>> НАЖМИ ЧТОБЫ ЗАПУСТИТЬ</span>';
+        }
+    }
+
+    function beginBoot(e) {
+        if (bootStarted) return;
+        if (e.type === 'keydown' && (e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift' || e.key === 'Meta')) return;
+        bootStarted = true;
+        justStartedUntil = Date.now() + 400;
+        document.removeEventListener('pointerdown', beginBoot);
+        document.removeEventListener('keydown', beginBoot);
+        document.removeEventListener('touchstart', beginBoot);
+        // жест уже произошёл — разблокируем всё аудио сразу
+        try { window.__retroUnlockAudio(); } catch (err) {}
+        initFanSound();
+        if (output) output.innerHTML = '';
+        updateStatus();
+        typeTimer = setTimeout(typeLine, 250);
+    }
+
+    showStartPrompt();
+    ['pointerdown', 'keydown', 'touchstart'].forEach(evt => document.addEventListener(evt, beginBoot));
+
+    // ---- РАЗБЛОКИРОВКА ЗВУКА ПРИ ПЕРВОМ ЖЕСТЕ ----
+    // Браузеры запрещают аудио до клика/клавиши/тапа. Регистрируем
+    // слушатели сразу и разблокируем все контексты + отложенный старт-ап.
+    let pendingStartupAudio = null;
+    window.__retroUnlockAudio = function() {
+        try {
+            if (fanAudioCtx && fanAudioCtx.state === 'suspended') fanAudioCtx.resume().catch(function() {});
+        } catch (e) {}
+        try {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(function() {});
+        } catch (e) {}
+        if (pendingStartupAudio) {
+            var a = pendingStartupAudio;
+            pendingStartupAudio = null;
+            a.play().catch(function() { pendingStartupAudio = a; });
+        }
+    };
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function(evt) {
+        document.addEventListener(evt, window.__retroUnlockAudio);
+    });
+    // Воспроизвести старт-ап «в момент жеста», если он был заблокирован
+    window.__retroPlayStartupQueued = function() { return pendingStartupAudio; };
+
     function finishTerminal() {
         if (isTerminalFinished) return;
         isTerminalFinished = true;
@@ -152,6 +214,7 @@
         setTimeout(() => {
             screen.classList.add('fade-out');
             try { document.getElementById('page-content').classList.add('power-on'); } catch(e) {}
+            playStartupSound();
             setTimeout(() => {
                 screen.style.display = 'none';
                 if (typeof initApp === 'function' && !window._appStarted) {
@@ -162,10 +225,30 @@
         }, 500);
     }
 
+    // Старт-ап звук включения (Mac Quadra) в момент CRT-включения экрана.
+    // Если браузер ещё не разрешил аудио (не было клика) — ставим в очередь
+    // и он прозвучит при первом же жесте пользователя.
+    function playStartupSound() {
+        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
+        try {
+            const audio = new Audio('sounds/StartupMacQuadraAV.wav');
+            audio.volume = 0.55;
+            const p = audio.play();
+            if (p && typeof p.catch === 'function') {
+                p.catch(() => {
+                    // автоплей заблокирован — воспроизведём при первом жесте
+                    pendingStartupAudio = audio;
+                });
+            }
+        } catch (e) {}
+    }
+
     function handleSkip(e) {
         if (e.type === 'keydown') {
             if (e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift' || e.key === 'Meta') return;
         }
+        if (!bootStarted) return;          // до запуска пропускать нечего
+        if (Date.now() < justStartedUntil) return; // первый жест только что стартовал загрузку
         if (!isTerminalFinished) {
             finishTerminal();
         }
@@ -226,7 +309,8 @@
         statusElem.innerHTML = `<span class="status-text">${statusMessages[idx]}</span>`;
     }
 
-    typeTimer = setTimeout(typeLine, 500);
+    // Набор текста стартует только после жеста (beginBoot) — иначе
+    // браузер заблокирует все звуки загрузки до первого клика.
 })();
 
 // ============================================================
@@ -282,8 +366,14 @@ function playSound(freq, duration, type = 'square', volume = 0.12) {
     if (!soundsEnabled) return;
     const ctx = initAudioContext();
     if (!ctx) return;
-    if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
+    if (ctx.state !== 'running') {
+        // Контекст заблокирован до первого жеста: разблокируем и доиграем звук
+        // после успешной разблокировки, вместо того чтобы молча терять его.
+        ctx.resume().then(() => {
+            if (ctx.state === 'running' && soundsEnabled) {
+                playSound(freq, duration, type, volume);
+            }
+        }).catch(() => {});
         return;
     }
     const now = ctx.currentTime;
