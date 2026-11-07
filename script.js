@@ -3683,9 +3683,16 @@ function initApp() {
     async function sendFormWithRetry(formData, retries = 3) {
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
+                // ⬇ Используем AJAX-эндпоинт с заголовком Accept
                 const response = await fetch(
-                    'https://formsubmit.co/goodmopsreset@gmail.com?fromname=Godoined+Archive',
-                    { method: 'POST', body: formData }
+                    'https://formsubmit.co/ajax/goodmopsreset@gmail.com?fromname=Godoined+Archive',
+                    {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json' // ⬅ Ключевое изменение
+                        }
+                    }
                 );
                 if (response.ok) return { success: true };
                 if (attempt < retries) continue;
