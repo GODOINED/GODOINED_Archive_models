@@ -1124,6 +1124,59 @@ function navigateModal(direction) {
     }
     playClickSound();
 }
+// ============================================================
+//  ФУНКЦИИ ДЛЯ ПРОСМОТРА РЕНДЕРОВ (КАРТИНОК/ВИДЕО)
+// ============================================================
+function openModal(mediaArray, startIndex = 0) {
+    if (!mediaArray || mediaArray.length === 0) return;
+    modalMediaItems = mediaArray;
+    modalCurrentIndex = Math.max(0, Math.min(startIndex, mediaArray.length - 1));
+    modalIsOpen = true;
+    const modal = document.getElementById('render-modal');
+    const wrapper = document.getElementById('modal-media-wrapper');
+    const counter = document.getElementById('modal-counter');
+    const prevBtn = document.getElementById('modal-prev');
+    const nextBtn = document.getElementById('modal-next');
+
+    if (!modal) return;
+    playModalOpenSound();
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+
+    renderModalMedia(modalCurrentIndex);
+    counter.textContent = `${modalCurrentIndex + 1} / ${mediaArray.length}`;
+    prevBtn.style.display = mediaArray.length > 1 ? 'block' : 'none';
+    nextBtn.style.display = mediaArray.length > 1 ? 'block' : 'none';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('render-modal');
+    if (!modal) return;
+    if (modalIsOpen) playModalCloseSound();
+    modal.classList.remove('active');
+    modalIsOpen = false;
+    if (currentVideoElement) {
+        currentVideoElement.pause();
+        currentVideoElement = null;
+    }
+    if (playerInterval) {
+        clearInterval(playerInterval);
+        playerInterval = null;
+    }
+    const playerContainer = document.getElementById('custom-player');
+    if (playerContainer) playerContainer.style.display = 'none';
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+        const wrapper = document.getElementById('modal-media-wrapper');
+        if (wrapper) wrapper.innerHTML = '';
+        document.body.style.overflow = '';
+    }, 300);
+}
+// ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('render-modal');
@@ -1226,6 +1279,8 @@ function showModelDetail(modelName) {
     const renderThumbnails = document.getElementById('render-thumbnails');
 
     const allMedia = [];
+
+    // ============================================================
     renders.forEach(src => {
         allMedia.push({ type: 'image', src: src });
     });
@@ -1962,72 +2017,83 @@ function initApp() {
     const closeBtn = document.getElementById('order-modal-close');
     const dialogue = document.getElementById('dt-dialogue');
     function openModal() {
-        // 1. Включаем туман и размытие сайта
+        // 1) Туман + размытие сайта
         const fog = document.getElementById('dt-fog-overlay');
         if (fog) fog.classList.add('active');
         document.body.classList.add('dt-active');
         document.body.style.overflow = 'hidden';
 
-        // 2. Звуки (если функции нет, ничего не сломается)
-        try { if (typeof playClickSound === 'function') playClickSound(); } catch(e) {}
-        try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch(e) {}
+        // 2) Все звуки — безопасно, по отдельности
+        try { if (typeof playClickSound === 'function') playClickSound(); } catch (e) {}
+        try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch (e) {}
 
-        // 3. Сброс формы
-        state.step = 0;
-        state.name = ''; state.food = ''; state.color = ''; state.gift = '';
-        state.feeling = ''; state.honest = ''; state.pain = '';
-        state.message = ''; state.files = null;
-        
-        try { if (typeof resetFinale === 'function') resetFinale(); } catch(e) {}
-        try { if (typeof clickEchoes !== 'undefined') clickEchoes.length = 0; } catch(e) {}
-        
-        targetProgress = 0;
-        currentProgress = 0;
-        modal.style.setProperty('--dt-progress', '0');
+        // 3) Сброс состояния
+        try {
+            state.step = 0;
+            state.name = ''; state.food = ''; state.color = ''; state.gift = '';
+            state.feeling = ''; state.honest = ''; state.pain = '';
+            state.message = ''; state.files = null;
+            if (typeof resetFinale === 'function') resetFinale();
+            if (typeof clickEchoes !== 'undefined' && clickEchoes.length !== undefined) clickEchoes.length = 0;
+            targetProgress = 0;
+            currentProgress = 0;
+            modal.style.setProperty('--dt-progress', '0');
+        } catch (e) {
+            console.warn('Reset state error:', e);
+        }
 
-        // 4. Показываем модалку
+        // 4) Показываем модалку
         setTimeout(() => {
-            modal.style.display = 'block';
-            
-            // Небольшая пауза, чтобы display: block успел примениться
-            setTimeout(() => {
-                modal.classList.add('active');
-                
-                // Через 600мс туман рассеивается, открывая модалку
+            try {
+                modal.style.display = 'block';
+                requestAnimationFrame(() => {
+                    modal.classList.add('active');
+                    setTimeout(() => {
+                        if (fog) fog.classList.remove('active');
+                    }, 800);
+                });
                 setTimeout(() => {
-                    if (fog) fog.classList.remove('active');
-                }, 600);
-
-                // Запускаем музыку и первый вопрос
-                try { if (typeof startMusic === 'function') startMusic(); } catch(e) {}
-                try { if (typeof runStep === 'function') runStep(); } catch(e) { console.error('Ошибка в runStep:', e); }
-            }, 50);
-        }, 400);
+                    try { if (typeof startMusic === 'function') startMusic(); } catch (e) {}
+                    try { if (typeof runStep === 'function') runStep(); } catch (e) { console.error('runStep error:', e); }
+                }, 1200);
+            } catch (e) {
+                console.error('Modal show error:', e);
+            }
+        }, 500);
     }
 
     function closeModal() {
-        const modal = document.getElementById('render-modal');
-        if (!modal) return;
-        if (modalIsOpen) playModalCloseSound();
+        if (typeof playBackSound === 'function') playBackSound();
+
+        // 1) Включаем туман обратно
+        const fog = document.getElementById('dt-fog-overlay');
+        if (fog) fog.classList.add('active');
+
+        // 2) Прячем модалку
         modal.classList.remove('active');
-        modalIsOpen = false;
-        if (currentVideoElement) {
-            currentVideoElement.pause();
-            currentVideoElement = null;
-        }
-        if (playerInterval) {
-            clearInterval(playerInterval);
-            playerInterval = null;
-        }
-        const playerContainer = document.getElementById('custom-player');
-        if (playerContainer) playerContainer.style.display = 'none';
-        
+
+        // 3) Сбросы
+        stopMusic();
+        clearDialogue();
+        resetFinale();
+        clickEchoes.length = 0;
+        targetProgress = 0;
+        currentProgress = 0;
+
+        // 4) Возвращаем сайт
         setTimeout(() => {
             modal.style.display = 'none';
-            const wrapper = document.getElementById('modal-media-wrapper');
-            if (wrapper) wrapper.innerHTML = '';
+            
+            document.body.classList.remove('dt-active');
             document.body.style.overflow = '';
-        }, 300);
+            dialogue.innerHTML = '';
+            modal.style.setProperty('--dt-progress', '0');
+
+            // Туман рассеивается
+            setTimeout(() => {
+                if (fog) fog.classList.remove('active');
+            }, 500);
+        }, 700);
     }
     if (!modal || !openBtn || !dialogue) return;
 
@@ -2147,16 +2213,25 @@ function initApp() {
         const sctx = staticCanvas.getContext('2d');
         const tctx = trailCanvas.getContext('2d');
         const gctx = glowCanvas.getContext('2d');
-        const PX = 3; // мельче пиксели = глаже
+        
+        // ⬇ СОЗДАЕМ ХОЛСТ ДЛЯ БЛЮРА ⬇
+        const bloomCanvas = document.createElement('canvas');
+        const bctx = bloomCanvas.getContext('2d');
+
+        const PX = 3; 
 
         function resize() {
             const w = Math.max(2, Math.ceil(window.innerWidth / PX));
             const h = Math.max(2, Math.ceil(window.innerHeight / PX));
             staticCanvas.width = w; staticCanvas.height = h;
             trailCanvas.width = w; trailCanvas.height = h;
-            // Glow рисуется в полном разрешении — для плавного блюра
             glowCanvas.width = window.innerWidth;
             glowCanvas.height = window.innerHeight;
+            
+            // ⬇ ХОЛСТ БЛЮРА ДЕЛАЕМ В 4 РАЗА МЕНЬШЕ (для производительности) ⬇
+            bloomCanvas.width = Math.max(2, Math.ceil(window.innerWidth / 4));
+            bloomCanvas.height = Math.max(2, Math.ceil(window.innerHeight / 4));
+            
             sctx.imageSmoothingEnabled = false;
             tctx.imageSmoothingEnabled = false;
             gctx.imageSmoothingEnabled = true;
@@ -2471,6 +2546,8 @@ function initApp() {
             cometLastSpawn = 0;
             explosionStart = 0;
             lastExplosionSpark = 0;
+            isFountainActive = false;
+            fountainParticles.length = 0; // ⬅ ДОБАВИТЬ ВОТ ЭТУ СТРОКУ
         }
         window.__dtResetCanvas = resetCanvasEffects;
 
@@ -2920,6 +2997,27 @@ function initApp() {
             // 8) Искры
             updateAndDrawSparks(sctx);
 
+            // 8.5) РАЗЛОМ (ТРЕЩИНЫ) И ФОНТАН
+            if (shatterTime > 0 && shatterTime < 80) {
+                shatterTime++;
+                const alpha = Math.max(0, 1 - (shatterTime / 80));
+                sctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                sctx.lineWidth = 2;
+                sctx.shadowBlur = 15;
+                sctx.shadowColor = 'white';
+                
+                sctx.beginPath();
+                shatterLines.forEach(line => {
+                    if (line.length > 0) {
+                        sctx.moveTo(staticCanvas.width / 2, staticCanvas.height / 2);
+                        line.forEach(p => sctx.lineTo(p.x, p.y));
+                    }
+                });
+                sctx.stroke();
+                sctx.shadowBlur = 0; // Сбрасываем тень
+            }
+            
+            drawFountain(sctx, cx, cy, w, h);
             // ===== GHOSTING-ЧАСТИЦЫ =====
             const fadeRate = Math.max(0.04, 0.12 - energy * 0.06);
             tctx.globalCompositeOperation = 'destination-out';
@@ -2990,6 +3088,149 @@ function initApp() {
                 }
             }
         };
+        // ============================================================
+        //  ЭФФЕКТ РАЗЛОМА И ПОСТОЯННОГО ТЁМНОГО ФОНТАНА (СИСТЕМА ЧАСТИЦ)
+        // ============================================================
+        let shatterLines = [];
+        let shatterTime = 0;
+        let isFountainActive = false;
+        const fountainParticles = []; // Массив для частиц фонтана
+
+        window.__dtShatterFountain = function() {
+            shatterLines = [];
+            shatterTime = 1;
+            isFountainActive = true;
+            fountainParticles.length = 0; // Очищаем старые частицы
+            
+            const numCracks = 30 + Math.floor(Math.random() * 20);
+            const cx = staticCanvas.width / 2;
+            const cy = staticCanvas.height / 2;
+            
+            for (let i = 0; i < numCracks; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const segments = [];
+                let currentX = cx;
+                let currentY = cy;
+                let currentAngle = angle;
+                const length = (Math.max(staticCanvas.width, staticCanvas.height) / 2) + 50;
+                let dist = 0;
+                
+                while (dist < length) {
+                    const step = 15 + Math.random() * 30;
+                    currentAngle += (Math.random() - 0.5) * 0.6;
+                    currentX += Math.cos(currentAngle) * step;
+                    currentY += Math.sin(currentAngle) * step;
+                    segments.push({ x: currentX, y: currentY });
+                    dist += step;
+                }
+                shatterLines.push(segments);
+            }
+        };
+
+                function drawFountain(ctx, cx, cy, w, h) {
+            if (!isFountainActive) return;
+            
+            const PX = 1.5; 
+            const maxHeight = h * 1.2; 
+            
+            // ==========================================
+            // ЭТАП 1: ЧЕТКИЕ ПИКСЕЛИ (Основной холст)
+            // ==========================================
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen'; 
+
+            for (let y = 0; y < maxHeight; y += PX) {
+                const yRatio = y / maxHeight; 
+                const baseWidth = 10 + Math.pow(yRatio, 1.5) * 140;
+                const wave = Math.sin(y * 0.03 - time * 0.15) * 30 * yRatio;
+
+                for (let x = -baseWidth; x <= baseWidth; x += PX) {
+                    const distFromCenter = Math.abs(x) / Math.max(1, baseWidth);
+                    let spawnChance = 1 - Math.pow(distFromCenter, 1.5);
+                    spawnChance *= (1 - yRatio * 0.4);
+
+                    if (Math.random() > spawnChance) continue;
+
+                    let color;
+                    if (distFromCenter < 0.2) color = `rgba(255, 255, 255, 1)`;
+                    else if (distFromCenter < 0.6) color = `rgba(255, 0, 242, 0.9)`;
+                    else color = `rgba(255, 0, 221, 0.7)`;
+
+                    ctx.fillStyle = color;
+                    ctx.fillRect(Math.floor((cx + x + wave) / PX) * PX, Math.floor((cy - y) / PX) * PX, PX, PX);
+                }
+            }
+
+            // Брызги сверху (тоже четкие)
+            for (let i = 0; i < 40; i++) {
+                const seed = i * 13.37;
+                const timeOffset = time * 3 + seed * 10;
+                const spawnY = cy - maxHeight * 0.9;
+                const spawnX = cx + (Math.random() - 0.5) * 200;
+                const dropY = spawnY + (timeOffset % 150); 
+                const dropX = spawnX + Math.sin(timeOffset) * 60;
+
+                if (dropY < cy) {
+                    ctx.fillStyle = `rgba(255, 100, 255, ${1 - (dropY - spawnY) / 150})`;
+                    ctx.fillRect(Math.floor(dropX / PX) * PX, Math.floor(dropY / PX) * PX, PX, PX);
+                }
+            }
+            ctx.restore();
+
+            // ==========================================
+            // ЭТАП 2: БЛЮР (Маленький холст)
+            // ==========================================
+            const bw = bloomCanvas.width;
+            const bh = bloomCanvas.height;
+            const bcx = (cx / w) * bw;
+            const bcy = (cy / h) * bh;
+            const scale = bw / w;
+
+            bctx.clearRect(0, 0, bw, bh);
+            bctx.save();
+            
+            // Включаем размытие (на маленьком холсте это летает)
+            bctx.filter = 'blur(4px)'; 
+            bctx.globalCompositeOperation = 'lighter';
+
+            // Рисуем яркое пятно у основания
+            const baseGrad = bctx.createRadialGradient(bcx, bcy, 0, bcx, bcy, 80 * scale);
+            baseGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            baseGrad.addColorStop(0.4, 'rgba(255, 0, 242, 0.8)');
+            baseGrad.addColorStop(1, 'transparent');
+            bctx.fillStyle = baseGrad;
+            bctx.beginPath(); 
+            bctx.arc(bcx, bcy, 80 * scale, 0, Math.PI * 2); 
+            bctx.fill();
+
+            // Рисуем размытый конус (столб)
+            bctx.fillStyle = 'rgba(255, 0, 242, 0.5)';
+            bctx.beginPath();
+            bctx.moveTo(bcx - 20 * scale, bcy);
+            bctx.lineTo(bcx - 120 * scale, bcy - maxHeight * scale);
+            bctx.lineTo(bcx + 120 * scale, bcy - maxHeight * scale);
+            bctx.lineTo(bcx + 20 * scale, bcy);
+            bctx.fill();
+
+            // Рисуем белое ядро внутри
+            bctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            bctx.beginPath();
+            bctx.moveTo(bcx - 5 * scale, bcy);
+            bctx.lineTo(bcx - 30 * scale, bcy - maxHeight * scale);
+            bctx.lineTo(bcx + 30 * scale, bcy - maxHeight * scale);
+            bctx.lineTo(bcx + 5 * scale, bcy);
+            bctx.fill();
+            bctx.restore();
+
+            // ==========================================
+            // ЭТАП 3: НАЛОЖЕНИЕ БЛЮРА НА ОСНОВНОЙ ХОЛСТ
+            // ==========================================
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter'; // Склеиваем по свету
+            // Растягиваем маленький холст на весь экран
+            ctx.drawImage(bloomCanvas, 0, 0, w, h); 
+            ctx.restore();
+        }
         drawFrame();
     })();
 
@@ -3103,6 +3344,47 @@ function initApp() {
         }, 3000);
     }
 
+    function playFountainShatterSound() {
+        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
+        const ctx = initAudioContext();
+        if (!ctx || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+
+        // 1. Звон стекла
+        const bufferSize = Math.floor(ctx.sampleRate * 1.5);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = 'highpass';
+        noiseFilter.frequency.value = 1500;
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.25, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start(now);
+
+        // 2. Низкий гул (как от фонтана)
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.linearRampToValueAtTime(30, now + 1.5);
+        
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 2.1);
+    }
+
     function triggerSoulPour() {
         finaleMode = 1;
         finaleStartTime = performance.now();
@@ -3115,7 +3397,10 @@ function initApp() {
 
     function triggerSoulBurst() {
         finaleMode = 2;
+        
+        // Запускаем взрыв, трещины и визуальный фонтан
         if (window.__dtStartExplosion) window.__dtStartExplosion();
+        if (window.__dtShatterFountain) window.__dtShatterFountain();
 
         // Оригинальная вспышка
         const flashEl = document.getElementById('dt-magic-flash');
@@ -3125,7 +3410,7 @@ function initApp() {
             flashEl.classList.add('active');
         }
 
-        // #3 RGB-глитч на диалоге
+        // RGB-глитч на тексте (на 0.4 сек)
         const innerEl = modal.querySelector('.dt-inner');
         if (innerEl) {
             innerEl.classList.remove('rgb-glitching');
@@ -3134,8 +3419,11 @@ function initApp() {
             setTimeout(() => innerEl.classList.remove('rgb-glitching'), 420);
         }
 
+        // Звуки
         playSoulBurstSound();
+        playFountainShatterSound();
     }
+
     function resetFinale() {
         finaleMode = 0;
         finaleBoost = 0;
