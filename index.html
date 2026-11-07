@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <title>Архив моделей</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%23050508'/><rect x='18' y='18' width='64' height='64' rx='6' fill='none' stroke='%233eff6e' stroke-width='6'/><rect x='38' y='18' width='24' height='18' fill='%233eff6e'/></svg>">
     <meta property="og:title" content="Архив 3D моделей — ретро портфолио">
@@ -144,6 +147,8 @@
             <button class="hud-btn" id="sound-toggle" title="Включить / выключить звук">🔊</button>
         </div>
     </div>
+    <!-- ===== ТУМАН ПЕРЕХОДА ===== -->
+    <div class="dt-fog-overlay" id="dt-fog-overlay"></div>
 
     <!-- ===== ЭКРАННЫЙ СИСТЕМНЫЙ ЖУРНАЛ ===== -->
     <div id="console-panel" class="console-panel" aria-live="polite">
@@ -342,40 +347,20 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ЗАКАЗА 3D-ГИФТ ===== -->
-    <div id="order-modal" class="render-modal" style="display: none;">
-        <div class="modal-overlay"></div>
-        <div class="modal-content order-modal-content">
-            <button class="modal-close" id="order-modal-close">✕</button>
-            <h2 style="color: var(--text-primary); text-align: center; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">>> ЗАКАЗ 3D-ГИФТ</h2>
-            <form id="order-form" enctype="multipart/form-data">
-                <!-- Скрытые поля для FormSubmit -->
-                <input type="hidden" name="_subject" value="Godoined Archive новая заявка">
-                <input type="hidden" name="_replyto" value="goodmopsreset@gmail.com">
-                <input type="hidden" name="_captcha" value="false">
-
-                <div class="order-form-group">
-                    <label for="order-name">Ваше имя (необязательно)</label>
-                    <input type="text" id="order-name" name="name" placeholder="Имя или никнейм" class="order-input">
-                </div>
-                <div class="order-form-group">
-                    <label for="order-message">Описание модели *</label>
-                    <textarea id="order-message" name="message" placeholder="Опишите, какую модель вы хотите, её особенности, цвет, стиль..." required class="order-textarea"></textarea>
-                </div>
-                <div class="order-form-group">
-                    <label for="order-files">Прикрепите фото/референсы (можно несколько)</label>
-                    <input type="file" id="order-files" name="attachment" accept="image/*" multiple class="order-file-input">
-                    <small style="color: var(--text-secondary);">Поддерживаются JPG, PNG, WEBP (макс. 5 МБ суммарно)</small>
-                </div>
-
-                <!-- Основная кнопка отправки -->
-                <button type="submit" id="main-send-btn" class="order-submit-btn">📨 ОТПРАВИТЬ ЗАЯВКУ</button>
-
-                <!-- Альтернативная кнопка (появляется при ошибке) -->
-                <button type="button" id="alt-send-btn" class="order-submit-btn alt-send-btn" style="display: none; margin-top: 0.5rem;">📧 АЛЬТЕРНАТИВНАЯ ОТПРАВКА</button>
-
-                <div id="order-status" class="order-status" style="display: none;"></div>
-            </form>
+    <!-- ===== ЭКРАН СОЗДАНИЯ СОСУДА ===== -->
+    <div id="order-modal" class="dt-vessel" style="display: none;">
+        <div class="dt-bg-base"></div>
+        <canvas class="dt-glow-canvas" id="dt-glow-canvas"></canvas>
+        <div class="dt-vignette-progress" id="dt-vignette-progress"></div>
+        <canvas class="dt-static-canvas" id="dt-static-canvas"></canvas>
+        <canvas class="dt-trail-canvas" id="dt-trail-canvas"></canvas>
+        <div class="dt-noise"></div>
+        <button type="button" class="dt-exit" id="order-modal-close" title="Уйти">✕</button>
+        <!-- ДОБАВИТЬ ПЕРЕД .dt-inner -->
+        <div class="dt-soul-pour" id="dt-soul-pour"></div>
+        <div class="dt-magic-flash" id="dt-magic-flash"></div>
+        <div class="dt-inner">
+            <div class="dt-dialogue" id="dt-dialogue"></div>
         </div>
     </div>
 

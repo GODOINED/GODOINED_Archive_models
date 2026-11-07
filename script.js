@@ -2,7 +2,6 @@
 //  ЗАГРУЗОЧНЫЙ ЭКРАН (ТЕРМИНАЛ С ПРОПУСКОМ)
 // ============================================================
 
-
 (function initTerminal() {
     const screen = document.getElementById('loading-screen');
     const output = document.getElementById('terminal-output');
@@ -108,10 +107,6 @@
 
     setTimeout(initFanSound, 300);
 
-    // ---- ЗАПУСК ПОСЛЕ ЖЕСТА ----
-    // Браузеры запрещают аудио до первого клика/клавиши, поэтому загрузка
-    // ждёт «НАЖМИ ЧТОБЫ ЗАПУСТИТЬ» — жест разблокирует звук, и все
-    // эффекты (вентилятор, набор текста, старт-ап) звучат сразу.
     let bootStarted = false;
     let justStartedUntil = 0;
 
@@ -136,7 +131,6 @@
         document.removeEventListener('pointerdown', beginBoot);
         document.removeEventListener('keydown', beginBoot);
         document.removeEventListener('touchstart', beginBoot);
-        // жест уже произошёл — разблокируем всё аудио сразу
         try { window.__retroUnlockAudio(); } catch (err) {}
         initFanSound();
         if (output) output.innerHTML = '';
@@ -147,9 +141,6 @@
     showStartPrompt();
     ['pointerdown', 'keydown', 'touchstart'].forEach(evt => document.addEventListener(evt, beginBoot));
 
-    // ---- РАЗБЛОКИРОВКА ЗВУКА ПРИ ПЕРВОМ ЖЕСТЕ ----
-    // Браузеры запрещают аудио до клика/клавиши/тапа. Регистрируем
-    // слушатели сразу и разблокируем все контексты + отложенный старт-ап.
     let pendingStartupAudio = null;
     window.__retroUnlockAudio = function() {
         try {
@@ -167,7 +158,6 @@
     ['pointerdown', 'keydown', 'touchstart'].forEach(function(evt) {
         document.addEventListener(evt, window.__retroUnlockAudio);
     });
-    // Воспроизвести старт-ап «в момент жеста», если он был заблокирован
     window.__retroPlayStartupQueued = function() { return pendingStartupAudio; };
 
     function finishTerminal() {
@@ -186,8 +176,6 @@
 
         const outputContainer = document.getElementById('terminal-output');
         if (outputContainer) {
-            // Перестраиваем вывод только при ПРОПУСКЕ (частр строк ещё не набрана).
-            // При обычном завершении строки уже на экране — их пересборка вызывала резкое мигание.
             const typedCount = outputContainer.querySelectorAll('.line').length;
             const allLines = lines.slice(0, lineIndex + 1);
             if (typedCount < allLines.length) {
@@ -225,9 +213,6 @@
         }, 500);
     }
 
-    // Старт-ап звук включения (Mac Quadra) в момент CRT-включения экрана.
-    // Если браузер ещё не разрешил аудио (не было клика) — ставим в очередь
-    // и он прозвучит при первом же жесте пользователя.
     function playStartupSound() {
         if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
         try {
@@ -236,7 +221,6 @@
             const p = audio.play();
             if (p && typeof p.catch === 'function') {
                 p.catch(() => {
-                    // автоплей заблокирован — воспроизведём при первом жесте
                     pendingStartupAudio = audio;
                 });
             }
@@ -247,8 +231,8 @@
         if (e.type === 'keydown') {
             if (e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift' || e.key === 'Meta') return;
         }
-        if (!bootStarted) return;          // до запуска пропускать нечего
-        if (Date.now() < justStartedUntil) return; // первый жест только что стартовал загрузку
+        if (!bootStarted) return;
+        if (Date.now() < justStartedUntil) return;
         if (!isTerminalFinished) {
             finishTerminal();
         }
@@ -306,11 +290,8 @@
 
     function updateStatus() {
         const idx = Math.min(Math.floor(lineIndex / 2), statusMessages.length - 1);
-        statusElem.innerHTML = `<span class="status-text">${statusMessages[idx]}</span>`;
+        if (statusElem) statusElem.innerHTML = `<span class="status-text">${statusMessages[idx]}</span>`;
     }
-
-    // Набор текста стартует только после жеста (beginBoot) — иначе
-    // браузер заблокирует все звуки загрузки до первого клика.
 })();
 
 // ============================================================
@@ -328,12 +309,10 @@ let currentModelName = null;
 let animationInterval = null;
 let currentLoadId = 0;
 
-// Переменные для модалки рендеров
 let modalMediaItems = [];
 let modalCurrentIndex = 0;
 let modalIsOpen = false;
 
-// Переменные для плеера
 let currentVideoElement = null;
 let playerInterval = null;
 
@@ -367,8 +346,6 @@ function playSound(freq, duration, type = 'square', volume = 0.12) {
     const ctx = initAudioContext();
     if (!ctx) return;
     if (ctx.state !== 'running') {
-        // Контекст заблокирован до первого жеста: разблокируем и доиграем звук
-        // после успешной разблокировки, вместо того чтобы молча терять его.
         ctx.resume().then(() => {
             if (ctx.state === 'running' && soundsEnabled) {
                 playSound(freq, duration, type, volume);
@@ -392,9 +369,6 @@ function playSound(freq, duration, type = 'square', volume = 0.12) {
 function playClickSound() { playSound(880, 0.08, 'square', 0.10); }
 function playShareSound() { playSound(1200, 0.06, 'square', 0.06); }
 
-// ---- СИНТЕЗ РЕТРО-ПОСЛЕДОВАТЕЛЬНОСТЕЙ ----
-// Проигрывает массив нот [{f, d, t, v}] с задержкой startDelay.
-// Нота — частота, длительность, тип осциллятора, громкость.
 function playSequence(notes, startDelay = 0) {
     if (!soundsEnabled) return;
     const ctx = initAudioContext();
@@ -415,7 +389,6 @@ function playSequence(notes, startDelay = 0) {
         osc.type = n.t || 'square';
         osc.frequency.setValueAtTime(n.f, when);
         if (n.glide) {
-            // плавный перелёт частоты (для «приветствия» и «загрузки»)
             osc.frequency.exponentialRampToValueAtTime(n.glide, when + n.d);
         }
         gain.gain.setValueAtTime(n.v || 0.08, when);
@@ -426,7 +399,6 @@ function playSequence(notes, startDelay = 0) {
     });
 }
 
-// Открытие модели: восходящее арпеджио «доступ разрешён»
 function playOpenSound() {
     playSequence([
         { f: 523, d: 0.07, t: 'square', v: 0.07, gap: 0.06 },
@@ -436,7 +408,6 @@ function playOpenSound() {
     ]);
 }
 
-// Возврат в галерею: нисходящее арпеджио «закрытие меню»
 function playBackSound() {
     playSequence([
         { f: 784, d: 0.06, t: 'square', v: 0.06, gap: 0.05 },
@@ -445,7 +416,6 @@ function playBackSound() {
     ]);
 }
 
-// Чекпоинт/достижение: маленькая фанфара
 function playAchievementSound() {
     playSequence([
         { f: 659, d: 0.08, t: 'square', v: 0.07, gap: 0.09 },
@@ -456,25 +426,19 @@ function playAchievementSound() {
     ]);
 }
 
-// ---- ИНТЕРФЕЙСНЫЕ ЗВУКИ ----
-
-// Тихий одиночный «пик» (пи-пик) — база для мелких реакций интерфейса
 function playBlip(freq = 900, vol = 0.04) {
     playSound(freq, 0.05, 'square', vol);
 }
 
-// Послойное появление панели модели: цепочка тихих пиков,
-// синхронизирована с задержками анимации слоёв
 function playLayerTicks() {
     if (!soundsEnabled) return;
-    const delays = [150, 350, 400, 480, 560, 640]; // мс, как в CSS-задержках слоёв
+    const delays = [150, 350, 400, 480, 560, 640];
     const freqs = [740, 880, 980, 1080, 1180, 1280];
     delays.forEach((ms, i) => {
         setTimeout(() => playBlip(freqs[i], 0.028), ms);
     });
 }
 
-// Открытие модалки (рендеры/видео): восходящий «бип-бип»
 function playModalOpenSound() {
     playSequence([
         { f: 660, d: 0.06, t: 'square', v: 0.05, gap: 0.06 },
@@ -482,7 +446,6 @@ function playModalOpenSound() {
     ]);
 }
 
-// Закрытие модалки: нисходящий «бип-бип»
 function playModalCloseSound() {
     playSequence([
         { f: 990, d: 0.06, t: 'square', v: 0.05, gap: 0.06 },
@@ -490,7 +453,6 @@ function playModalCloseSound() {
     ]);
 }
 
-// Уведомление-тост: короткий двойной щелчок
 function playToastSound() {
     playSequence([
         { f: 1100, d: 0.045, t: 'triangle', v: 0.045, gap: 0.09 },
@@ -498,7 +460,6 @@ function playToastSound() {
     ]);
 }
 
-// Набор в поиске: едва слышный тик (троттлинг внутри)
 let lastSearchTick = 0;
 function playSearchTick() {
     const now = performance.now();
@@ -507,7 +468,6 @@ function playSearchTick() {
     playBlip(1500 + Math.random() * 200, 0.018);
 }
 
-// Смена темы: мягкий свип вверх (фильтр+осциллятор через glide)
 function playThemeSwitchSound() {
     playSequence([
         { f: 400, glide: 1200, d: 0.25, t: 'sine', v: 0.05 },
@@ -516,7 +476,6 @@ function playThemeSwitchSound() {
 }
 
 function playDownloadSound() {
-    // Классическая «передача данных»: пилообразный перелёт вниз + писк в конце
     playSequence([
         { f: 980, glide: 220, d: 0.5, t: 'sawtooth', v: 0.05 },
         { f: 440, d: 0.06, t: 'square', v: 0.07, gap: 0.05 },
@@ -614,7 +573,6 @@ function sortModels(models, sortType) {
     const sorted = [...models];
     switch(sortType) {
         case 'random':
-            // Перемешиваем один раз на «сессию» фильтра, а не на каждый символ в поиске
             if (!randomOrderKey || randomOrderKey !== lastFilterSignature()) {
                 cachedRandomOrder = shuffleArray(sorted.map((_, i) => i));
                 randomOrderKey = lastFilterSignature();
@@ -669,7 +627,6 @@ function renderModelsGrid(models) {
         updatePaginationControls(0);
         return;
     }
-    // Сортировка применяется заранее в applyFilters (порядок стабилен между перерисовками)
     const sortedModels = models;
     const totalPages = Math.ceil(sortedModels.length / itemsPerPage);
     if (currentPage > totalPages) currentPage = totalPages || 1;
@@ -688,7 +645,6 @@ function renderModelsGrid(models) {
         });
         card.addEventListener('mouseenter', playHoverSound);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
-        // Лёгкий 3D-наклон карточки за курсором
         card.addEventListener('mousemove', (e) => {
             const r = card.getBoundingClientRect();
             const px = (e.clientX - r.left) / r.width - 0.5;
@@ -700,7 +656,6 @@ function renderModelsGrid(models) {
             card.style.setProperty('--ry', '0deg');
             card.style.setProperty('--rx', '0deg');
         });
-        // Путь для превью с новой структурой
         let previewUrl = model.preview || `models/${model.name}/frames/start/0001.webp`;
         if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/frames/idle/0001.webp`;
         if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `models/${model.name}/icon.webp`;
@@ -753,7 +708,6 @@ function setupPagination() {
         if (currentPage > 1) {
             currentPage--;
             applyFilters();
-            // «перелистывание» назад — нисходящий щелчок
             playSequence([
                 { f: 700, d: 0.05, t: 'square', v: 0.05, gap: 0.05 },
                 { f: 500, d: 0.08, t: 'square', v: 0.05 }
@@ -765,7 +719,6 @@ function setupPagination() {
         if (currentPage < total) {
             currentPage++;
             applyFilters();
-            // «перелистывание» вперёд — восходящий щелчок
             playSequence([
                 { f: 500, d: 0.05, t: 'square', v: 0.05, gap: 0.05 },
                 { f: 700, d: 0.08, t: 'square', v: 0.05 }
@@ -984,7 +937,6 @@ function showGallery() {
             detail.classList.remove('closing');
             gallery.classList.remove('hidden');
             header.classList.remove('hidden');
-            // Футер возвращаем только ПОСЛЕ закрытия панели, иначе он всплывает поверх детального экрана
             document.body.classList.remove('detail-open');
             document.body.style.overflow = '';
             window.scrollTo(0, 0);
@@ -1011,60 +963,8 @@ function showGallery() {
     closeModal();
 }
 
-// ============================================================
-//  МОДАЛЬНОЕ ОКНО ДЛЯ РЕНДЕРОВ (ИЗОБРАЖЕНИЯ + ВИДЕО)
-// ============================================================
-function openModal(mediaArray, startIndex = 0) {
-    if (!mediaArray || mediaArray.length === 0) return;
-    modalMediaItems = mediaArray;
-    modalCurrentIndex = Math.max(0, Math.min(startIndex, mediaArray.length - 1));
-    modalIsOpen = true;
-    const modal = document.getElementById('render-modal');
-    const wrapper = document.getElementById('modal-media-wrapper');
-    const counter = document.getElementById('modal-counter');
-    const prevBtn = document.getElementById('modal-prev');
-    const nextBtn = document.getElementById('modal-next');
 
-    if (!modal) return;
-    playModalOpenSound();
-    modal.style.display = 'flex';
-    requestAnimationFrame(() => {
-        modal.classList.add('active');
-    });
 
-    renderModalMedia(modalCurrentIndex);
-    counter.textContent = `${modalCurrentIndex + 1} / ${mediaArray.length}`;
-    prevBtn.style.display = mediaArray.length > 1 ? 'block' : 'none';
-    nextBtn.style.display = mediaArray.length > 1 ? 'block' : 'none';
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-    const modal = document.getElementById('render-modal');
-    if (!modal) return;
-    if (modalIsOpen) playModalCloseSound();
-    modal.classList.remove('active');
-    modalIsOpen = false;
-    if (currentVideoElement) {
-        currentVideoElement.pause();
-        currentVideoElement = null;
-    }
-    if (playerInterval) {
-        clearInterval(playerInterval);
-        playerInterval = null;
-    }
-    const playerContainer = document.getElementById('custom-player');
-    if (playerContainer) playerContainer.style.display = 'none';
-    
-    setTimeout(() => {
-        modal.style.display = 'none';
-        const wrapper = document.getElementById('modal-media-wrapper');
-        if (wrapper) wrapper.innerHTML = '';
-        document.body.style.overflow = '';
-    }, 300);
-}
-
-// ===== КАСТОМНЫЙ ПЛЕЕР =====
 function initPlayer(video) {
     const playBtn = document.getElementById('player-play');
     const timeDisplay = document.getElementById('player-time');
@@ -1245,9 +1145,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ============================================================
-//  ПОКАЗ ДЕТАЛЕЙ МОДЕЛИ (с поддержкой FPS из JSON)
-// ============================================================
 function showModelDetail(modelName) {
     if (animationInterval) {
         clearInterval(animationInterval);
@@ -1321,10 +1218,8 @@ function showModelDetail(modelName) {
         document.body.style.overflow = 'hidden';
         window.scrollTo(0, 0);
     });
-    // тихая цепочка пиков под слои панели (вызывается и при открытии по ссылке)
     playLayerTicks();
 
-    // ===== ГАЛЕРЕЯ РЕНДЕРОВ =====
     const renders = model.renders || [];
     const videos = model.videos || [];
     const renderGallery = document.getElementById('render-gallery');
@@ -1419,7 +1314,6 @@ function showModelDetail(modelName) {
         }
     }
 
-    // ===== АНИМАЦИЯ (кадры) с поддержкой FPS =====
     const startUrls = Array.from({ length: model.startFrames }, (_, i) => 
         `models/${model.name}/frames/start/${String(i+1).padStart(4, '0')}.webp`
     );
@@ -1427,7 +1321,6 @@ function showModelDetail(modelName) {
         `models/${model.name}/frames/idle/${String(i+1).padStart(4, '0')}.webp`
     );
 
-    // Читаем FPS из модели (по умолчанию 24)
     const fps = (model.fps && typeof model.fps === 'number' && model.fps > 0) ? model.fps : 24;
     const frameDelay = 1000 / fps;
 
@@ -1458,7 +1351,6 @@ function showModelDetail(modelName) {
     preloadFramesWithIndicator(startUrls, idleUrls, frameDelay);
 }
 
-// ===== ПРЕДЗАГРУЗКА С ИНДИКАТОРОМ =====
 async function preloadFramesWithIndicator(startUrls, idleUrls, frameDelay) {
     const loadId = ++currentLoadId;
     const loaderDiv = document.getElementById('frame-loader');
@@ -1507,7 +1399,6 @@ async function preloadFramesWithIndicator(startUrls, idleUrls, frameDelay) {
     startAnimation(images, startUrls.length, idleUrls.length, frameDelay);
 }
 
-// ===== ЗАПУСК АНИМАЦИИ =====
 function startAnimation(images, startCount, idleCount, frameDelay) {
     if (animationInterval) {
         clearInterval(animationInterval);
@@ -1552,9 +1443,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
     });
 }
 
-// ============================================================
-//  ФОНОВЫЕ ЧАСТИЦЫ
-// ============================================================
 (function initParticles() {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
@@ -1595,10 +1483,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
     window.addEventListener('beforeunload', () => cancelAnimationFrame(animId));
 })();
 
-// ============================================================
-//  ФОН В СТИЛЕ DISCORD CHECKPOINT:
-//  точечная сетка + перспективная проволочная сетка + wireframe-фигуры
-// ============================================================
 (function initCheckpointBackground() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
@@ -1615,9 +1499,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         };
     }
     let colors = themeColors();
-
-    // Фон рендерится в 1/3 разрешения и растягивается браузером
-    // крупными «пикселями» (image-rendering: pixelated в CSS)
     const RENDER_SCALE = 3;
 
     function resizeCanvas() {
@@ -1629,7 +1510,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         buildDotPattern();
     }
 
-    // ---- статичная точечная сетка (как на фоне Checkpoint) ----
     let dotPattern = null;
     const DOT_GAP = 16;
     function buildDotPattern() {
@@ -1645,23 +1525,20 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         dotPattern = ctx.createPattern(pc, 'repeat');
     }
 
-    // ---- wireframe-фигуры (вылетают из «портала» в центре) ----
     function makeShape(i, total) {
         const kinds = ['prism', 'star', 'ring', 'cube', 'gem', 'blender'];
         const kind = kinds[i % kinds.length];
         return {
             kind: kind,
-            // направление полёта из центра и текущая дистанция (0 = центр, 1 = край)
             angle: Math.random() * Math.PI * 2,
-            dist: Math.random(),                       // стартуем в разных точках траектории
-            speed: 0.00016 + Math.random() * 0.00022,   // насколько быстро удаляется от центра
-            // логотип Blender делаем чуть крупнее, чтобы читался
+            dist: Math.random(),
+            speed: 0.00016 + Math.random() * 0.00022,
             size: kind === 'blender' ? (70 + Math.random() * 60) : (40 + Math.random() * 90),
             rot: Math.random() * Math.PI * 2,
             rotSpeed: (Math.random() - 0.5) * 0.006,
             tilt: Math.random() * Math.PI * 2,
             tiltSpeed: (Math.random() - 0.5) * 0.004,
-            wobble: Math.random() * Math.PI * 2,        // лёгкое боковое покачивание
+            wobble: Math.random() * Math.PI * 2,
             wobbleSpeed: 0.0006 + Math.random() * 0.0008,
             alpha: 0.16 + Math.random() * 0.2
         };
@@ -1669,32 +1546,26 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
     const shapeCount = window.innerWidth < 700 ? 5 : 9;
     const shapes = Array.from({ length: shapeCount }, (_, i) => makeShape(i, shapeCount));
 
-    // Обновление «полёта из портала»: фигура рождается в центре мелкой,
-    // разлетается наружу, растёт (перспектива) и тает у края, затем respawn.
     function updatePortalFlight(sh) {
         sh.dist += sh.speed;
         sh.wobble += sh.wobbleSpeed;
         sh.rot += sh.rotSpeed;
         sh.tilt += sh.tiltSpeed;
         if (sh.dist >= 1) {
-            // вылетела за край — «перерождаем» из центра в новом направлении
             sh.dist = 0;
             sh.angle = Math.random() * Math.PI * 2;
             sh.speed = 0.00016 + Math.random() * 0.00022;
         }
-        // небольшое боковое покачивание, добавляемое к радиальному направлению
         const wob = Math.sin(sh.wobble) * 0.06;
         const d = sh.dist * 0.75 + wob * sh.dist;
         sh.x = 0.5 + Math.cos(sh.angle) * d;
         sh.y = 0.5 + Math.sin(sh.angle) * d;
-        // перспектива: ближе к краю — крупнее; затухание у края
         sh.scale = 0.25 + sh.dist * 1.35;
         sh.fade = sh.dist < 0.12
-            ? sh.dist / 0.12                       // появляется: 0 -> 1
-            : (sh.dist > 0.82 ? (1 - sh.dist) / 0.18 : 1); // тает: 1 -> 0
+            ? sh.dist / 0.12
+            : (sh.dist > 0.82 ? (1 - sh.dist) / 0.18 : 1);
     }
 
-    // Первичная инициализация координат, чтобы фигуры не стояли кучей в центре
     shapes.forEach(sh => {
         updatePortalFlight(sh);
         sh.dist = 0.05 + Math.random() * 0.9;
@@ -1723,7 +1594,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         const pts3d = [];
         const seg = 14;
         if (sh.kind === 'blender') {
-            // логотип Blender — рисуем сразу в экранных координатах центра фигуры
             drawBlenderLogo(W / 2 + cx, H / 2 + cy, r, sh.rot, alpha);
             ctx.restore();
             return;
@@ -1763,7 +1633,7 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
             ctx.stroke();
             ctx.restore();
             return;
-        } else { // gem
+        } else {
             const top = [0, -r, 0], bot = [0, r, 0];
             for (let i = 0; i < seg; i++) {
                 const a = (i / seg) * Math.PI * 2;
@@ -1805,18 +1675,10 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         return [p[0] * c + p[2] * s, p[1], -p[0] * s + p[2] * c];
     }
 
-    // ---- ПЛАВАЮЩИЙ ЛОГОТИП BLENDER ----
-    // Точная геометрия знака (по референсу):
-    //  - толстое кольцо-тело (круг) справа;
-    //  - внутри него глаз: белый круг + зрачок;
-    //  - сверху острый «пик» (как горный вершиной вверх);
-    //  - от пика влево горизонтальный «клюв»;
-    //  - из-под клюва вниз-влево длинный загнутый хвост, сужающийся к концу.
-    // Рисуется контуром (wireframe) в цвете темы.
     function drawBlenderLogo(cx, cy, r, rot, alpha) {
         ctx.save();
         ctx.translate(cx, cy);
-        ctx.rotate(rot * 0.25); // лёгкий наклон при вращении фигуры
+        ctx.rotate(rot * 0.25);
         ctx.strokeStyle = colors.accent;
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
@@ -1825,20 +1687,17 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         ctx.shadowBlur = 6;
         ctx.globalAlpha = alpha;
 
-        const bodyX = 0.1 * r, bodyY = 0.15 * r;   // центр тела
-        const bodyR = 0.5 * r;                       // радиус тела
+        const bodyX = 0.1 * r, bodyY = 0.15 * r;
+        const bodyR = 0.5 * r;
 
-        // тело (круг)
         ctx.beginPath();
         ctx.arc(bodyX, bodyY, bodyR, 0, Math.PI * 2);
         ctx.stroke();
 
-        // глаз (круг внутри тела)
         ctx.beginPath();
         ctx.arc(0.18 * r, 0.12 * r, 0.26 * r, 0, Math.PI * 2);
         ctx.stroke();
 
-        // зрачок — залитая точка
         ctx.beginPath();
         ctx.arc(0.2 * r, 0.1 * r, 0.18 * r, 0, Math.PI * 2);
         ctx.fillStyle = colors.accent;
@@ -1846,20 +1705,17 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         ctx.fill();
         ctx.globalAlpha = alpha;
 
-        // острый пик сверху: от клюва вверх к вершине и вниз-вправо к телу
         ctx.beginPath();
-        ctx.moveTo(-0.4 * r, -0.2 * r);   // левое основание пика (клюв)
-        ctx.lineTo(0.02 * r, -0.75 * r);  // вершина
-        ctx.lineTo(0.48 * r, -0.28 * r);  // правый склон, смыкается с телом
+        ctx.moveTo(-0.4 * r, -0.2 * r);
+        ctx.lineTo(0.02 * r, -0.75 * r);
+        ctx.lineTo(0.48 * r, -0.28 * r);
         ctx.stroke();
 
-        // горизонтальный «клюв» влево
         ctx.beginPath();
         ctx.moveTo(-0.4 * r, -0.24 * r);
         ctx.lineTo(-0.58 * r, -0.24 * r);
         ctx.stroke();
 
-        // длинный хвост: от основания пика вниз-влево, сужаясь
         ctx.beginPath();
         ctx.moveTo(-0.32 * r, -0.08 * r);
         ctx.quadraticCurveTo(-0.78 * r, 0.18 * r, -0.66 * r, 0.55 * r);
@@ -1872,7 +1728,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         ctx.restore();
     }
 
-    // ---- перспективная сетка (пол/потолок) ----
     function drawPerspectiveGrid() {
         const vpx = W / 2, vpy = H / 2;
         ctx.save();
@@ -1880,7 +1735,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         ctx.globalAlpha = 0.10;
         ctx.lineWidth = 1;
 
-        // линии к точке схода
         const rays = 22;
         for (let i = 0; i <= rays; i++) {
             const t = i / rays;
@@ -1894,7 +1748,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
             ctx.lineTo(edgeX, H * 1.2);
             ctx.stroke();
         }
-        // расходящиеся кольца
         const offset = (time * 0.0004) % 1;
         for (let i = 0; i < 12; i++) {
             const t = (i + offset) / 12;
@@ -1911,7 +1764,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         colors = themeColors();
         ctx.clearRect(0, 0, W, H);
 
-        // фоновая подложка (чуть светлее чёрного, как у Checkpoint)
         ctx.fillStyle = colors.bg;
         ctx.globalAlpha = 0.9;
         ctx.fillRect(0, 0, W, H);
@@ -1933,7 +1785,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
             if (!reducedMotion) updatePortalFlight(sh);
         });
 
-        // мягкое свечение в центре
         const grad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.55);
         grad.addColorStop(0, 'rgba(255,255,255,0.03)');
         grad.addColorStop(1, 'rgba(0,0,0,0)');
@@ -1944,7 +1795,6 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         animFrame = requestAnimationFrame(draw);
     }
 
-    // пересобрать точки при смене темы
     const observer = new MutationObserver(() => {
         colors = themeColors();
         buildDotPattern();
@@ -1955,12 +1805,8 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
     resizeCanvas();
     draw();
     window.addEventListener('beforeunload', () => { if (animFrame) cancelAnimationFrame(animFrame); });
-    console.log('[GODOINED ARCHIVE] Checkpoint-фон инициализирован (' + shapeCount + ' wireframe-фигур)');
 })();
 
-// ============================================================
-//  ТЕМЫ
-// ============================================================
 function applyTheme(theme) {
     document.body.classList.remove('theme-amber', 'theme-blue', 'theme-green');
     document.documentElement.classList.remove('theme-amber', 'theme-blue', 'theme-green');
@@ -1991,9 +1837,6 @@ if (savedTheme) {
     applyTheme('green');
 }
 
-// ============================================================
-//  КАСТОМНЫЙ СКРОЛЛБАР
-// ============================================================
 (function initCustomScrollbar() {
     const scrollbarContainer = document.createElement('div');
     scrollbarContainer.id = 'custom-scrollbar';
@@ -2061,9 +1904,6 @@ if (savedTheme) {
     });
 })();
 
-// ============================================================
-//  НАВИГАЦИЯ
-// ============================================================
 function setupNavigation() {
     const backBtn = document.getElementById('back-to-gallery');
     if (backBtn) {
@@ -2086,9 +1926,6 @@ function setupNavigation() {
     });
 }
 
-// ============================================================
-//  ИНИЦИАЛИЗАЦИЯ
-// ============================================================
 function initApp() {
     const savedTheme = localStorage.getItem('retro-theme');
     if (savedTheme) applyTheme(savedTheme);
@@ -2113,191 +1950,1945 @@ function initApp() {
         } else {
             showGallery();
         }
-        console.log('[GODOINED ARCHIVE] Приложение инициализировано, версия ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?'));
     }).catch(e => console.error('[GODOINED ARCHIVE] initApp:', e));
 }
 
 // ============================================================
-//  МОДАЛЬНОЕ ОКНО ЗАКАЗА 3D-ГИФТ (с альтернативной отправкой)
+//  ЭКРАН СОЗДАНИЯ СОСУДА — ПИКСЕЛИ + GHOSTING GLOW
 // ============================================================
 (function initOrderModal() {
     const modal = document.getElementById('order-modal');
     const openBtn = document.getElementById('order-btn');
     const closeBtn = document.getElementById('order-modal-close');
-    const form = document.getElementById('order-form');
-    const statusDiv = document.getElementById('order-status');
-    const mainSendBtn = document.getElementById('main-send-btn');
-    const altSendBtn = document.getElementById('alt-send-btn');
-    const fileInput = document.getElementById('order-files');
-
-    if (!modal || !openBtn || !closeBtn || !form || !mainSendBtn) {
-        console.warn('Не найдены элементы модалки заказа');
-        return;
-    }
-
-    const ordersEnabled = typeof ENABLE_ORDERS !== 'undefined' ? ENABLE_ORDERS : true;
-
-    if (!ordersEnabled) {
-        openBtn.disabled = true;
-        openBtn.title = 'Заказы временно не принимаются';
-        openBtn.addEventListener('click', function() {
-            alert('⛔ Заказы временно не принимаются. Загляните позже!');
-        });
-        return;
-    }
-
-    // ---- Открыть/закрыть модалку ----
+    const dialogue = document.getElementById('dt-dialogue');
     function openModal() {
-        modal.style.display = 'flex';
-        requestAnimationFrame(() => modal.classList.add('active'));
-        playClickSound();
+        // 1. Включаем туман и размытие сайта
+        const fog = document.getElementById('dt-fog-overlay');
+        if (fog) fog.classList.add('active');
+        document.body.classList.add('dt-active');
         document.body.style.overflow = 'hidden';
-        statusDiv.style.display = 'none';
-        mainSendBtn.style.display = 'block';
-        altSendBtn.style.display = 'none';
-        mainSendBtn.disabled = false;
-        mainSendBtn.textContent = '📨 ОТПРАВИТЬ ЗАЯВКУ';
-        form.reset();
+
+        // 2. Звуки (если функции нет, ничего не сломается)
+        try { if (typeof playClickSound === 'function') playClickSound(); } catch(e) {}
+        try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch(e) {}
+
+        // 3. Сброс формы
+        state.step = 0;
+        state.name = ''; state.food = ''; state.color = ''; state.gift = '';
+        state.feeling = ''; state.honest = ''; state.pain = '';
+        state.message = ''; state.files = null;
+        
+        try { if (typeof resetFinale === 'function') resetFinale(); } catch(e) {}
+        try { if (typeof clickEchoes !== 'undefined') clickEchoes.length = 0; } catch(e) {}
+        
+        targetProgress = 0;
+        currentProgress = 0;
+        modal.style.setProperty('--dt-progress', '0');
+
+        // 4. Показываем модалку
+        setTimeout(() => {
+            modal.style.display = 'block';
+            
+            // Небольшая пауза, чтобы display: block успел примениться
+            setTimeout(() => {
+                modal.classList.add('active');
+                
+                // Через 600мс туман рассеивается, открывая модалку
+                setTimeout(() => {
+                    if (fog) fog.classList.remove('active');
+                }, 600);
+
+                // Запускаем музыку и первый вопрос
+                try { if (typeof startMusic === 'function') startMusic(); } catch(e) {}
+                try { if (typeof runStep === 'function') runStep(); } catch(e) { console.error('Ошибка в runStep:', e); }
+            }, 50);
+        }, 400);
     }
 
     function closeModal() {
+        const modal = document.getElementById('render-modal');
+        if (!modal) return;
+        if (modalIsOpen) playModalCloseSound();
         modal.classList.remove('active');
-        document.body.style.overflow = '';
-        setTimeout(() => { modal.style.display = 'none'; }, 300);
-        playBackSound();
+        modalIsOpen = false;
+        if (currentVideoElement) {
+            currentVideoElement.pause();
+            currentVideoElement = null;
+        }
+        if (playerInterval) {
+            clearInterval(playerInterval);
+            playerInterval = null;
+        }
+        const playerContainer = document.getElementById('custom-player');
+        if (playerContainer) playerContainer.style.display = 'none';
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+            const wrapper = document.getElementById('modal-media-wrapper');
+            if (wrapper) wrapper.innerHTML = '';
+            document.body.style.overflow = '';
+        }, 300);
+    }
+    if (!modal || !openBtn || !dialogue) return;
+
+    const ordersEnabled = typeof ENABLE_ORDERS !== 'undefined' ? ENABLE_ORDERS : true;
+    if (!ordersEnabled) {
+        openBtn.disabled = true;
+        openBtn.title = 'Заказы временно не принимаются';
+        openBtn.addEventListener('click', () => alert('⛔ Заказы временно не принимаются. Загляните позже!'));
+        return;
     }
 
-    openBtn.addEventListener('click', openModal);
-    closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target.classList.contains('modal-overlay')) {
-            closeModal();
+    const MAX_TOTAL_SIZE = 5 * 1024 * 1024;
+    const state = {
+        step: 0, name: '', food: '', color: '', gift: '',
+        feeling: '', honest: '', pain: '', message: '', files: null
+    };
+
+    let currentProgress = 0;
+    let targetProgress = 0;
+    const PROGRESS_LERP = 0.035;
+        // ---- ФИЧА 11/12/13: состояние фич ----
+    let mouseNearHeart = 0;
+    const clickEchoes = [];
+    const personality = {
+        heartHue: 340,
+        spiralHue: 280,
+        glowHue: 300,
+        heartSat: 100,
+        isAngry: false
+    };
+
+    function updatePersonality() {
+        let hHue = 340, sHue = 280, gHue = 300, hSat = 100, angry = false;
+
+        // Чувства к творению — задают характер
+        if (state.feeling === 'ЛЮБОВЬ')       { hHue = 340; sHue = 320; gHue = 340; }
+        else if (state.feeling === 'НАДЕЖДА') { hHue = 200; sHue = 240; gHue = 220; }
+        else if (state.feeling === 'СТРАХ')   { hHue = 40;  sHue = 280; gHue = 60; angry = true; }
+        else if (state.feeling === 'ОТВРАЩЕНИЕ') { hHue = 0; sHue = 200; gHue = 10; angry = true; }
+
+        // Еда корректирует оттенок
+        if (state.food === 'БОЛЬ') hHue = (hHue + 300) % 360;
+        else if (state.food === 'ХОЛОД') hHue = (hHue + 180) % 360;
+        else if (state.food === 'СЛАДКОЕ') hHue = (hHue + 15) % 360;
+        else if (state.food === 'КИСЛОЕ') hHue = (hHue + 60) % 360;
+
+        // Цвет сосуда — влияет на спирали
+        if (state.color === 'СИНИЙ')      sHue = 220;
+        else if (state.color === 'ЗЕЛЕНЫЙ') sHue = 130;
+        else if (state.color === 'РОЗОВЫЙ') sHue = 330;
+        else if (state.color === 'КРАСНЫЙ') sHue = 0;
+
+        personality.heartHue = hHue;
+        personality.spiralHue = sHue;
+        personality.glowHue = gHue;
+        personality.heartSat = hSat;
+        personality.isAngry = angry;
+    }
+
+    // ---- ФИЧА 11+12: обработчики мыши ----
+    (function initMouseTracking() {
+        const handlerMove = (e) => {
+            if (!modal.classList.contains('active')) return;
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+            const maxDist = Math.min(window.innerWidth, window.innerHeight) * 0.45;
+            mouseNearHeart = Math.max(0, 1 - dist / maxDist);
+        };
+        const handlerClick = (e) => {
+            if (!modal.classList.contains('active')) return;
+            clickEchoes.push({ x: e.clientX, y: e.clientY, life: 0, maxLife: 38 });
+        };
+        document.addEventListener('mousemove', handlerMove, { passive: true });
+        document.addEventListener('pointerdown', handlerClick, { passive: true });
+    })();
+    // Финальный режим: 0 = обычный, 1 = сводка (вливание), 2 = отправка (взрыв)
+    let finaleMode = 0;
+    let finaleBoost = 0;
+    let finaleStartTime = 0;
+
+    function updateProgress() {
+        targetProgress = Math.min(1, state.step / steps.length);
+    }
+
+    const steps = [
+        { type: 'text', key: 'name', question: 'Как тебя зовут?', sub: 'Можно пропустить.',
+          placeholder: 'ИМЯ', maxLength: 24, optional: true,
+          reaction: (st) => st.name ? `Хорошо, ${st.name}.` : 'Хорошо.' },
+        { type: 'choice', key: 'food', question: 'Какая любимая еда у сосуда?',
+          options: ['СЛАДКОЕ', 'МЯГКОЕ', 'КИСЛОЕ', 'СОЛЕНОЕ', 'БОЛЬ', 'ХОЛОД'], reaction: 'Записал.' },
+        { type: 'choice', key: 'color', question: 'Какой цвет ему нравится больше всего?',
+          options: ['КРАСНЫЙ', 'СИНИЙ', 'ЗЕЛЕНЫЙ', 'РОЗОВЫЙ'], reaction: 'Понял.' },
+        { type: 'choice', key: 'gift', question: 'Какой дар ты ему преподнесёшь?',
+          options: ['ДОБРОТА', 'УМ', 'АМБИЦИИ', 'ХРАБРОСТЬ', 'ГОЛОС'], reaction: 'Принято.' },
+        { type: 'choice', key: 'feeling', question: 'Что ты чувствуешь к своему творению?',
+          sub: '(Оно не услышит.)', options: ['ЛЮБОВЬ', 'НАДЕЖДА', 'СТРАХ', 'ОТВРАЩЕНИЕ'], reaction: 'Хорошо.' },
+        { type: 'choice', key: 'honest', question: 'Ты отвечал честно?',
+          options: ['ДА', 'НЕТ'], reaction: 'Записал.' },
+        { type: 'choice', key: 'pain', question: 'Ты осознаёшь возможность боли и страданий?',
+          options: ['ДА', 'НЕТ'], reaction: 'Понял.' },
+        { type: 'textarea', key: 'message', question: 'Расскажи о своём творении.',
+          sub: 'Обязательное поле.', placeholder: 'Что это? Из чего? Зачем?', reaction: 'Понял.' },
+        { type: 'file', key: 'files', question: 'Есть ли у тебя референсы?',
+          sub: 'До 5 МБ. Можно несколько.', optional: true, reaction: 'Записал.' }
+    ];
+
+    // ============================================================
+    //  CANVAS'Ы: СМУЗ-ГЛОУ + ПИКСЕЛИ + ВЗРЫВНОЙ ФИНАЛ
+    // ============================================================
+    (function initCanvases() {
+        const staticCanvas = document.getElementById('dt-static-canvas');
+        const trailCanvas = document.getElementById('dt-trail-canvas');
+        const glowCanvas = document.getElementById('dt-glow-canvas');
+        if (!staticCanvas || !trailCanvas || !glowCanvas) return;
+
+        const sctx = staticCanvas.getContext('2d');
+        const tctx = trailCanvas.getContext('2d');
+        const gctx = glowCanvas.getContext('2d');
+        const PX = 3; // мельче пиксели = глаже
+
+        function resize() {
+            const w = Math.max(2, Math.ceil(window.innerWidth / PX));
+            const h = Math.max(2, Math.ceil(window.innerHeight / PX));
+            staticCanvas.width = w; staticCanvas.height = h;
+            trailCanvas.width = w; trailCanvas.height = h;
+            // Glow рисуется в полном разрешении — для плавного блюра
+            glowCanvas.width = window.innerWidth;
+            glowCanvas.height = window.innerHeight;
+            sctx.imageSmoothingEnabled = false;
+            tctx.imageSmoothingEnabled = false;
+            gctx.imageSmoothingEnabled = true;
         }
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.style.display === 'flex') {
-            closeModal();
+        resize();
+        window.addEventListener('resize', resize);
+
+        const particles = [];
+        const MAX_PARTICLES = 75;
+        let time = 0;
+
+        // ============================================================
+        //  УТИЛИТЫ
+        // ============================================================
+        function easeInOutQuad(x) {
+            return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
         }
-    });
-
-    // ---- АЛЬТЕРНАТИВНАЯ ОТПРАВКА (mailto) ----
-    altSendBtn.addEventListener('click', function() {
-        const name = document.getElementById('order-name')?.value?.trim() || 'Аноним';
-        const message = document.getElementById('order-message')?.value?.trim() || '';
-
-        if (!message) {
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'order-status error';
-            statusDiv.textContent = '❌ Поле "Описание модели" обязательно для заполнения.';
-            return;
+        function easeOutCubic(x) {
+            return 1 - Math.pow(1 - x, 3);
         }
 
-        const subject = encodeURIComponent('Godoined Archive новая заявка');
-        const body = encodeURIComponent(
-            `Имя: ${name}\n\n` +
-            `Описание модели:\n${message}\n\n` +
-            `---\nПожалуйста, прикрепите фото/референсы к этому письму.`
-        );
-        const mailtoLink = `mailto:goodmopsreset@gmail.com?subject=${subject}&body=${body}`;
-        window.open(mailtoLink, '_blank');
+        // ============================================================
+        //  СПИРАЛИ
+        // ============================================================
+        const SPIRAL_ARMS = 4;
+        const SPIRAL_PARTICLES = [];
+        let spiralInitialized = false;
 
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'order-status success';
-        statusDiv.textContent = '📧 Почтовый клиент открыт. Прикрепите фото и отправьте письмо.';
-        playClickSound();
+        function initSpiral() {
+            SPIRAL_PARTICLES.length = 0;
+            for (let arm = 0; arm < SPIRAL_ARMS; arm++) {
+                for (let i = 0; i < 32; i++) {
+                    SPIRAL_PARTICLES.push({
+                        arm: arm,
+                        s: i / 32,
+                        speed: 0.0035 + Math.random() * 0.0025,
+                        size: Math.random() < 0.35 ? 2 : 1,
+                        hueBase: 265 + arm * 15
+                    });
+                }
+            }
+            spiralInitialized = true;
+        }
+
+        function drawSpiralArms(ctx, cx, cy, w, h, energy, t) {
+            if (energy < 0.08) return;
+            if (!spiralInitialized) initSpiral();
+            const maxR = Math.min(w, h) * 0.72;
+            const revolutions = 2.3;
+            for (const p of SPIRAL_PARTICLES) {
+                p.s += p.speed * (0.3 + energy * 4);
+                if (p.s > 1) p.s -= 1;
+                const baseAngle = (p.arm / SPIRAL_ARMS) * Math.PI * 2;
+                const theta = baseAngle + p.s * revolutions * Math.PI * 2;
+                const r = (1 - p.s) * maxR;
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r * 0.55;
+                const intensity = 0.15 + p.s * 0.85;
+                const alpha = intensity * energy * 0.95;
+                const hue = p.hueBase + p.s * 55;
+                const light = 55 + p.s * 40;
+                if (p.s > 0.06) {
+                    for (let k = 1; k <= 2; k++) {
+                        const trailS = p.s - k * 0.014;
+                        if (trailS < 0) continue;
+                        const trailAngle = baseAngle + trailS * revolutions * Math.PI * 2;
+                        const trailR = (1 - trailS) * maxR;
+                        const tx = cx + Math.cos(trailAngle) * trailR;
+                        const ty = cy + Math.sin(trailAngle) * trailR * 0.55;
+                        ctx.fillStyle = `hsla(${hue}, 100%, ${light - 10}, ${alpha * (0.35 / k)})`;
+                        ctx.fillRect(Math.floor(tx), Math.floor(ty), p.size, p.size);
+                    }
+                }
+                ctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${alpha})`;
+                ctx.fillRect(Math.floor(x), Math.floor(y), p.size, p.size);
+            }
+        }
+
+        // ============================================================
+        //  МАГИЧЕСКИЙ КРУГ
+        // ============================================================
+        function drawMagicCircle(ctx, cx, cy, w, h, energy, t) {
+            if (energy < 0.12) return;
+            const groundY = cy + Math.min(w, h) * 0.28;
+            const radiusX = Math.min(w, h) * 0.5;
+            const radiusY = radiusX * 0.28;
+            const alpha = Math.min(1, (energy - 0.12) / 0.38);
+            const scale = 0.7 + Math.min(1, energy / 0.6) * 0.3;
+
+            function ellipse(rx, ry, hue, a, dashed) {
+                const seg = 80;
+                ctx.fillStyle = `hsla(${hue}, 100%, 75%, ${a})`;
+                for (let i = 0; i < seg; i++) {
+                    if (dashed && i % 4 >= 2) continue;
+                    const angle = (i / seg) * Math.PI * 2;
+                    const x = cx + Math.cos(angle) * rx;
+                    const y = groundY + Math.sin(angle) * ry;
+                    ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
+                }
+            }
+            const rx = radiusX * scale;
+            const ry = radiusY * scale;
+            ellipse(rx, ry, 280, alpha * 0.95, false);
+            if (energy > 0.3) {
+                const midAlpha = Math.min(1, (energy - 0.3) / 0.4);
+                ellipse(rx * 0.78, ry * 0.78, 300, alpha * midAlpha * 0.7, true);
+            }
+            if (energy > 0.5) {
+                const innerAlpha = Math.min(1, (energy - 0.5) / 0.4);
+                ellipse(rx * 0.52, ry * 0.52, 320, alpha * innerAlpha * 0.6, false);
+            }
+            const hasName = state.name && state.name.length > 0;
+            if (hasName) {
+                drawNameRunes(ctx, cx, groundY, rx, ry, alpha, t);
+            } else {
+                const runeCount = Math.floor(6 + energy * 10);
+                const rot = t * (0.008 + energy * 0.025);
+                for (let i = 0; i < runeCount; i++) {
+                    const angle = (i / runeCount) * Math.PI * 2 + rot;
+                    const x = cx + Math.cos(angle) * rx * 0.88;
+                    const y = groundY + Math.sin(angle) * ry * 0.88;
+                    const flick = 0.4 + Math.sin(t * 0.08 + i * 1.7) * 0.6;
+                    ctx.fillStyle = `hsla(310, 100%, 82%, ${alpha * flick})`;
+                    ctx.fillRect(Math.floor(x), Math.floor(y - 2), 2, 5);
+                    ctx.fillRect(Math.floor(x - 2), Math.floor(y), 6, 2);
+                }
+            }
+            if (energy > 0.4) {
+                const triAlpha = Math.min(1, (energy - 0.4) / 0.3) * alpha;
+                const triRot = -t * (0.012 + energy * 0.02);
+                const triPts = [];
+                for (let i = 0; i < 3; i++) {
+                    const angle = triRot + (i / 3) * Math.PI * 2 - Math.PI / 2;
+                    triPts.push([
+                        cx + Math.cos(angle) * rx * 0.42,
+                        groundY + Math.sin(angle) * ry * 0.42
+                    ]);
+                }
+                ctx.fillStyle = `hsla(290, 100%, 78%, ${triAlpha * 0.55})`;
+                for (let i = 0; i < 3; i++) {
+                    const a = triPts[i];
+                    const b = triPts[(i + 1) % 3];
+                    for (let s = 0; s <= 24; s++) {
+                        const x = a[0] + (b[0] - a[0]) * (s / 24);
+                        const y = a[1] + (b[1] - a[1]) * (s / 24);
+                        ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
+                    }
+                }
+            }
+            if (energy > 0.55) {
+                const pillarIntensity = Math.min(1, (energy - 0.55) / 0.35);
+                const height = groundY - cy;
+                const numPixels = Math.floor(16 + pillarIntensity * 24);
+                for (let i = 0; i < numPixels; i++) {
+                    const phase = (t * (0.012 + pillarIntensity * 0.012) + i / numPixels) % 1;
+                    const y = groundY - phase * height;
+                    const x = cx + Math.sin(phase * 8 + t * 0.05) * 3 * pillarIntensity;
+                    const w2 = (1 - phase * 0.55) * 7 * pillarIntensity;
+                    const a = pillarIntensity * 0.65 * Math.sin(phase * Math.PI);
+                    if (a < 0.03) continue;
+                    ctx.fillStyle = `hsla(300, 100%, 78%, ${a})`;
+                    ctx.fillRect(Math.floor(x - w2), Math.floor(y), Math.max(1, Math.floor(w2 * 2)), 2);
+                }
+            }
+        }
+
+        // ============================================================
+        //  КОМЕТЫ (с улучшенной физикой)
+        // ============================================================
+        const soulComets = [];
+        let cometLastSpawn = 0;
+
+        function spawnSoulComet(w, h) {
+            const side = Math.floor(Math.random() * 4);
+            const padding = 60;
+            let x, y, angle;
+            if (side === 0) { x = Math.random() * w; y = -padding; angle = Math.PI / 2 + (Math.random() - 0.5) * 0.5; }
+            else if (side === 1) { x = w + padding; y = Math.random() * h; angle = Math.PI + (Math.random() - 0.5) * 0.5; }
+            else if (side === 2) { x = Math.random() * w; y = h + padding; angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5; }
+            else { x = -padding; y = Math.random() * h; angle = (Math.random() - 0.5) * 0.5; }
+            return {
+                x, y, angle,
+                speed: 1.4 + Math.random() * 0.9,
+                size: 2 + Math.random() * 2,
+                hue: 280 + Math.random() * 55,
+                trail: [],
+                age: 0
+            };
+        }
+
+        function updateAndDrawComets(ctx, cx, cy, w, h, energy, t) {
+            if (energy < 0.3) return;
+            const now = performance.now();
+            const spawnInterval = Math.max(100, 500 - (energy - 0.3) * 570);
+            const maxComets = 1 + Math.floor((energy - 0.3) * 7);
+            if (now - cometLastSpawn > spawnInterval && soulComets.length < maxComets) {
+                cometLastSpawn = now;
+                soulComets.push(spawnSoulComet(w, h));
+            }
+            for (let i = soulComets.length - 1; i >= 0; i--) {
+                const c = soulComets[i];
+                c.age++;
+                const dx = cx - c.x;
+                const dy = cy - c.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const targetAngle = Math.atan2(dy, dx);
+                let da = targetAngle - c.angle;
+                while (da > Math.PI) da -= Math.PI * 2;
+                while (da < -Math.PI) da += Math.PI * 2;
+                c.angle += da * 0.06 * (1 + energy * 0.8);
+                const speedBoost = 1 + (1 - Math.min(1, dist / 320)) * energy * 2.2;
+                c.x += Math.cos(c.angle) * c.speed * speedBoost;
+                c.y += Math.sin(c.angle) * c.speed * speedBoost;
+                c.trail.unshift({ x: c.x, y: c.y });
+                if (c.trail.length > 26) c.trail.pop();
+                if (dist < 10) {
+                    for (let s = 0; s < 12; s++) {
+                        const sa = Math.random() * Math.PI * 2;
+                        const sp = 2 + Math.random() * 3.5;
+                        soulSparks.push({
+                            x: cx, y: cy,
+                            vx: Math.cos(sa) * sp,
+                            vy: Math.sin(sa) * sp,
+                            life: 0,
+                            maxLife: 25 + Math.random() * 20,
+                            size: 1 + Math.random() * 2,
+                            hue: c.hue
+                        });
+                    }
+                    soulComets.splice(i, 1);
+                    continue;
+                }
+                for (let k = c.trail.length - 1; k >= 0; k--) {
+                    const p = c.trail[k];
+                    const tp = 1 - k / c.trail.length;
+                    const trailAlpha = tp * tp * 0.85 * energy;
+                    const trailLight = 42 + tp * 38;
+                    const sz = Math.ceil(c.size * tp);
+                    if (sz < 1) continue;
+                    ctx.fillStyle = `hsla(${c.hue}, 100%, ${trailLight}%, ${trailAlpha})`;
+                    ctx.fillRect(Math.floor(p.x - sz / 2), Math.floor(p.y - sz / 2), sz, sz);
+                }
+                const headAlpha = energy * (0.9 + Math.sin(t * 0.18 + c.age * 0.1) * 0.1);
+                const sz = Math.ceil(c.size);
+                ctx.fillStyle = `hsla(${c.hue}, 100%, 60%, ${headAlpha * 0.35})`;
+                ctx.fillRect(Math.floor(c.x - sz * 1.5), Math.floor(c.y - sz * 1.5), sz * 3, sz * 3);
+                ctx.fillStyle = `hsla(${c.hue}, 100%, 88%, ${headAlpha})`;
+                ctx.fillRect(Math.floor(c.x - sz / 2), Math.floor(c.y - sz / 2), sz, sz);
+                ctx.fillStyle = `hsla(0, 0%, 100%, ${headAlpha})`;
+                ctx.fillRect(Math.floor(c.x), Math.floor(c.y), 1, 1);
+            }
+        }
+
+        // ============================================================
+        //  ЛУЧИ
+        // ============================================================
+        const RAY_COUNT = 32;
+        const rayAngles = [];
+        for (let i = 0; i < RAY_COUNT; i++) {
+            rayAngles.push((i * Math.PI * 2 / RAY_COUNT) + Math.random() * 0.1);
+        }
+        function drawRays(ctx, cx, cy, energy, t) {
+            if (energy < 0.05) return;
+            const maxR = Math.min(ctx.canvas.width, ctx.canvas.height) * 1.1;
+            const activeRays = Math.floor(RAY_COUNT * Math.min(1, energy / 0.6));
+            for (let i = 0; i < activeRays; i++) {
+                const angle = rayAngles[i];
+                const flicker = 0.7 + Math.sin(t * 0.03 + i * 0.7) * 0.3;
+                const len = maxR * Math.min(1, energy * 1.3) * flicker;
+                if (len < 3) continue;
+                const steps = Math.floor(len / 2.5);
+                for (let s = 0; s < steps; s++) {
+                    const t0 = s / steps;
+                    const x = cx + Math.cos(angle) * len * t0;
+                    const y = cy + Math.sin(angle) * len * t0 * 0.55;
+                    const segAlpha = (1 - t0) * 0.7 * energy * flicker;
+                    if (segAlpha < 0.03) continue;
+                    const hue = 280 + i * 4;
+                    const light = 60 + 30 * (1 - t0);
+                    ctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${segAlpha})`;
+                    const sz = t0 < 0.15 ? 3 : (t0 < 0.4 ? 2 : 1);
+                    ctx.fillRect(Math.floor(x), Math.floor(y), sz, sz);
+                }
+            }
+        }
+
+        // ============================================================
+        //  ИСКРЫ
+        // ============================================================
+        const soulSparks = [];
+        function updateAndDrawSparks(ctx) {
+            for (let i = soulSparks.length - 1; i >= 0; i--) {
+                const sp = soulSparks[i];
+                sp.life++;
+                if (sp.life > sp.maxLife) { soulSparks.splice(i, 1); continue; }
+                sp.x += sp.vx;
+                sp.y += sp.vy;
+                sp.vx *= 0.93;
+                sp.vy *= 0.93;
+                const p = sp.life / sp.maxLife;
+                const alpha = (1 - p) * 0.95;
+                const light = 82 + p * 15;
+                const sz = Math.max(1, Math.ceil(sp.size * (1 - p * 0.5)));
+                ctx.fillStyle = `hsla(${sp.hue}, 100%, ${light}%, ${alpha})`;
+                ctx.fillRect(Math.floor(sp.x), Math.floor(sp.y), sz, sz);
+            }
+        }
+
+        function resetCanvasEffects() {
+            soulComets.length = 0;
+            soulSparks.length = 0;
+            cometLastSpawn = 0;
+            explosionStart = 0;
+            lastExplosionSpark = 0;
+        }
+        window.__dtResetCanvas = resetCanvasEffects;
+
+        // ============================================================
+        //  БАЗОВЫЕ
+        // ============================================================
+        function spawnParticle() {
+            return {
+                angle: Math.random() * Math.PI * 2,
+                orbit: 12 + Math.random() * 65,
+                size: 1 + Math.floor(Math.random() * 2),
+                life: 0,
+                maxLife: 180 + Math.random() * 280,
+                speed: (0.004 + Math.random() * 0.018) * (Math.random() < 0.5 ? 1 : -1),
+                hue: 250 + Math.random() * 70
+            };
+        }
+
+        const HEART_MAP = [
+            [0,1,1,0,0,0,1,1,0],
+            [1,1,1,1,0,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1],
+            [0,1,1,1,1,1,1,1,0],
+            [0,0,1,1,1,1,1,0,0],
+            [0,0,0,1,1,1,0,0,0],
+            [0,0,0,0,1,0,0,0,0]
+        ];
+        function drawPixelHeart(ctx, cx, cy, cell, glow) {
+            const hue = personality.heartHue;
+            const mapW = HEART_MAP[0].length;
+            const mapH = HEART_MAP.length;
+            const startX = Math.floor(cx - (mapW * cell) / 2);
+            const startY = Math.floor(cy - (mapH * cell) / 2);
+            if (glow > 0.05) {
+                ctx.fillStyle = `hsla(${hue}, 100%, 55%, ${0.16 * glow})`;
+                for (let y = 0; y < mapH; y++) {
+                    for (let x = 0; x < mapW; x++) {
+                        if (!HEART_MAP[y][x]) continue;
+                        ctx.fillRect(startX + x * cell - cell, startY + y * cell - cell, cell * 3, cell * 3);
+                    }
+                }
+            }
+            ctx.fillStyle = `hsl(${hue}, 100%, 55%)`;
+            for (let y = 0; y < mapH; y++) {
+                for (let x = 0; x < mapW; x++) {
+                    if (!HEART_MAP[y][x]) continue;
+                    ctx.fillRect(startX + x * cell, startY + y * cell, cell, cell);
+                }
+            }
+            if (glow > 0.5) {
+                ctx.fillStyle = `hsla(${hue}, 100%, 88%, ${0.6 * (glow - 0.5) * 2})`;
+                ctx.fillRect(startX + 2 * cell, startY + 2 * cell, cell, cell);
+                ctx.fillRect(startX + 3 * cell, startY + 2 * cell, cell, cell);
+            }
+        }
+
+        function drawAura(ctx, cx, cy, progress) {
+            const maxR = Math.min(cx, cy) * 0.95;
+            const bands = 7;
+            for (let i = bands; i >= 1; i--) {
+                const ratio = i / bands;
+                const radius = Math.floor(maxR * ratio * (0.4 + progress * 0.6));
+                const alpha = (1 - ratio) * 0.18 * (0.35 + progress * 0.65);
+                ctx.fillStyle = `rgba(110, 0, 190, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(Math.floor(cx), Math.floor(cy), radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            if (progress > 0.3) {
+                const innerP = (progress - 0.3) / 0.7;
+                ctx.fillStyle = `rgba(200, 100, 255, ${0.16 * innerP})`;
+                ctx.beginPath();
+                ctx.arc(Math.floor(cx), Math.floor(cy), Math.floor(maxR * 0.28 * innerP), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawPixelRing(ctx, cx, cy, radius, alpha, rot) {
+            const points = Math.max(16, Math.floor(radius * 0.9));
+            const dotSize = 2;
+            ctx.fillStyle = `rgba(180, 100, 255, ${alpha})`;
+            for (let i = 0; i < points; i++) {
+                const a = (i / points) * Math.PI * 2 + rot;
+                const x = cx + Math.cos(a) * radius;
+                const y = cy + Math.sin(a) * radius;
+                ctx.fillRect(Math.floor(x), Math.floor(y), dotSize, dotSize);
+            }
+        }
+        // ===== ФИЧА 4: Качественное отражение души в полу =====
+        function drawMirrorHeart(ctx, cx, cy, cell, hue, energy) {
+            if (energy < 0.3) return;
+            
+            const mapW = HEART_MAP[0].length;
+            const mapH = HEART_MAP.length;
+            
+            // ⬇⬇⬇ НАСТРОЙКА ВЫСОТЫ ОТРАЖЕНИЯ ⬇⬇⬇
+            const gap = 75; // Чем больше это число, тем ниже отражение. Попробуй 30, 50 или 60.
+            
+            // Отражение начинается от нижней кромки сердца + отступ (gap)
+            const startY = cy + (mapH * cell) / 2 + gap;
+            const startX = Math.floor(cx - (mapW * cell) / 2);
+            
+            // Сжатие по вертикали (перспектива)
+            const squash = 0.35; 
+            
+            // Плавная волна (рябь), которая не зависит от биения сердца
+            const waveSpeed = time * 0.05; 
+
+            ctx.save();
+            
+            for (let y = 0; y < mapH; y++) {
+                for (let x = 0; x < mapW; x++) {
+                    if (!HEART_MAP[y][x]) continue;
+                    
+                    // 1. Рябь по X (каждый следующий пиксель вниз колышется сильнее)
+                    const depth = (mapH - 1 - y); // 0 (верх отражения) -> 6 (низ)
+                    const waveX = Math.sin(waveSpeed + depth * 0.8) * (cell * 0.6 + depth * 0.2);
+                    
+                    // 2. Сжатие по Y (переворачиваем, сжимаем и опускаем вниз)
+                    const py = startY + depth * cell * squash;
+                    const px = startX + x * cell + waveX;
+                    
+                    // 3. Прозрачность (затухание). Верх отражения ярче, низ — растворяется
+                    const fade = 1 - (depth / mapH);
+                    const alpha = fade * 0.35 * energy; 
+                    
+                    if (alpha < 0.02) continue;
+
+                    ctx.fillStyle = `hsla(${hue}, 100%, 55%, ${alpha})`;
+                    ctx.fillRect(
+                        Math.floor(px), 
+                        Math.floor(py), 
+                        Math.ceil(cell), 
+                        Math.ceil(cell * squash) + 1
+                    );
+                }
+            }
+            ctx.restore();
+        }
+
+        // ===== ФИЧА 5: Туман внизу =====
+        const fogPixels = [];
+        let fogInitialized = false;
+        function initFog(w, h) {
+            fogPixels.length = 0;
+            const count = Math.floor(w * 0.35);
+            for (let i = 0; i < count; i++) {
+                fogPixels.push({
+                    x: Math.random() * w * 1.2,
+                    y: h * (0.75 + Math.random() * 0.25),
+                    size: 1 + Math.floor(Math.random() * 3),
+                    speed: 0.05 + Math.random() * 0.25,
+                    hue: 260 + Math.random() * 80
+                });
+            }
+            fogInitialized = true;
+        }
+        function drawFog(ctx, w, h, energy) {
+            if (!fogInitialized) initFog(w, h);
+            const alpha = 0.06 + energy * 0.18;
+            for (const p of fogPixels) {
+                p.x += p.speed * (1 + energy * 1.5);
+                if (p.x > w * 1.2) p.x = -10;
+                const wobble = Math.sin(p.x * 0.02 + time * 0.02) * 3;
+                ctx.fillStyle = `hsla(${p.hue}, 80%, 55%, ${alpha})`;
+                ctx.fillRect(Math.floor(p.x), Math.floor(p.y + wobble), p.size, p.size);
+            }
+        }
+
+
+        // ===== ФИЧА 12: Ударные волны от кликов =====
+        function drawClickEchoes(ctx) {
+            for (let i = clickEchoes.length - 1; i >= 0; i--) {
+                const c = clickEchoes[i];
+                c.life++;
+                if (c.life > c.maxLife) { clickEchoes.splice(i, 1); continue; }
+                const p = c.life / c.maxLife;
+                const r = p * 90;
+                const seg = Math.floor(r * 0.6);
+                const alpha = (1 - p) * 0.7;
+                for (let s = 0; s < seg; s++) {
+                    const a = (s / seg) * Math.PI * 2;
+                    const x = c.x + Math.cos(a) * r;
+                    const y = c.y + Math.sin(a) * r;
+                    ctx.fillStyle = `hsla(${personality.glowHue}, 100%, 78%, ${alpha})`;
+                    ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
+                }
+            }
+        }
+
+        // ===== ФИЧА 15: Руны складываются в имя сосуда =====
+        function drawNameRunes(ctx, cx, groundY, rx, ry, energy, t) {
+            if (!state.name || state.name.length === 0) return false;
+            const name = state.name.toUpperCase().slice(0, 16);
+            const count = Math.max(name.length, 4);
+            const rot = t * (0.008 + energy * 0.025);
+            ctx.save();
+            ctx.font = 'bold 14px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i < count; i++) {
+                const char = name[i % name.length];
+                const angle = (i / count) * Math.PI * 2 + rot;
+                const x = cx + Math.cos(angle) * rx * 0.88;
+                const y = groundY + Math.sin(angle) * ry * 0.88;
+                const flick = 0.5 + Math.sin(t * 0.08 + i * 1.3) * 0.5;
+                const a = energy * flick;
+                ctx.fillStyle = `hsla(${310 + i * 4}, 100%, 85%, ${a})`;
+                ctx.fillText(char, Math.floor(x), Math.floor(y));
+            }
+            ctx.restore();
+            return true;
+        }
+
+        // ============================================================
+        //  ГЛОУ-СЛОЙ (плавный bloom, рисуется в полном разрешении)
+        // ============================================================
+        function drawGlowLayer(cx, cy, w, h, energy, explosionState) {
+            gctx.clearRect(0, 0, w, h);
+            const intensity = Math.min(1.5, energy * 0.45 + (explosionState ? explosionState.glowBoost * 1.2 : 0));
+            if (intensity < 0.01) return;
+
+            // Основное ядро
+            const coreR = Math.min(w, h) * (0.3 + energy * 0.35);
+            const grad = gctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+            grad.addColorStop(0, `hsla(320, 100%, 70%, ${Math.min(1, intensity) * 0.55})`);
+            grad.addColorStop(0.35, `hsla(280, 100%, 65%, ${Math.min(1, intensity) * 0.32})`);
+            grad.addColorStop(0.7, `hsla(260, 100%, 55%, ${Math.min(1, intensity) * 0.12})`);
+            grad.addColorStop(1, 'transparent');
+            gctx.fillStyle = grad;
+            gctx.fillRect(0, 0, w, h);
+
+            // Белое ядро при взрыве
+            if (explosionState && explosionState.phase === 'flash') {
+                const whiteR = Math.min(w, h) * 0.4;
+                const wg = gctx.createRadialGradient(cx, cy, 0, cx, cy, whiteR);
+                wg.addColorStop(0, `rgba(255, 255, 255, ${explosionState.flash})`);
+                wg.addColorStop(0.4, `rgba(255, 220, 255, ${explosionState.flash * 0.6})`);
+                wg.addColorStop(1, 'transparent');
+                gctx.fillStyle = wg;
+                gctx.fillRect(0, 0, w, h);
+            }
+
+            // Расширяющееся кольцо при взрыве
+            if (explosionState && (explosionState.phase === 'explosion' || explosionState.phase === 'flash')) {
+                const t = explosionState.phase === 'flash'
+                    ? (explosionState.flash)
+                    : (1 - explosionState.glowBoost);
+                const ringR = Math.max(w, h) * 0.4 * Math.min(1, t * 1.2);
+                const rg = gctx.createRadialGradient(cx, cy, ringR * 0.7, cx, cy, ringR * 1.1);
+                rg.addColorStop(0, 'transparent');
+                rg.addColorStop(0.5, `hsla(300, 100%, 80%, ${(1 - t) * 0.7})`);
+                rg.addColorStop(1, 'transparent');
+                gctx.fillStyle = rg;
+                gctx.fillRect(0, 0, w, h);
+            }
+        }
+
+        // ============================================================
+        //  СОСТОЯНИЕ ВЗРЫВА
+        // ============================================================
+        const EXPLOSION_DURATION = 1500;
+        let explosionStart = 0;
+        let lastExplosionSpark = 0;
+
+        function getExplosionState() {
+            if (!explosionStart) return null;
+            const elapsed = performance.now() - explosionStart;
+            if (elapsed < 0) return null;
+            if (elapsed > EXPLOSION_DURATION) { explosionStart = 0; return null; }
+
+            if (elapsed < 200) {
+                // ЗАРЯД
+                const p = elapsed / 200;
+                return { phase: 'charge', p, energyMult: 1 + p * 2.5, flash: 0, shake: p * 0.3, glowBoost: p * 0.4 };
+            }
+            if (elapsed < 380) {
+                // ВСПЫШКА
+                const p = (elapsed - 200) / 180;
+                return { phase: 'flash', p, energyMult: 3.5 - p * 0.3, flash: p < 0.3 ? p / 0.3 : (1 - (p - 0.3) / 0.7), shake: 1.0, glowBoost: 1.0 };
+            }
+            if (elapsed < 1000) {
+                // ВЗРЫВ
+                const p = (elapsed - 380) / 620;
+                return { phase: 'explosion', p, energyMult: 3.2 - p * 2.2, flash: 0, shake: (1 - p) * 0.85, glowBoost: 1 - p * 0.6 };
+            }
+            // ПОСЛЕСВЕЧЕНИЕ
+            const p = (elapsed - 1000) / (EXPLOSION_DURATION - 1000);
+            return { phase: 'afterglow', p, energyMult: 1 - p * 0.4, flash: 0, shake: 0, glowBoost: (1 - p) * 0.25 };
+        }
+
+        // ============================================================
+        //  УДАРНАЯ ВОЛНА (3 кольца)
+        // ============================================================
+        function drawShockwave(ctx, cx, cy, elapsed) {
+            const rings = [
+                { start: 200, dur: 700, maxR: 1.15, hue: 300 },
+                { start: 280, dur: 600, maxR: 0.85, hue: 280 },
+                { start: 360, dur: 500, maxR: 0.55, hue: 320 }
+            ];
+            for (const ring of rings) {
+                if (elapsed < ring.start || elapsed > ring.start + ring.dur) continue;
+                const t = (elapsed - ring.start) / ring.dur;
+                const r = easeOutCubic(t) * Math.min(ctx.canvas.width, ctx.canvas.height) * ring.maxR;
+                const alpha = (1 - t) * 0.95;
+                const thickness = (1 - t) * 6 + 1;
+                const seg = Math.floor(r * 0.7);
+                for (let i = 0; i < seg; i++) {
+                    const angle = (i / seg) * Math.PI * 2;
+                    const x = cx + Math.cos(angle) * r;
+                    const y = cy + Math.sin(angle) * r * 0.55;
+                    ctx.fillStyle = `hsla(${ring.hue}, 100%, ${90 - t * 15}%, ${alpha})`;
+                    ctx.fillRect(Math.floor(x - thickness / 2), Math.floor(y - thickness / 2), Math.ceil(thickness), Math.ceil(thickness));
+                }
+            }
+        }
+
+        // ============================================================
+        //  ШЕЙК (JS-managed transform на .dt-inner)
+        // ============================================================
+        const innerEl = modal.querySelector('.dt-inner');
+        function applyShake(intensity) {
+            if (!innerEl) return;
+            if (intensity < 0.02) {
+                innerEl.style.transform = '';
+                return;
+            }
+            const amp = intensity * 14;
+            const dx = (Math.random() - 0.5) * amp;
+            const dy = (Math.random() - 0.5) * amp;
+            const rot = (Math.random() - 0.5) * intensity * 0.8;
+            innerEl.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
+        }
+
+        // ============================================================
+        //  ГЛАВНЫЙ ЦИКЛ
+        // ============================================================
+        function drawFrame() {
+            const w = staticCanvas.width;
+            const h = staticCanvas.height;
+
+            currentProgress += (targetProgress - currentProgress) * PROGRESS_LERP;
+            if (Math.abs(targetProgress - currentProgress) < 0.001) currentProgress = targetProgress;
+            const progress = currentProgress;
+
+            if (finaleMode === 1 && finaleStartTime) {
+                const elapsed = performance.now() - finaleStartTime;
+                finaleBoost = Math.min(1, elapsed / 2000);
+                finaleBoost = 1 - Math.pow(1 - finaleBoost, 2);
+            } else if (finaleMode === 2) {
+                finaleBoost = 1;
+            } else {
+                finaleBoost = 0;
+            }
+
+            const explosionState = getExplosionState();
+            const baseEnergy = Math.min(1, easeInOutQuad(progress) * 0.95 + finaleBoost * 0.3);
+            const energy = explosionState
+                ? Math.min(4, baseEnergy * explosionState.energyMult)
+                : baseEnergy;
+
+            modal.style.setProperty('--dt-progress', progress.toFixed(3));
+
+            const cx = w / 2;
+            const cy = h / 2;
+            const gcx = glowCanvas.width / 2;
+            const gcy = glowCanvas.height / 2;
+
+            sctx.clearRect(0, 0, w, h);
+            // ФИЧА 5: туман снизу (позади всего)
+            drawFog(sctx, w, h, energy);
+
+            // 1) Лучи
+            drawRays(sctx, cx, cy, energy, time);
+
+            // 2) Аура
+            drawAura(sctx, cx, cy, Math.min(1, energy * 0.85));
+
+            // 3) Магический круг
+            drawMagicCircle(sctx, cx, cy, w, h, energy, time);
+
+            // 4) Спирали
+            drawSpiralArms(sctx, cx, cy, w, h, energy, time);
+
+            // 5) Кольца
+            if (progress > 0.08 || energy > 0) {
+                const ringAlpha = Math.min(1, energy * 1.5);
+                const spinBoost = 1 + energy * 3;
+                drawPixelRing(sctx, cx, cy, (55 + progress * 15) * (1 + energy * 0.4), 0.15 + ringAlpha * 0.5, time * 0.006 * spinBoost);
+                drawPixelRing(sctx, cx, cy, (78 + progress * 20) * (1 + energy * 0.5), 0.10 + ringAlpha * 0.4, -time * 0.009 * spinBoost);
+                drawPixelRing(sctx, cx, cy, (40 + progress * 12) * (1 + energy * 0.6), 0.20 + ringAlpha * 0.6, time * 0.013 * spinBoost);
+            }
+
+            // 6) Кометы
+            updateAndDrawComets(sctx, cx, cy, w, h, energy, time);
+
+            // 7) Сердце + heartbeat от близости мыши (#11)
+            if (progress > 0.45 || energy > 0.3) {
+                const hp = Math.max((progress - 0.45) / 0.55, Math.min(1, energy));
+                const baseCell = (1 + hp * 2) * (1 + energy * 0.5);
+                
+                // Heartbeat
+                const beatRate = 0.9 + mouseNearHeart * 1.4;
+                const beatPhase = ((time * 0.016 * beatRate) % 1);
+                const beatPulse = Math.pow(Math.max(0, 1 - beatPhase * 4), 2);
+                const pulse = 1 + Math.sin(time * (0.08 + energy * 0.15)) * (0.08 + energy * 0.12) + beatPulse * 0.18;
+                
+                // Оригинальное сердце (пульсирует)
+                drawPixelHeart(sctx, cx, cy, baseCell * pulse, Math.min(1, hp));
+                
+                // ⬇ ОТРАЖЕНИЕ: передаем baseCell (без pulse), чтобы оно не дёргалось
+                drawMirrorHeart(sctx, cx, cy, baseCell, personality.heartHue, energy);
+            }
+            
+            // 7.5) УДАРНЫЕ ВОЛНЫ + ВЗРЫВНЫЕ ИСКРЫ
+            if (explosionStart) {
+                const elapsed = performance.now() - explosionStart;
+                drawShockwave(sctx, cx, cy, elapsed);
+
+                // Массовый спавн искр во время взрыва
+                if (explosionState && (explosionState.phase === 'flash' || explosionState.phase === 'explosion')) {
+                    const now = performance.now();
+                    if (now - lastExplosionSpark > 25) {
+                        lastExplosionSpark = now;
+                        for (let i = 0; i < 6; i++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const speed = 2 + Math.random() * 14;
+                            soulSparks.push({
+                                x: cx, y: cy,
+                                vx: Math.cos(angle) * speed,
+                                vy: Math.sin(angle) * speed,
+                                life: 0,
+                                maxLife: 30 + Math.random() * 45,
+                                size: 2 + Math.random() * 3,
+                                hue: 280 + Math.random() * 60
+                            });
+                        }
+                    }
+                }
+
+                // Шейк
+                if (explosionState) applyShake(explosionState.shake);
+            } else {
+                if (innerEl && innerEl.style.transform) innerEl.style.transform = '';
+            }
+
+            // 8) Искры
+            updateAndDrawSparks(sctx);
+
+            // ===== GHOSTING-ЧАСТИЦЫ =====
+            const fadeRate = Math.max(0.04, 0.12 - energy * 0.06);
+            tctx.globalCompositeOperation = 'destination-out';
+            tctx.fillStyle = `rgba(0, 0, 0, ${fadeRate})`;
+            tctx.fillRect(0, 0, w, h);
+            tctx.globalCompositeOperation = 'source-over';
+
+            const maxP = MAX_PARTICLES + Math.floor(energy * 100);
+            const target = Math.floor(progress * maxP);
+            while (particles.length < target) particles.push(spawnParticle());
+            while (particles.length > target) particles.pop();
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.life++;
+
+                if (finaleMode === 1 || finaleMode === 2) {
+                    p.orbit -= 0.25 + energy * 0.85;
+                    if (p.orbit < 2.5) {
+                        if (finaleMode === 1) {
+                            particles[i] = spawnParticle();
+                            particles[i].orbit = 60 + Math.random() * 20;
+                            continue;
+                        }
+                    }
+                    p.angle += p.speed * (1 + energy * 2);
+                } else {
+                    p.angle += p.speed;
+                }
+                if (p.life > p.maxLife && finaleMode === 0) {
+                    particles[i] = spawnParticle();
+                    continue;
+                }
+
+                const ratio = p.life / p.maxLife;
+                const alpha = finaleMode === 0 ? Math.sin(ratio * Math.PI) * 0.9 : 0.9;
+                const x = cx + Math.cos(p.angle) * p.orbit;
+                const y = cy + Math.sin(p.angle) * p.orbit * 0.55;
+
+                let hue = p.hue;
+                let light = 72;
+                if (energy > 0.2) {
+                    hue = p.hue - (p.hue - 330) * Math.min(1, energy);
+                    light = 72 + Math.min(50, energy * 30);
+                }
+                tctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${alpha})`;
+                tctx.fillRect(Math.floor(x), Math.floor(y), p.size, p.size);
+            }
+
+            // ===== GLOW LAYER (плавный bloom в полном разрешении) =====
+            drawGlowLayer(gcx, gcy, glowCanvas.width, glowCanvas.height, energy, explosionState);
+            // ФИЧА 14: силуэт сосуда (за сердцем, на алтаре)
+
+            // ФИЧА 12: эхо от кликов
+            drawClickEchoes(sctx);
+            time++;
+            requestAnimationFrame(drawFrame);
+        }
+        window.__dtStartExplosion = function() {
+            explosionStart = performance.now();
+            // Ускоряем музыку при взрыве (если играет)
+            if (dtMusicSource && dtMusicSource.playbackRate && dtMusicSource.playbackRate.cancelScheduledValues) {
+                const ctx = initAudioContext();
+                if (ctx) {
+                    dtMusicSource.playbackRate.cancelScheduledValues(ctx.currentTime);
+                    dtMusicSource.playbackRate.linearRampToValueAtTime(1.4, ctx.currentTime + 0.3);
+                    dtMusicSource.playbackRate.linearRampToValueAtTime(0.6, ctx.currentTime + 1.5);
+                }
+            }
+        };
+        drawFrame();
+    })();
+
+        // ---- ФИНАЛЬНЫЕ ЭФФЕКТЫ ----
+    function playSoulPourSound() {
+        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
+        const ctx = initAudioContext();
+        if (!ctx || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        // Восходящий свип — «душа вливается»
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(1400, now + 2.0);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.07, now + 0.8);
+        gain.gain.exponentialRampToValueAtTime(0.00001, now + 2.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 2.2);
+        // Подголосок в терцию
+        setTimeout(() => {
+            try {
+                const o2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                o2.type = 'sine';
+                o2.frequency.setValueAtTime(270, ctx.currentTime);
+                o2.frequency.exponentialRampToValueAtTime(2100, ctx.currentTime + 1.8);
+                g2.gain.setValueAtTime(0.001, ctx.currentTime);
+                g2.gain.exponentialRampToValueAtTime(0.04, ctx.currentTime + 0.8);
+                g2.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 1.9);
+                o2.connect(g2);
+                g2.connect(ctx.destination);
+                o2.start(ctx.currentTime);
+                o2.stop(ctx.currentTime + 2.0);
+            } catch (e) {}
+        }, 100);
+    }
+
+    function playSoulBurstSound() {
+        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
+        const ctx = initAudioContext();
+        if (!ctx || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+
+        // #20 Реверб-шина (feedback delay)
+        const delay = ctx.createDelay(2.0);
+        delay.delayTime.value = 0.28;
+        const feedback = ctx.createGain();
+        feedback.gain.value = 0.58;
+        const wetGain = ctx.createGain();
+        wetGain.gain.value = 0.42;
+        const dryGain = ctx.createGain();
+        dryGain.gain.value = 0.85;
+        delay.connect(feedback);
+        feedback.connect(delay);
+        delay.connect(wetGain);
+        wetGain.connect(ctx.destination);
+        dryGain.connect(ctx.destination);
+
+        // Основной «бум»
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1600, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 1.2);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.00001, now + 1.3);
+        osc.connect(gain);
+        gain.connect(dryGain);
+        gain.connect(delay);
+        osc.start(now);
+        osc.stop(now + 1.4);
+
+        // Суб-бас — физическое ощущение
+        const sub = ctx.createOscillator();
+        const subGain = ctx.createGain();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(38, now);
+        subGain.gain.setValueAtTime(0.22, now);
+        subGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.9);
+        sub.connect(subGain);
+        subGain.connect(ctx.destination);
+        sub.start(now);
+        sub.stop(now + 1.0);
+
+        // Хор с эхом
+        [400, 600, 900, 1200, 1600].forEach((freq, i) => {
+            setTimeout(() => {
+                try {
+                    const t = ctx.currentTime;
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, t);
+                    g.gain.setValueAtTime(0.06, t);
+                    g.gain.exponentialRampToValueAtTime(0.00001, t + 0.9);
+                    o.connect(g);
+                    g.connect(dryGain);
+                    g.connect(delay);
+                    o.start(t);
+                    o.stop(t + 1.0);
+                } catch (e) {}
+            }, i * 60);
+        });
 
         setTimeout(() => {
-            closeModal();
+            try { wetGain.disconnect(); delay.disconnect(); feedback.disconnect(); dryGain.disconnect(); } catch(e) {}
         }, 3000);
+    }
+
+    function triggerSoulPour() {
+        finaleMode = 1;
+        finaleStartTime = performance.now();
+        finaleBoost = 0;
+        modal.classList.add('dt-finale');
+        const pourEl = document.getElementById('dt-soul-pour');
+        if (pourEl) pourEl.classList.add('active');
+        playSoulPourSound();
+    }
+
+    function triggerSoulBurst() {
+        finaleMode = 2;
+        if (window.__dtStartExplosion) window.__dtStartExplosion();
+
+        // Оригинальная вспышка
+        const flashEl = document.getElementById('dt-magic-flash');
+        if (flashEl) {
+            flashEl.classList.remove('active');
+            void flashEl.offsetWidth;
+            flashEl.classList.add('active');
+        }
+
+        // #3 RGB-глитч на диалоге
+        const innerEl = modal.querySelector('.dt-inner');
+        if (innerEl) {
+            innerEl.classList.remove('rgb-glitching');
+            void innerEl.offsetWidth;
+            innerEl.classList.add('rgb-glitching');
+            setTimeout(() => innerEl.classList.remove('rgb-glitching'), 420);
+        }
+
+        playSoulBurstSound();
+    }
+    function resetFinale() {
+        finaleMode = 0;
+        finaleBoost = 0;
+        finaleStartTime = 0;
+        modal.classList.remove('dt-finale');
+        const pourEl = document.getElementById('dt-soul-pour');
+        if (pourEl) pourEl.classList.remove('active');
+        const flashEl = document.getElementById('dt-magic-flash');
+        if (flashEl) flashEl.classList.remove('active');
+        if (window.__dtResetCanvas) window.__dtResetCanvas();
+    }
+
+    // ============================================================
+    //  МУЗЫКА — с эффектом «раскрутки плёнки» (pitch spin-up)
+    // ============================================================
+    const MUSIC_URL = 'sounds/ANOTHER_HIM.ogg';
+    const MUSIC_VOLUME = 0.25;
+    const SPIN_UP_TIME = 2.0;      // сек — длительность раскрутки
+    const START_RATE  = 0.5;       // стартовый pitch (0.5 = октава ниже)
+    const VOLUME_RAMP = 1.2;       // сек — плавное появление громкости
+
+    let dtMusicSource = null;
+    let dtMusicGain = null;
+    let dtMusicBuffer = null;
+    let dtMusicLoading = false;
+    let dtMusicFadeTimeout = null;
+    let dtMusicElement = null;
+    let dtMusicFadeInterval = null;
+    let dtMusicSpinInterval = null;
+
+    async function tryLoadMusicBuffer() {
+        if (dtMusicBuffer) return dtMusicBuffer;
+        if (dtMusicLoading) return null;
+        if (location.protocol === 'file:') return null; // CORS на file://
+        dtMusicLoading = true;
+        try {
+            const ctx = initAudioContext();
+            if (!ctx) { dtMusicLoading = false; return null; }
+            const res = await fetch(MUSIC_URL);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const ab = await res.arrayBuffer();
+            dtMusicBuffer = await ctx.decodeAudioData(ab);
+            dtMusicLoading = false;
+            return dtMusicBuffer;
+        } catch (e) {
+            console.warn('[MUSIC] Web Audio не удался:', e.message);
+            dtMusicLoading = false;
+            return null;
+        }
+    }
+
+    function startMusicElement() {
+        if (dtMusicElement) return;
+        try {
+            dtMusicElement = new Audio(MUSIC_URL);
+            dtMusicElement.loop = true;
+            // Отключаем pitch-preservation — хотим чтобы playbackRate менял ВЫСОТУ
+            try {
+                dtMusicElement.preservesPitch = false;
+                dtMusicElement.mozPreservesPitch = false;
+                dtMusicElement.webkitPreservesPitch = false;
+            } catch (e) {}
+            dtMusicElement.playbackRate = START_RATE;
+            dtMusicElement.volume = 0;
+
+            const startSpin = () => {
+                const t0 = performance.now();
+                if (dtMusicSpinInterval) clearInterval(dtMusicSpinInterval);
+                dtMusicSpinInterval = setInterval(() => {
+                    if (!dtMusicElement) {
+                        clearInterval(dtMusicSpinInterval);
+                        dtMusicSpinInterval = null;
+                        return;
+                    }
+                    const elapsed = performance.now() - t0;
+                    const p = Math.min(1, elapsed / (SPIN_UP_TIME * 1000));
+                    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+                    dtMusicElement.playbackRate = START_RATE + (1.0 - START_RATE) * eased;
+                    const vp = Math.min(1, elapsed / (VOLUME_RAMP * 1000));
+                    dtMusicElement.volume = MUSIC_VOLUME * vp;
+                    if (p >= 1 && vp >= 1) {
+                        clearInterval(dtMusicSpinInterval);
+                        dtMusicSpinInterval = null;
+                        dtMusicElement.playbackRate = 1.0;
+                        dtMusicElement.volume = MUSIC_VOLUME;
+                    }
+                }, 30);
+            };
+
+            const p = dtMusicElement.play();
+            if (p && p.then) {
+                p.then(startSpin).catch(() => {
+                    const retry = () => {
+                        if (dtMusicElement) {
+                            dtMusicElement.play().then(startSpin).catch(() => {});
+                        }
+                        document.removeEventListener('pointerdown', retry);
+                        document.removeEventListener('keydown', retry);
+                    };
+                    document.addEventListener('pointerdown', retry, { once: true });
+                    document.addEventListener('keydown', retry, { once: true });
+                });
+            } else {
+                startSpin();
+            }
+        } catch (e) {
+            console.error('[MUSIC] <audio> ошибка:', e.message);
+        }
+    }
+
+    async function startMusic() {
+        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
+        if (dtMusicSource || dtMusicElement) return;
+
+        const buffer = await tryLoadMusicBuffer();
+        if (buffer) {
+            const ctx = initAudioContext();
+            if (!ctx) return;
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            if (dtMusicSource) return;
+
+            const now = ctx.currentTime;
+
+            dtMusicSource = ctx.createBufferSource();
+            dtMusicSource.buffer = buffer;
+            dtMusicSource.loop = true;
+            dtMusicSource.loopStart = 0;
+            dtMusicSource.loopEnd = buffer.duration;
+
+            // Отключаем pitch-preservation (по умолчанию может быть true в новых Chrome)
+            try { dtMusicSource.preservesPitch = false; } catch (e) {}
+
+            // ---- SPIN-UP: playbackRate 0.5 → 1.0 за SPIN_UP_TIME ----
+            dtMusicSource.playbackRate.setValueAtTime(START_RATE, now);
+            dtMusicSource.playbackRate.linearRampToValueAtTime(1.0, now + SPIN_UP_TIME);
+
+            // ---- Lowpass фильтр — звук «прогревается» ----
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(600, now);
+            filter.frequency.exponentialRampToValueAtTime(20000, now + SPIN_UP_TIME);
+            filter.Q.value = 0.5;
+
+            // ---- Плавное появление громкости ----
+            dtMusicGain = ctx.createGain();
+            dtMusicGain.gain.setValueAtTime(0.001, now);
+            dtMusicGain.gain.exponentialRampToValueAtTime(MUSIC_VOLUME, now + VOLUME_RAMP);
+
+            dtMusicSource.connect(filter);
+            filter.connect(dtMusicGain);
+            dtMusicGain.connect(ctx.destination);
+            dtMusicSource.start(0);
+        } else {
+            startMusicElement();
+        }
+    }
+
+    function stopMusic() {
+        // Web Audio
+        if (dtMusicSource) {
+            const ctx = initAudioContext();
+            const source = dtMusicSource;
+            const gain = dtMusicGain;
+            dtMusicSource = null;
+            dtMusicGain = null;
+            if (ctx && gain) {
+                const now = ctx.currentTime;
+                const startVol = gain.gain.value || MUSIC_VOLUME;
+                gain.gain.cancelScheduledValues(now);
+                gain.gain.setValueAtTime(startVol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                if (dtMusicFadeTimeout) clearTimeout(dtMusicFadeTimeout);
+                dtMusicFadeTimeout = setTimeout(() => {
+                    try { source.stop(); source.disconnect(); gain.disconnect(); } catch (e) {}
+                }, 650);
+            } else {
+                try { source.stop(); } catch (e) {}
+            }
+        }
+        // <audio> fallback
+        if (dtMusicElement) {
+            if (dtMusicSpinInterval) {
+                clearInterval(dtMusicSpinInterval);
+                dtMusicSpinInterval = null;
+            }
+            const el = dtMusicElement;
+            dtMusicElement = null;
+            if (dtMusicFadeInterval) clearInterval(dtMusicFadeInterval);
+            const startVol = el.volume;
+            const steps = 20;
+            let i = 0;
+            dtMusicFadeInterval = setInterval(() => {
+                i++;
+                el.volume = Math.max(0, startVol * (1 - i / steps));
+                if (i >= steps) {
+                    clearInterval(dtMusicFadeInterval);
+                    dtMusicFadeInterval = null;
+                    try { el.pause(); el.currentTime = 0; } catch (e) {}
+                }
+            }, 30);
+        }
+    }
+
+    // ---- ЗВУКИ ----
+    function playSelect() { if (typeof playSound === 'function') playSound(660, 0.06, 'square', 0.04); }
+    function playConfirm() {
+        if (typeof playSound === 'function') {
+            playSound(880, 0.06, 'square', 0.05);
+            setTimeout(() => playSound(1100, 0.08, 'square', 0.04), 50);
+        }
+    }
+    function playCancel() { if (typeof playSound === 'function') playSound(330, 0.08, 'square', 0.04); }
+    function playTypeSound() {
+        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
+        if (typeof playSound === 'function') {
+            playSound(600 + Math.random() * 150, 0.025, 'square', 0.015);
+        }
+    }
+
+    // ---- TYPEWRITER ----
+    let typeState = null;
+    function typeText(el, text, speed, done) {
+        if (typeState && typeState.timer) clearTimeout(typeState.timer);
+        el.innerHTML = '';
+        typeState = { el, text, i: 0, timer: null, done };
+        (function step() {
+            if (!typeState || typeState.el !== el) return;
+            if (typeState.i < text.length) {
+                const ch = text[typeState.i];
+                const span = document.createElement('span');
+                span.className = 'dt-char-pop';
+                span.textContent = ch === ' ' ? '\u00A0' : ch;
+                el.appendChild(span);
+                typeState.i++;
+                if (ch !== ' ' && typeState.i % 2 === 0) playTypeSound();
+                typeState.timer = setTimeout(step, speed);
+            } else {
+                const d = typeState.done;
+                typeState = null;
+                if (d) d();
+            }
+        })();
+    }
+    function skipTyping() {
+        if (!typeState) return;
+        if (typeState.timer) clearTimeout(typeState.timer);
+        const d = typeState.done;
+        typeState.el.textContent = typeState.text;
+        typeState = null;
+        if (d) d();
+    }
+    dialogue.addEventListener('click', (e) => {
+        if (typeState && !e.target.closest('button, input, textarea, .dt-file')) skipTyping();
     });
 
-    // ---- ОСНОВНАЯ ОТПРАВКА (FormSubmit) ----
-    const MAX_TOTAL_SIZE = 5 * 1024 * 1024; // 5 МБ
-
+    // ---- ОТПРАВКА ----
     async function sendFormWithRetry(formData, retries = 3) {
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
-                const response = await fetch('https://formsubmit.co/goodmopsreset@gmail.com?fromname=Godoined+Archive', {
-                    method: 'POST',
-                    body: formData
-                });
-                if (response.ok) {
-                    return { success: true };
-                } else {
-                    if (attempt < retries) continue;
-                    return { success: false, error: `Ошибка HTTP ${response.status}` };
-                }
+                const response = await fetch(
+                    'https://formsubmit.co/goodmopsreset@gmail.com?fromname=Godoined+Archive',
+                    { method: 'POST', body: formData }
+                );
+                if (response.ok) return { success: true };
+                if (attempt < retries) continue;
+                return { success: false, error: `HTTP ${response.status}` };
             } catch (err) {
                 if (attempt < retries) continue;
                 return { success: false, error: err.message || 'Сетевая ошибка' };
             }
         }
-        return { success: false, error: 'Не удалось отправить после нескольких попыток' };
+        return { success: false, error: 'Не удалось после нескольких попыток' };
     }
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    async function submitForm(sendBtn) {
+        triggerSoulBurst(); // ⬅ магический выплеск
+        sendBtn.disabled = true;
+        sendBtn.textContent = '...';
+        const status = document.createElement('div');
+        status.className = 'dt-status';
+        status.textContent = '⏳ Сосуд формируется...';
+        dialogue.appendChild(status);
 
-        if (fileInput && fileInput.files.length > 0) {
-            let totalSize = 0;
-            for (let f of fileInput.files) {
-                totalSize += f.size;
-            }
-            if (totalSize > MAX_TOTAL_SIZE) {
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'order-status error';
-                statusDiv.innerHTML = `
-                    ❌ Общий размер файлов превышает 5 МБ (сейчас ${(totalSize / 1024 / 1024).toFixed(1)} МБ).
-                    <br>Используйте <strong>альтернативную отправку</strong> (кнопка появится ниже).
-                `;
-                mainSendBtn.style.display = 'none';
-                altSendBtn.style.display = 'block';
-                return;
-            }
-        }
+        const fd = new FormData();
+        fd.append('_subject', 'Godoined Archive новая заявка');
+        fd.append('_replyto', 'goodmopsreset@gmail.com');
+        fd.append('_captcha', 'false');
+        fd.append('name', state.name || 'Аноним');
+        fd.append('food', state.food);
+        fd.append('color', state.color);
+        fd.append('gift', state.gift);
+        fd.append('feeling', state.feeling);
+        fd.append('honest', state.honest);
+        fd.append('pain', state.pain);
+        fd.append('message', state.message);
+        if (state.files) state.files.forEach(f => fd.append('attachment', f));
 
-        const message = document.getElementById('order-message')?.value?.trim();
-        if (!message) {
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'order-status error';
-            statusDiv.textContent = '❌ Поле "Описание модели" обязательно для заполнения.';
-            return;
-        }
-
-        const formData = new FormData(form);
-        mainSendBtn.disabled = true;
-        mainSendBtn.textContent = 'ОТПРАВКА...';
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'order-status';
-        statusDiv.textContent = '⏳ Отправка...';
-
-        const result = await sendFormWithRetry(formData, 3);
+        const result = await sendFormWithRetry(fd, 3);
 
         if (result.success) {
-            statusDiv.className = 'order-status success';
-            statusDiv.textContent = '✅ Заявка успешно отправлена! Мы свяжемся с вами.';
-            form.reset();
-            setTimeout(() => {
-                closeModal();
-            }, 3000);
+            status.className = 'dt-status success';
+            status.textContent = '✅ Сосуд принят. Мы свяжемся с тобой.';
+            if (typeof playAchievementSound === 'function') playAchievementSound();
+            setTimeout(closeModal, 2800);
         } else {
-            statusDiv.className = 'order-status error';
-            statusDiv.innerHTML = `
-                ❌ Не удалось отправить через сайт (${result.error || 'неизвестная ошибка'}).
-                <br>Попробуйте <strong>альтернативную отправку</strong> (кнопка ниже).
-            `;
-            mainSendBtn.style.display = 'none';
-            altSendBtn.style.display = 'block';
-            playBackSound();
+            status.className = 'dt-status error';
+            status.innerHTML = `❌ Не удалось (${result.error || 'ошибка'}).<br>Попробуй альтернативную отправку.`;
+            sendBtn.style.display = 'none';
+            const alt = document.getElementById('dt-alt-send');
+            if (alt) alt.style.display = 'inline-block';
+        }
+        sendBtn.disabled = false;
+        sendBtn.textContent = '▶ ОТПРАВИТЬ';
+    }
+
+    function sendViaMailto() {
+        const subject = encodeURIComponent('Godoined Archive новая заявка');
+        const body = encodeURIComponent(
+            `Имя: ${state.name || 'Аноним'}\n` +
+            `Еда: ${state.food}\nЦвет: ${state.color}\nДар: ${state.gift}\n` +
+            `Чувства: ${state.feeling}\nЧестность: ${state.honest}\nБоль: ${state.pain}\n\n` +
+            `Описание:\n${state.message}\n\n---\nПрикрепите референсы к этому письму.`
+        );
+        window.open(`mailto:goodmopsreset@gmail.com?subject=${subject}&body=${body}`, '_blank');
+    }
+
+    // ---- ДИАЛОГ ----
+    function clearDialogue() {
+        if (typeState && typeState.timer) clearTimeout(typeState.timer);
+        typeState = null;
+        dialogue.innerHTML = '';
+        if (window.dtKeyHandler) {
+            document.removeEventListener('keydown', window.dtKeyHandler);
+            window.dtKeyHandler = null;
+        }
+    }
+    const pause = (ms) => new Promise(res => setTimeout(res, ms));
+
+    function speak(text, speed = 35) {
+        return new Promise(resolve => {
+            const el = document.createElement('div');
+            el.className = 'dt-question';
+            dialogue.appendChild(el);
+            typeText(el, text, speed, resolve);
+        });
+    }
+    function react(text, speed = 28) {
+        return new Promise(resolve => {
+            const el = document.createElement('div');
+            el.className = 'dt-reaction';
+            dialogue.appendChild(el);
+            typeText(el, text, speed, resolve);
+        });
+    }
+
+    // ---- ШАГИ ----
+    async function runStep() {
+        updateProgress();
+        if (state.step >= steps.length) {
+            renderSummary();
+            return;
+        }
+        clearDialogue();
+        const step = steps[state.step];
+
+        const q = document.createElement('div');
+        q.className = 'dt-question';
+        dialogue.appendChild(q);
+
+        typeText(q, step.question, 35, async () => {
+            if (step.sub) {
+                const sub = document.createElement('div');
+                sub.className = 'dt-sub';
+                sub.textContent = step.sub;
+                dialogue.appendChild(sub);
+            }
+            await pause(400);
+            if (step.type === 'text') renderTextInput(step);
+            else if (step.type === 'textarea') renderTextarea(step);
+            else if (step.type === 'file') renderFileInput(step);
+            else if (step.type === 'choice') renderChoices(step);
+        });
+    }
+
+    function renderTextInput(step) {
+        const wrap = document.createElement('div');
+        wrap.className = 'dt-input-wrap';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'dt-input';
+        inp.placeholder = step.placeholder || '';
+        inp.maxLength = step.maxLength || 99;
+        inp.autocomplete = 'off';
+        inp.value = state[step.key] || '';
+        inp.addEventListener('input', () => {
+            const pos = inp.selectionStart;
+            inp.value = inp.value.toUpperCase();
+            inp.setSelectionRange(pos, pos);
+        });
+        wrap.appendChild(inp);
+
+        const actions = document.createElement('div');
+        actions.className = 'dt-actions';
+
+        if (step.optional) {
+            const skip = document.createElement('button');
+            skip.type = 'button';
+            skip.className = 'dt-btn dt-btn-secondary';
+            skip.textContent = '✕ ПРОПУСТИТЬ';
+            skip.addEventListener('click', () => {
+                state[step.key] = '';
+                playSelect();
+                goNext(step);
+            });
+            actions.appendChild(skip);
         }
 
-        mainSendBtn.disabled = false;
-        mainSendBtn.textContent = '📨 ОТПРАВИТЬ ЗАЯВКУ';
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.className = 'dt-btn';
+        next.textContent = '▶ ДАЛЕЕ';
+        next.addEventListener('click', () => {
+            state[step.key] = inp.value.trim().toUpperCase();
+            playConfirm();
+            goNext(step);
+        });
+
+        actions.appendChild(next);
+        dialogue.appendChild(wrap);
+        dialogue.appendChild(actions);
+
+        inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); next.click(); }
+        });
+        setTimeout(() => inp.focus(), 100);
+    }
+
+    function renderTextarea(step) {
+        const ta = document.createElement('textarea');
+        ta.className = 'dt-textarea';
+        ta.placeholder = step.placeholder || '';
+        ta.value = state[step.key] || '';
+
+        const actions = document.createElement('div');
+        actions.className = 'dt-actions';
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.className = 'dt-btn';
+        next.textContent = '▶ ДАЛЕЕ';
+        next.addEventListener('click', () => {
+            const val = ta.value.trim();
+            if (!val) {
+                ta.style.borderColor = '#ff4444';
+                ta.style.boxShadow = '4px 4px 0 #400';
+                setTimeout(() => {
+                    ta.style.borderColor = '';
+                    ta.style.boxShadow = '';
+                }, 600);
+                ta.focus();
+                return;
+            }
+            state[step.key] = val;
+            playConfirm();
+            goNext(step);
+        });
+        actions.appendChild(next);
+        dialogue.appendChild(ta);
+        dialogue.appendChild(actions);
+
+        ta.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                next.click();
+            }
+        });
+        setTimeout(() => ta.focus(), 100);
+    }
+
+    function renderFileInput(step) {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.className = 'dt-file';
+        inp.accept = 'image/*';
+        inp.multiple = true;
+
+        const actions = document.createElement('div');
+        actions.className = 'dt-actions';
+
+        if (step.optional) {
+            const skip = document.createElement('button');
+            skip.type = 'button';
+            skip.className = 'dt-btn dt-btn-secondary';
+            skip.textContent = '✕ ПРОПУСТИТЬ';
+            skip.addEventListener('click', () => {
+                state.files = null;
+                playSelect();
+                goNext(step);
+            });
+            actions.appendChild(skip);
+        }
+
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.className = 'dt-btn';
+        next.textContent = '▶ ДАЛЕЕ';
+        next.addEventListener('click', () => {
+            if (inp.files && inp.files.length > 0) {
+                let total = 0;
+                for (let f of inp.files) total += f.size;
+                if (total > MAX_TOTAL_SIZE) {
+                    const err = document.createElement('div');
+                    err.className = 'dt-status error';
+                    err.textContent = `❌ Слишком большой размер: ${(total / 1024 / 1024).toFixed(1)} МБ (макс 5 МБ)`;
+                    dialogue.appendChild(err);
+                    return;
+                }
+                state.files = Array.from(inp.files);
+            } else {
+                state.files = null;
+            }
+            playConfirm();
+            goNext(step);
+        });
+
+        actions.appendChild(next);
+        dialogue.appendChild(inp);
+        dialogue.appendChild(actions);
+    }
+
+    function renderChoices(step) {
+        const container = document.createElement('div');
+        container.className = 'dt-choices';
+        dialogue.appendChild(container);
+
+        let focusedIdx = step.options.indexOf(state[step.key]);
+        if (focusedIdx < 0) focusedIdx = 0;
+        const btns = [];
+
+        function updateFocus(idx) {
+            btns.forEach((b, i) => b.classList.toggle('focused', i === idx));
+        }
+        function selectChoice(idx) {
+            state[step.key] = step.options[idx];
+            playConfirm();
+            goNext(step);
+        }
+
+        step.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'dt-choice';
+            btn.innerHTML = `<span class="dt-soul-cursor"></span><span>${opt}</span>`;
+            btn.addEventListener('click', () => {
+                focusedIdx = i;
+                updateFocus(i);
+                selectChoice(i);
+            });
+            btn.addEventListener('mouseenter', () => {
+                focusedIdx = i;
+                updateFocus(i);
+                playSelect();
+            });
+            container.appendChild(btn);
+            btns.push(btn);
+        });
+        updateFocus(focusedIdx);
+
+        window.dtKeyHandler = (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const dir = e.key === 'ArrowDown' ? 1 : -1;
+                focusedIdx = (focusedIdx + dir + btns.length) % btns.length;
+                updateFocus(focusedIdx);
+                playSelect();
+            } else if (e.key === 'Enter' || e.key === 'z' || e.key === 'Z') {
+                e.preventDefault();
+                selectChoice(focusedIdx);
+            }
+        };
+        document.addEventListener('keydown', window.dtKeyHandler);
+    }
+
+    async function goNext(step) {
+        clearDialogue();
+        await pause(300);
+        let reactionText = step.reaction;
+        if (typeof reactionText === 'function') reactionText = reactionText(state);
+        if (reactionText) {
+            await react(reactionText);
+            await pause(600);
+        }
+        updatePersonality();  // ⬅ новая строка
+        state.step++;
+        runStep();
+    }
+
+    // ---- ФИНАЛ ----
+    async function renderSummary() {
+        updateProgress();
+        triggerSoulPour(); // ⬅ запускаем вливание души
+        clearDialogue();
+        await speak('Вот что я записал.');
+
+        const sum = document.createElement('div');
+        sum.className = 'dt-summary';
+        const fileCount = state.files ? state.files.length : 0;
+        sum.innerHTML = `
+            <div><span class="dt-summary-label">ИМЯ:</span><span class="dt-summary-value">${escapeHtml(state.name || '— не указано —')}</span></div>
+            <div><span class="dt-summary-label">ЕДА:</span><span class="dt-summary-value">${state.food}</span></div>
+            <div><span class="dt-summary-label">ЦВЕТ:</span><span class="dt-summary-value">${state.color}</span></div>
+            <div><span class="dt-summary-label">ДАР:</span><span class="dt-summary-value">${state.gift}</span></div>
+            <div><span class="dt-summary-label">ЧУВСТВА:</span><span class="dt-summary-value">${state.feeling}</span></div>
+            <div><span class="dt-summary-label">ЧЕСТНОСТЬ:</span><span class="dt-summary-value">${state.honest}</span></div>
+            <div><span class="dt-summary-label">БОЛЬ:</span><span class="dt-summary-value">${state.pain}</span></div>
+            <div><span class="dt-summary-label">ОПИСАНИЕ:</span><span class="dt-summary-value">${escapeHtml(state.message).replace(/\n/g, '<br>')}</span></div>
+            <div><span class="dt-summary-label">РЕФЕРЕНСЫ:</span><span class="dt-summary-value">${fileCount > 0 ? fileCount + ' файл(ов)' : '— нет —'}</span></div>
+        `;
+        dialogue.appendChild(sum);
+
+        await pause(300);
+
+        const q2 = document.createElement('div');
+        q2.className = 'dt-reaction';
+        dialogue.appendChild(q2);
+        await new Promise(res => typeText(q2, 'Всё верно?', 28, res));
+
+        await pause(300);
+
+        const actions = document.createElement('div');
+        actions.className = 'dt-actions';
+
+        const back = document.createElement('button');
+        back.type = 'button';
+        back.className = 'dt-btn dt-btn-secondary';
+        back.textContent = '← НАЗАД';
+        back.addEventListener('click', () => {
+            state.step = steps.length - 1;
+            playCancel();
+            runStep();
+        });
+
+        const send = document.createElement('button');
+        send.type = 'button';
+        send.className = 'dt-btn';
+        send.id = 'dt-send';
+        send.textContent = '▶ ОТПРАВИТЬ';
+        send.addEventListener('click', () => submitForm(send));
+
+        const alt = document.createElement('button');
+        alt.type = 'button';
+        alt.className = 'dt-btn dt-btn-secondary';
+        alt.id = 'dt-alt-send';
+        alt.style.display = 'none';
+        alt.textContent = '📧 АЛЬТЕРНАТИВНАЯ ОТПРАВКА';
+        alt.addEventListener('click', sendViaMailto);
+
+        actions.appendChild(back);
+        actions.appendChild(send);
+        actions.appendChild(alt);
+        dialogue.appendChild(actions);
+    }
+
+    // ---- ОТКРЫТИЕ / ЗАКРЫТИЕ ----
+    function openModal() {
+        // 1) Туман + размытие сайта
+        const fog = document.getElementById('dt-fog-overlay');
+        if (fog) fog.classList.add('active');
+        document.body.classList.add('dt-active');
+        document.body.style.overflow = 'hidden';
+
+        // 2) Все звуки — безопасно, по отдельности
+        try { if (typeof playClickSound === 'function') playClickSound(); } catch (e) {}
+        try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch (e) {}
+
+        // 3) Сброс состояния (тоже безопасно)
+        try {
+            state.step = 0;
+            state.name = ''; state.food = ''; state.color = ''; state.gift = '';
+            state.feeling = ''; state.honest = ''; state.pain = '';
+            state.message = ''; state.files = null;
+            if (typeof resetFinale === 'function') resetFinale();
+            if (typeof clickEchoes !== 'undefined' && clickEchoes.length !== undefined) clickEchoes.length = 0;
+            targetProgress = 0;
+            currentProgress = 0;
+            modal.style.setProperty('--dt-progress', '0');
+        } catch (e) {
+            console.warn('Reset state error:', e);
+        }
+
+        // 4) Показываем модалку
+        setTimeout(() => {
+            try {
+                modal.style.display = 'block';
+                requestAnimationFrame(() => {
+                    modal.classList.add('active');
+                    setTimeout(() => {
+                        if (fog) fog.classList.remove('active');
+                    }, 800);
+                });
+                setTimeout(() => {
+                    try { if (typeof startMusic === 'function') startMusic(); } catch (e) {}
+                    try { if (typeof runStep === 'function') runStep(); } catch (e) { console.error('runStep error:', e); }
+                }, 1200);
+            } catch (e) {
+                console.error('Modal show error:', e);
+            }
+        }, 500);
+    }
+
+    function closeModal() {
+        if (typeof playBackSound === 'function') playBackSound();
+
+        // 1) Включаем туман обратно
+        const fog = document.getElementById('dt-fog-overlay');
+        if (fog) fog.classList.add('active');
+
+        // 2) Прячем модалку
+        modal.classList.remove('active');
+
+        // 3) Сбросы
+        stopMusic();
+        clearDialogue();
+        resetFinale();
+        clickEchoes.length = 0;
+        targetProgress = 0;
+        currentProgress = 0;
+
+        // 4) Возвращаем сайт
+        setTimeout(() => {
+            modal.style.display = 'none';
+            
+            document.body.classList.remove('dt-active');
+            document.body.style.overflow = '';
+            dialogue.innerHTML = '';
+            modal.style.setProperty('--dt-progress', '0');
+
+            // Туман рассеивается
+            setTimeout(() => {
+                if (fog) fog.classList.remove('active');
+            }, 500);
+        }, 700);
+    }
+
+    openBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) closeModal();
     });
 })();
 
 // ============================================================
-//  ЖИВОЙ РЕТРО-СЛОЙ (HUD, ТОСТЫ, СТАТИСТИКА, ГЛИТЧИ)
+//  ЖИВОЙ РЕТРО-СЛОЙ
 // ============================================================
 window.RETRO = (function () {
     const LS = {
@@ -2320,7 +3911,6 @@ window.RETRO = (function () {
         try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
     }
 
-    // ---------- ТОСТЫ ----------
     function toast(title, text) {
         const box = document.getElementById('toast-container');
         if (!box) return;
@@ -2342,7 +3932,6 @@ window.RETRO = (function () {
         }, 4200);
     }
 
-    // ---------- ЧАСЫ / FPS / АПТАЙМ ----------
     const clockEl = document.getElementById('hud-clock');
     const fpsEl = document.getElementById('hud-fps');
     const uptimeEl = document.getElementById('footer-uptime');
@@ -2372,7 +3961,6 @@ window.RETRO = (function () {
         requestAnimationFrame(fpsLoop);
     })(performance.now());
 
-    // ---------- ЗВУК: ПЕРЕКЛЮЧАТЕЛЬ ----------
     const soundBtn = document.getElementById('sound-toggle');
     function applySoundState() {
         if (!soundBtn) return;
@@ -2392,7 +3980,6 @@ window.RETRO = (function () {
         });
     }
 
-    // ---------- СТАТИСТИКА АРХИВА ----------
     function archiveStats() {
         const models = allModels.length;
         let renders = 0, videos = 0;
@@ -2459,8 +4046,6 @@ window.RETRO = (function () {
         if (isNew) { names.push(name); lsSetJSON(LS.openedNames, names); }
         refreshStats();
         const s = archiveStats();
-        // Фанфара достижения звучит с лёгкой паузой, чтобы не накладывалась
-        // на арпеджио открытия модели
         const fanfare = () => { if (typeof playAchievementSound === 'function') playAchievementSound(); };
         if (opens === 1) {
             toast('CHECKPOINT #1', 'Первое открытие модели — архив изучается!');
@@ -2474,7 +4059,6 @@ window.RETRO = (function () {
         }
     }
 
-    // ---------- БЕГУЩАЯ СТРОКА ----------
     const tickerTrack = document.getElementById('ticker-track');
     function updateTicker() {
         if (!tickerTrack) return;
@@ -2492,11 +4076,9 @@ window.RETRO = (function () {
         }
     }
 
-    // ---------- ВИЗИТЫ ----------
     const visits = (parseInt(lsGet(LS.visits, '0'), 10) || 0) + 1;
     lsSet(LS.visits, visits);
 
-    // ---------- ЭКРАННЫЙ ЖУРНАЛ ----------
     const consolePanel = document.getElementById('console-panel');
     const consoleToggle = document.getElementById('console-toggle');
     const consoleClose = document.getElementById('console-close');
@@ -2513,7 +4095,6 @@ window.RETRO = (function () {
         });
     }
     if (consoleClose) consoleClose.addEventListener('click', () => setConsoleVisible(false));
-    // Если на старте уже были ошибки — журнал открыт сам (класс flash ставит диагностика)
     document.addEventListener('keydown', (e) => {
         if (e.key === '`' || e.key === 'ё' || e.key === '~') {
             if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
@@ -2526,7 +4107,6 @@ window.RETRO = (function () {
         }
     });
 
-    // ---------- ГЛИТЧИ ----------
     const glitchEl = document.querySelector('.glitch-title');
     const flashEl = document.getElementById('glitch-flash');
     function randomGlitch() {
@@ -2542,7 +4122,6 @@ window.RETRO = (function () {
     }
     setTimeout(randomGlitch, 3000);
 
-    // ---------- ПИКСЕЛЬНЫЙ СЛЕД КУРСОРА ----------
     let lastPixel = 0;
     document.addEventListener('mousemove', (e) => {
         const now = performance.now();
@@ -2556,7 +4135,6 @@ window.RETRO = (function () {
         setTimeout(() => p.remove(), 620);
     }, { passive: true });
 
-    // ---------- ИНИЦИАЛИЗАЦИЯ ПОСЛЕ ЗАГРУЗКИ МОДЕЛЕЙ ----------
     function onReady() {
         refreshStats();
         updateTicker();
@@ -2569,8 +4147,6 @@ window.RETRO = (function () {
             if (!readyFired) { readyFired = true; onReady(); }
         } else if (readyAttempts++ < 40) {
             setTimeout(waitModels, 400);
-        } else {
-            console.warn('[GODOINED ARCHIVE] Модели не загрузились — панель статистики останется пустой');
         }
     })();
 
@@ -2581,30 +4157,28 @@ window.RETRO = (function () {
 })();
 
 // ============================================================
-//  HOT RELOAD: сайт сам следит за своими файлами и перезагружается
-//  при их изменении — без Ctrl+R. Проверяет содержимое исходников
-//  каждые пару секунд и дёргает location.reload() при расхождении.
+//  HOT RELOAD (ОТКЛЮЧЕН ДЛЯ file://)
 // ============================================================
 (function initHotReload() {
+    // Если открыто как file:// — отключаем, чтобы не было ошибок CORS в консоли
+    if (location.protocol === 'file:') {
+        console.log('[GODOINED ARCHIVE] Hot-reload отключён (страница открыта через file://)');
+        return;
+    }
+
     const FILES = ['index.html', 'style.css', 'script.js', 'models_list.json', 'version.js'];
     const CHECK_MS = 2500;
     let baseline = null;
     let checking = false;
 
-    // ---- ГДЕ ВКЛЮЧЕН HOT-RELOAD ----
-    // Локально (localhost / 127.0.0.1 / file://) — всегда, это среда разработки.
-    // На проде (GitHub Pages и т.п.) — по умолчанию ВЫКЛЮЧЕН, чтобы не слать
-    // лишние запросы за каждым посетителем. Вручную включить: добавь ?dev
-    // в адрес (например https://site.ru/?dev).
     const host = location.hostname;
-    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '' || location.protocol === 'file:';
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
     const devOverride = /(?:\?|&)dev(?:[=&]|$)/.test(location.search);
     if (!isLocal && !devOverride) {
         console.log('[GODOINED ARCHIVE] Hot-reload выключен на проде (включить: ?dev в адресе)');
         return;
     }
 
-    // Хэш-сигнатура содержимого (FNV-1a): дёшево и достаточно для сравнения
     function hashText(str) {
         let h = 0x811c9dc5;
         for (let i = 0; i < str.length; i++) {
@@ -2618,11 +4192,9 @@ window.RETRO = (function () {
         const parts = [];
         for (const file of FILES) {
             try {
-                // cache: 'no-store' — всегда свежая копия с сервера
                 const res = await fetch(file + '?_t=' + Date.now(), { cache: 'no-store' });
                 parts.push(file + ':' + (res.ok ? hashText(await res.text()) : 'ERR' + res.status));
             } catch (e) {
-                // file:// или сеть недоступны — фиксируем как неизменность
                 parts.push(file + ':NA');
             }
         }
@@ -2641,18 +4213,15 @@ window.RETRO = (function () {
                 if (window.RETRO && window.RETRO.toast) {
                     window.RETRO.toast('ОБНОВЛЕНИЕ', 'Файлы изменились — страница перезагружается...');
                 }
-                // даём тосту мелькнуть, затем перезагружаем
                 setTimeout(() => location.reload(), 600);
                 return;
             }
         } catch (e) {
-            // тихо игнорируем сбои проверки — не мешаем работе сайта
         } finally {
             checking = false;
         }
     }
 
-    // Не мешаем, если открыта модалка или идёт ввод — перезагрузимся позже
     function busy() {
         const modal = document.getElementById('render-modal');
         const order = document.getElementById('order-modal');
@@ -2668,13 +4237,10 @@ window.RETRO = (function () {
     }
     setTimeout(tick, CHECK_MS);
 
-    // горячая клавиша: Ctrl+Alt+R — принудительная перезагрузка
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.altKey && (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К')) {
             e.preventDefault();
             location.reload();
         }
     });
-
-    console.log('[GODOINED ARCHIVE] Hot-reload активен: проверка каждые ' + (CHECK_MS / 1000) + 'с (Ctrl+Alt+R — принудительно)');
 })();
