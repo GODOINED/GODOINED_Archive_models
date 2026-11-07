@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Полный редактор архива</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050508;
+            --bg-panel: #0f1a0f;
+            --bg-card: #0a0f0a;
+            --border-color: #3eff6e;
+            --text-primary: #b3ffb0;
+            --text-secondary: #8bc97f;
+            --accent: #3eff6e;
+            --accent-hover: #a0ff9e;
+            --shadow: #000000;
+            --danger: #ff4444;
+            --input-bg: #000000;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Roboto Mono', monospace;
+            padding: 20px;
+            line-height: 1.5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Сканлайны как на сайте */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 4px);
+            pointer-events: none;
+            z-index: 100;
+            mix-blend-mode: multiply;
+            opacity: 0.6;
+        }
+
+        /* Шапка */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            z-index: 10;
+        }
+        h1 {
+            font-family: 'Press Start 2P', monospace;
+            color: #fff;
+            text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+        .header-btns { display: flex; gap: 15px; }
+        
+        /* Макет */
+        .layout {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+            z-index: 10;
+        }
+        
+        /* Левая панель (Список) */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            box-shadow: 6px 6px 0 var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .sidebar::before {
+            content: ""; position: absolute; inset: 0;
+            box-shadow: inset 0 0 15px rgba(62, 255, 110, 0.1);
+            pointer-events: none;
+        }
+
+        .sidebar h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .model-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 5px;
+            padding-right: 5px;
+        }
+        .model-list::-webkit-scrollbar { width: 6px; }
+        .model-list::-webkit-scrollbar-track { background: transparent; }
+        .model-list::-webkit-scrollbar-thumb { background: var(--border-color); }
+        
+        .model-item {
+            background: var(--bg-card);
+            border: 2px solid #333;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 3px 3px 0 var(--shadow);
+        }
+        .model-item:hover { border-color: var(--accent); transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--shadow); }
+        .model-item.active { border-color: var(--accent); background: #1a2a1a; box-shadow: inset 0 0 10px var(--accent); }
+        
+        .model-info strong { display: block; font-size: 0.9rem; color: #fff; font-family: 'Press Start 2P', monospace; margin-bottom: 5px; }
+        .model-info span { font-size: 0.75rem; color: var(--text-secondary); }
+        
+        /* Правая панель (Форма) */
+        .main-panel {
+            flex: 1;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            padding: 25px;
+            box-shadow: 6px 6px 0 var(--shadow);
+            overflow-y: auto;
+            position: relative;
+        }
+        .main-panel::before {
+            content: ""; position: absolute; inset: 0;
+            box-shadow: inset 0 0 15px rgba(62, 255, 110, 0.1);
+            pointer-events: none;
+        }
+        .main-panel::-webkit-scrollbar { width: 8px; }
+        .main-panel::-webkit-scrollbar-track { background: transparent; }
+        .main-panel::-webkit-scrollbar-thumb { background: var(--border-color); }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px dashed #333;
+            padding-bottom: 15px;
+        }
+        .form-title { 
+            font-family: 'Press Start 2P', monospace; 
+            font-size: 1rem; 
+            color: #fff;
+            text-shadow: 0 0 8px var(--accent);
+        }
+
+        /* Элементы формы */
+        .form-group { margin-bottom: 20px; position: relative; z-index: 2; }
+        label {
+            display: block;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Press Start 2P', monospace;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: 2px solid #444;
+            color: var(--text-primary);
+            padding: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+        }
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+            border-color: var(--accent);
+            box-shadow: inset 0 0 10px var(--accent), 0 0 10px rgba(62, 255, 110, 0.2);
+            background: #050a05;
+        }
+        .row { display: flex; gap: 15px; }
+        .row .form-group { flex: 1; }
+
+        /* Редактор BBCode */
+        .bb-editor {
+            border: 2px solid #444;
+            background: var(--input-bg);
+            box-shadow: inset 0 0 5px #000;
+        }
+        .bb-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 10px;
+            background: #111;
+            border-bottom: 2px solid #444;
+        }
+        .bb-btn {
+            background: var(--bg-panel);
+            border: 2px solid #555;
+            color: var(--text-primary);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            transition: all 0.1s;
+        }
+        .bb-btn:hover { border-color: var(--accent); background: var(--accent); color: #000; transform: translateY(-1px); }
+        .bb-btn.btn-color { border-color: #ff00ff; color: #ff00ff; }
+        .bb-btn.btn-color:hover { background: #ff00ff; color: #fff; }
+        .bb-btn.btn-rainbow { background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet); border-color: #fff; color: #fff; text-shadow: 1px 1px 0 #000; }
+        .bb-btn.btn-rainbow:hover { filter: brightness(1.3); }
+        .bb-btn.btn-shake { border-color: #ffb347; color: #ffb347; }
+        .bb-btn.btn-shake:hover { background: #ffb347; color: #000; }
+        
+        .bb-body { display: flex; gap: 2px; background: #444; }
+        .bb-body textarea {
+            flex: 1;
+            min-height: 180px;
+            border: none;
+            resize: vertical;
+            background: var(--input-bg);
+            padding: 15px;
+            box-shadow: none;
+        }
+        .bb-body textarea:focus { box-shadow: inset 0 0 10px rgba(62, 255, 110, 0.2); }
+        
+        .bb-preview {
+            flex: 1;
+            min-height: 180px;
+            background: #050508;
+            padding: 15px;
+            word-wrap: break-word;
+            overflow-y: auto;
+            border-left: 1px solid #444;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Стили BBCode для превью (синхронизированы с сайтом) */
+        .bbcode-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+        .rainbow-text {
+            display: inline-block;
+            background-image: linear-gradient(to right, #ff0000, #ff7700, #ffff00, #00ff00, #0000ff, #8b00ff, #ff0000);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbowMove 4s linear infinite;
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+        @keyframes rainbowMove { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+        .shake-letter {
+            display: inline-block;
+            animation: letterShake var(--shake-duration, 0.1s) infinite alternate;
+            --shake-distance: 1px;
+        }
+        @keyframes letterShake {
+            0%   { transform: translate(0, 0); }
+            25%  { transform: translate(calc(-1 * var(--shake-distance)), var(--shake-distance)); }
+            50%  { transform: translate(var(--shake-distance), calc(-1 * var(--shake-distance))); }
+            75%  { transform: translate(calc(-1 * var(--shake-distance)), calc(-1 * var(--shake-distance))); }
+            100% { transform: translate(var(--shake-distance), var(--shake-distance)); }
+        }
+
+        /* Менеджер тегов */
+        .tag-creator { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tag-creator input[type="text"] { flex: 1; }
+        .tag-creator input[type="color"] { 
+            width: 50px; height: 44px; padding: 0; cursor: pointer; 
+            background: #000; border: 2px solid #444; box-shadow: inset 0 0 5px #000;
+        }
+        .tag-list { 
+            display: flex; flex-wrap: wrap; gap: 10px; min-height: 50px; 
+            padding: 12px; background: var(--input-bg); border: 2px dashed #444; 
+        }
+        .tag-item {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-panel); border: 1px solid #555;
+            padding: 6px 10px; font-size: 0.75rem; box-shadow: 2px 2px 0 #000;
+        }
+        .tag-remove { color: var(--danger); cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .tag-remove:hover { color: #fff; background: var(--danger); padding: 0 4px; }
+
+        /* Кнопки */
+        button {
+            background: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 4px 4px 0 var(--shadow);
+            text-transform: uppercase;
+        }
+        button:hover { background: var(--accent); color: #000; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--shadow); }
+        button:active { transform: translate(2px, 2px); box-shadow: none; }
+        
+        .btn-sm { padding: 8px 12px; font-size: 0.6rem; box-shadow: 2px 2px 0 var(--shadow); }
+        .btn-del { border-color: var(--danger); color: var(--danger); box-shadow: none; }
+        .btn-del:hover { background: var(--danger); color: #000; transform: none; }
+        
+        .btn-save { width: 100%; margin-top: 20px; background: #1a2a1a; font-size: 0.9rem; padding: 15px; }
+        .btn-save:hover { background: var(--accent); box-shadow: 0 0 20px var(--accent); }
+        
+        .btn-download { background: #1a2a3a; border-color: #5bc0ff; color: #5bc0ff; }
+        .btn-download:hover { background: #5bc0ff; color: #000; box-shadow: 0 0 15px #5bc0ff; }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>> ПОЛНЫЙ РЕДАКТОР</h1>
+        <div class="header-btns">
+            <input type="file" id="fileInput" accept=".json" style="display: none;">
+            <button onclick="document.getElementById('fileInput').click()">📂 ЗАГРУЗИТЬ</button>
+            <button class="btn-download" onclick="downloadJSON()">💾 СКАЧАТЬ JSON</button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <!-- ЛЕВАЯ ПАНЕЛЬ -->
+        <div class="sidebar">
+            <h2>>> СПИСОК МОДЕЛЕЙ (<span id="model-count">0</span>)</h2>
+            <div class="model-list" id="model-list"></div>
+        </div>
+
+        <!-- ПРАВАЯ ПАНЕЛЬ -->
+        <div class="main-panel">
+            <div class="form-header">
+                <h2 class="form-title" id="form-title">НОВАЯ МОДЕЛЬ</h2>
+                <button class="btn-sm hidden" id="btn-cancel" onclick="resetForm()">ОТМЕНА</button>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Системное имя (папка)</label>
+                    <input type="text" id="f-name" placeholder="my_model">
+                </div>
+                <div class="form-group">
+                    <label>Отображаемое имя</label>
+                    <input type="text" id="f-displayName" placeholder="Моя Модель">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Описание (BBCode)</label>
+                <div class="bb-editor">
+                    <div class="bb-toolbar">
+                        <button class="bb-btn" onclick="wrapText('[b]', '[/b]')">B</button>
+                        <button class="bb-btn" onclick="wrapText('[i]', '[/i]')">I</button>
+                        <button class="bb-btn" onclick="wrapText('[u]', '[/u]')">U</button>
+                        <button class="bb-btn btn-color" onclick="applyColor()">ЦВЕТ</button>
+                        <button class="bb-btn btn-rainbow" onclick="wrapText('[rainbow]', '[/rainbow]')">РАДУГА</button>
+                        <button class="bb-btn btn-shake" onclick="applyShake()">ТРЯСКА</button>
+                        <button class="bb-btn" onclick="applyLink()">ССЫЛКА</button>
+                    </div>
+                    <div class="bb-body">
+                        <textarea id="f-description" placeholder="Текст описания..." oninput="updatePreview()"></textarea>
+                        <div class="bb-preview" id="desc-preview"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Теги модели</label>
+                <div class="tag-creator">
+                    <input type="text" id="new-tag-name" placeholder="Название тега...">
+                    <input type="color" id="new-tag-color" value="#3eff6e" title="Цвет тега">
+                    <button class="btn-sm" onclick="addTag()">+</button>
+                </div>
+                <div class="tag-list" id="current-tags"></div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Кадры старта</label>
+                    <input type="number" id="f-startFrames" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Кадры покоя</label>
+                    <input type="number" id="f-idleFrames" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>FPS</label>
+                    <input type="number" id="f-fps" value="24" min="1">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Ссылка на превью (если нет кадров)</label>
+                <input type="text" id="f-preview" placeholder="models/name/preview.webp">
+            </div>
+            <div class="form-group">
+                <label>Рендеры (каждый с новой строки)</label>
+                <textarea id="f-renders" style="min-height: 60px;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Видео (каждый с новой строки)</label>
+                <textarea id="f-videos" style="min-height: 60px;"></textarea>
+            </div>
+
+            <div class="row" style="align-items: center; margin-bottom: 15px;">
+                <input type="checkbox" id="f-downloadable" onchange="toggleDownload()" style="width: 20px; height: 20px; margin-right: 10px; accent-color: var(--accent); cursor: pointer;">
+                <label for="f-downloadable" style="margin: 0; cursor: pointer;">Разрешить скачивание</label>
+            </div>
+            <div class="form-group hidden" id="download-group">
+                <label>Имя файла (в папке модели)</label>
+                <input type="text" id="f-downloadFile" placeholder="model.zip">
+            </div>
+
+            <button class="btn-save" id="btn-save" onclick="saveModel()">+ ДОБАВИТЬ В СПИСОК</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. СОСТОЯНИЕ И ЗАГРУЗКА
+        // ==========================================
+        let models = [];
+        let editIndex = -1;
+        let currentTags = []; // Теги для текущей редактируемой модели
+
+        const fileInput = document.getElementById('fileInput');
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    if (Array.isArray(parsed)) {
+                        models = parsed;
+                        renderList();
+                        resetForm();
+                    } else alert('Ошибка: JSON должен быть массивом [ ... ]');
+                } catch (err) { alert('Ошибка чтения JSON: ' + err.message); }
+            };
+            reader.readAsText(file);
+            fileInput.value = '';
+        });
+
+        function downloadJSON() {
+            if (models.length === 0) return alert('Список пуст.');
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(models, null, 2));
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = "models_list.json";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        // ==========================================
+        // 2. СПИСОК МОДЕЛЕЙ
+        // ==========================================
+        function renderList() {
+            document.getElementById('model-count').textContent = models.length;
+            const list = document.getElementById('model-list');
+            list.innerHTML = '';
+            if (models.length === 0) {
+                list.innerHTML = '<p style="color:#666;font-size:0.8rem;text-align:center;margin-top:20px;">Список пуст</p>';
+                return;
+            }
+            models.forEach((m, i) => {
+                const div = document.createElement('div');
+                div.className = `model-item ${i === editIndex ? 'active' : ''}`;
+                div.onclick = () => editModel(i);
+                div.innerHTML = `
+                    <div class="model-info">
+                        <strong>${m.displayName || m.name}</strong>
+                        <span>${m.name}</span>
+                    </div>
+                    <button class="btn-sm btn-del" onclick="event.stopPropagation(); deleteModel(${i})">✕</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function editModel(index) {
+            editIndex = index;
+            const m = models[index];
+            
+            document.getElementById('f-name').value = m.name || '';
+            document.getElementById('f-displayName').value = m.displayName || '';
+            document.getElementById('f-description').value = m.description || '';
+            document.getElementById('f-startFrames').value = m.startFrames || 0;
+            document.getElementById('f-idleFrames').value = m.idleFrames || 0;
+            document.getElementById('f-fps').value = m.fps || 24;
+            document.getElementById('f-preview').value = m.preview || '';
+            document.getElementById('f-renders').value = (m.renders || []).join('\n');
+            document.getElementById('f-videos').value = (m.videos || []).join('\n');
+            document.getElementById('f-downloadable').checked = !!m.downloadable;
+            document.getElementById('f-downloadFile').value = m.downloadFile || '';
+            toggleDownload();
+            
+            // Теги
+            currentTags = m.tags ? JSON.parse(JSON.stringify(m.tags)) : [];
+            renderCurrentTags();
+            updatePreview();
+
+            document.getElementById('form-title').textContent = 'РЕДАКТИРОВАНИЕ';
+            document.getElementById('btn-save').textContent = '💾 СОХРАНИТЬ';
+            document.getElementById('btn-cancel').classList.remove('hidden');
+            
+            renderList();
+            document.querySelector('.main-panel').scrollTo(0, 0);
+        }
+
+        function deleteModel(index) {
+            if (!confirm('Удалить модель ' + models[index].name + '?')) return;
+            models.splice(index, 1);
+            if (editIndex === index) resetForm();
+            else if (editIndex > index) editIndex--;
+            renderList();
+        }
+
+        function resetForm() {
+            editIndex = -1;
+            document.getElementById('f-name').value = '';
+            document.getElementById('f-displayName').value = '';
+            document.getElementById('f-description').value = '';
+            document.getElementById('f-startFrames').value = '0';
+            document.getElementById('f-idleFrames').value = '0';
+            document.getElementById('f-fps').value = '24';
+            document.getElementById('f-preview').value = '';
+            document.getElementById('f-renders').value = '';
+            document.getElementById('f-videos').value = '';
+            document.getElementById('f-downloadable').checked = false;
+            document.getElementById('f-downloadFile').value = '';
+            toggleDownload();
+            
+            currentTags = [];
+            renderCurrentTags();
+            updatePreview();
+
+            document.getElementById('form-title').textContent = 'НОВАЯ МОДЕЛЬ';
+            document.getElementById('btn-save').textContent = '+ ДОБАВИТЬ В СПИСОК';
+            document.getElementById('btn-cancel').classList.add('hidden');
+            
+            renderList();
+        }
+
+        function saveModel() {
+            const name = document.getElementById('f-name').value.trim();
+            if (!name) return alert('Введите системное имя!');
+            if (editIndex === -1 && models.some(m => m.name === name)) return alert('Модель с таким именем уже есть!');
+
+            const model = {
+                name: name,
+                displayName: document.getElementById('f-displayName').value.trim() || name,
+                description: document.getElementById('f-description').value.trim(),
+                tags: currentTags,
+                startFrames: parseInt(document.getElementById('f-startFrames').value) || 0,
+                idleFrames: parseInt(document.getElementById('f-idleFrames').value) || 0,
+                fps: parseInt(document.getElementById('f-fps').value) || 24,
+                renders: document.getElementById('f-renders').value.split('\n').map(s=>s.trim()).filter(Boolean),
+                videos: document.getElementById('f-videos').value.split('\n').map(s=>s.trim()).filter(Boolean)
+            };
+
+            const preview = document.getElementById('f-preview').value.trim();
+            if (preview) model.preview = preview;
+
+            if (document.getElementById('f-downloadable').checked) {
+                const df = document.getElementById('f-downloadFile').value.trim();
+                if (df) { model.downloadable = true; model.downloadFile = df; }
+            }
+
+            if (editIndex === -1) models.push(model);
+            else models[editIndex] = model;
+
+            resetForm();
+        }
+
+        // ==========================================
+        // 3. ТЕГИ
+        // ==========================================
+        function addTag() {
+            const name = document.getElementById('new-tag-name').value.trim();
+            const color = document.getElementById('new-tag-color').value;
+            if (!name) return;
+            if (currentTags.some(t => (typeof t === 'string' ? t : t.name) === name)) return alert('Такой тег уже есть!');
+
+            if (color === '#3eff6e') currentTags.push(name);
+            else currentTags.push({ name: name, color: color });
+
+            document.getElementById('new-tag-name').value = '';
+            renderCurrentTags();
+        }
+
+        function removeTag(index) {
+            currentTags.splice(index, 1);
+            renderCurrentTags();
+        }
+
+        function renderCurrentTags() {
+            const list = document.getElementById('current-tags');
+            list.innerHTML = '';
+            currentTags.forEach((tag, i) => {
+                const isObj = typeof tag === 'object';
+                const name = isObj ? tag.name : tag;
+                const color = isObj ? tag.color : 'var(--text-primary)';
+                
+                const el = document.createElement('div');
+                el.className = 'tag-item';
+                el.innerHTML = `
+                    <span style="color: ${color}; border: 1px solid ${color}; padding: 2px 5px;">${name}</span>
+                    <span class="tag-remove" onclick="removeTag(${i})">✕</span>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        function toggleDownload() {
+            const isChecked = document.getElementById('f-downloadable').checked;
+            document.getElementById('download-group').classList.toggle('hidden', !isChecked);
+        }
+
+        // ==========================================
+        // 4. BBCode РЕДАКТОР
+        // ==========================================
+        const descInput = document.getElementById('f-description');
+        const descPreview = document.getElementById('desc-preview');
+
+        function wrapText(openTag, closeTag) {
+            const start = descInput.selectionStart;
+            const end = descInput.selectionEnd;
+            const text = descInput.value;
+            
+            if (start === end) {
+                descInput.value = text.substring(0, start) + openTag + closeTag + text.substring(start);
+                descInput.focus();
+                descInput.selectionStart = start + openTag.length;
+                descInput.selectionEnd = start + openTag.length;
+            } else {
+                const selected = text.substring(start, end);
+                descInput.value = text.substring(0, start) + openTag + selected + closeTag + text.substring(end);
+                descInput.focus();
+                descInput.selectionStart = start;
+                descInput.selectionEnd = end + openTag.length + closeTag.length;
+            }
+            updatePreview();
+        }
+
+        function applyColor() {
+            const color = prompt("HEX-код или название цвета (например, #ff0000):", "#ff00f2");
+            if (color) wrapText(`[color=${color}]`, `[/color]`);
+        }
+
+        function applyShake() {
+            const dur = prompt("Длительность (сек):", "0.1");
+            const dist = prompt("Амплитуда (пиксели):", "1");
+            if (dur && dist) wrapText(`[shake=${dur},${dist}]`, `[/shake]`);
+        }
+
+        function applyLink() {
+            const url = prompt("URL ссылки:", "https://");
+            if (!url) return;
+            const start = descInput.selectionStart;
+            const end = descInput.selectionEnd;
+            const text = descInput.value;
+            
+            if (start === end) {
+                descInput.value = text.substring(0, start) + `[url=${url}]${url}[/url]` + text.substring(start);
+            } else {
+                descInput.value = text.substring(0, start) + `[url=${url}]${text.substring(start, end)}[/url]` + text.substring(end);
+            }
+            updatePreview();
+        }
+
+        // ==========================================
+        // 5. ПАРСЕР BB-КОДОВ (Взят из script.js)
+        // ==========================================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        function parseBBCode(text) {
+            if (!text) return '';
+            let safe = escapeHtml(text);
+            let changed = true;
+            let iter = 0;
+            while (changed && iter < 50) {
+                changed = false;
+                iter++;
+                
+                let bMatch = /\[b\]([\s\S]*?)\[\/b\]/i.exec(safe);
+                if (bMatch) { safe = safe.substring(0, bMatch.index) + `<b>${parseBBCode(bMatch[1])}</b>` + safe.substring(bMatch.index + bMatch[0].length); changed = true; continue; }
+                
+                let iMatch = /\[i\]([\s\S]*?)\[\/i\]/i.exec(safe);
+                if (iMatch) { safe = safe.substring(0, iMatch.index) + `<i>${parseBBCode(iMatch[1])}</i>` + safe.substring(iMatch.index + iMatch[0].length); changed = true; continue; }
+                
+                let uMatch = /\[u\]([\s\S]*?)\[\/u\]/i.exec(safe);
+                if (uMatch) { safe = safe.substring(0, uMatch.index) + `<u>${parseBBCode(uMatch[1])}</u>` + safe.substring(uMatch.index + uMatch[0].length); changed = true; continue; }
+                
+                let urlMatch = /\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/i.exec(safe);
+                if (urlMatch) { safe = safe.substring(0, urlMatch.index) + `<a href="${urlMatch[1].trim()}" target="_blank" class="bbcode-link">${parseBBCode(urlMatch[2])}</a>` + safe.substring(urlMatch.index + urlMatch[0].length); changed = true; continue; }
+                
+                let urlSimple = /\[url\]([\s\S]*?)\[\/url\]/i.exec(safe);
+                if (urlSimple) { 
+                    let href = urlSimple[1].trim();
+                    if (!/^https?:\/\//i.test(href)) href = 'https://' + href;
+                    safe = safe.substring(0, urlSimple.index) + `<a href="${href}" target="_blank" class="bbcode-link">${parseBBCode(urlSimple[1])}</a>` + safe.substring(urlSimple.index + urlSimple[0].length); changed = true; continue; 
+                }
+                
+                let colorMatch = /\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/i.exec(safe);
+                if (colorMatch) { 
+                    const color = colorMatch[1].trim();
+                    safe = safe.substring(0, colorMatch.index) + `<span style="color: ${color}; text-shadow: 0 0 2px ${color}, 0 0 6px ${color}; display:inline-block;">${parseBBCode(colorMatch[2])}</span>` + safe.substring(colorMatch.index + colorMatch[0].length); changed = true; continue; 
+                }
+                
+                let rainbowMatch = /\[rainbow\]([\s\S]*?)\[\/rainbow\]/i.exec(safe);
+                if (rainbowMatch) { safe = safe.substring(0, rainbowMatch.index) + `<span class="rainbow-text">${parseBBCode(rainbowMatch[1])}</span>` + safe.substring(rainbowMatch.index + rainbowMatch[0].length); changed = true; continue; }
+                
+                let shakeMatch = /\[shake(?:=([\d.]+)(?:,([\d.]+))?)?\]([\s\S]*?)\[\/shake\]/i.exec(safe);
+                if (shakeMatch) {
+                    const duration = shakeMatch[1] ? parseFloat(shakeMatch[1]) : 0.1;
+                    const distance = shakeMatch[2] ? parseFloat(shakeMatch[2]) : 1;
+                    const innerHtml = parseBBCode(shakeMatch[3]);
+                    
+                    let processed = '';
+                    if (innerHtml.includes('<') && innerHtml.includes('>')) {
+                        processed = `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; display: inline-block;">${innerHtml}</span>`;
+                    } else {
+                        const chars = innerHtml.split('');
+                        for (let i = 0; i < chars.length; i++) {
+                            const ch = chars[i];
+                            if (ch === ' ') { processed += ' '; continue; }
+                            const delay = (i * 0.03).toFixed(3);
+                            processed += `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; animation-delay: ${delay}s;">${ch}</span>`;
+                        }
+                    }
+                    safe = safe.substring(0, shakeMatch.index) + processed + safe.substring(shakeMatch.index + shakeMatch[0].length);
+                    changed = true; 
+                    continue;
+                }
+            }
+            return safe;
+        }
+
+        function updatePreview() {
+            descPreview.innerHTML = parseBBCode(descInput.value).replace(/\n/g, '<br>');
+        }
+
+        // Инициализация
+        renderList();
+        resetForm();
+    </script>
+</body>
+</html>
