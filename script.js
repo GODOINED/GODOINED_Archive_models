@@ -426,6 +426,7 @@ function playAchievementSound() {
     ]);
 }
 
+
 function playBlip(freq = 900, vol = 0.04) {
     playSound(freq, 0.05, 'square', vol);
 }
@@ -2023,6 +2024,16 @@ function initApp() {
         document.body.classList.add('dt-active');
         document.body.style.overflow = 'hidden';
 
+        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
+        const acceptOverlay = document.getElementById('dt-accept-overlay');
+        if (acceptOverlay) {
+            acceptOverlay.classList.remove('visible', 'fade-out');
+        }
+        if (dialogue) {
+            dialogue.style.opacity = '1'; // Возвращаем видимость текста
+        }
+        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
+
         // 2) Все звуки — безопасно, по отдельности
         try { if (typeof playClickSound === 'function') playClickSound(); } catch (e) {}
         try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch (e) {}
@@ -2075,6 +2086,17 @@ function initApp() {
         // 3) Сбросы
         stopMusic();
         clearDialogue();
+        
+        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
+        const acceptOverlay = document.getElementById('dt-accept-overlay');
+        if (acceptOverlay) {
+            acceptOverlay.classList.remove('visible', 'fade-out');
+        }
+        if (dialogue) {
+            dialogue.style.opacity = '1';
+        }
+        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
+
         resetFinale();
         clickEchoes.length = 0;
         targetProgress = 0;
@@ -2107,8 +2129,8 @@ function initApp() {
 
     const MAX_TOTAL_SIZE = 5 * 1024 * 1024;
     const state = {
-        step: 0, name: '', food: '', color: '', gift: '',
-        feeling: '', honest: '', pain: '', message: '', files: null
+        step: 0, name: '', material: '', food: '', color: '', colorHex: '', colorName: '', purpose: '',
+        gift: '', fear: '', feeling: '', honest: '', pain: '', message: '', files: null
     };
 
     let currentProgress = 0;
@@ -2125,26 +2147,61 @@ function initApp() {
         isAngry: false
     };
 
+    function hexToHue(hex) {
+        let r = 0, g = 0, b = 0;
+        if (hex.length === 4) {
+            r = parseInt(hex[1]+hex[1], 16); g = parseInt(hex[2]+hex[2], 16); b = parseInt(hex[3]+hex[3], 16);
+        } else if (hex.length === 7) {
+            r = parseInt(hex.substring(1,3), 16); g = parseInt(hex.substring(3,5), 16); b = parseInt(hex.substring(5,7), 16);
+        }
+        r /= 255; g /= 255; b /= 255;
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+        if (max === min) { h = s = 0; }
+        else {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return Math.round(h * 360);
+    }
+
     function updatePersonality() {
         let hHue = 340, sHue = 280, gHue = 300, hSat = 100, angry = false;
 
-        // Чувства к творению — задают характер
+        // Чувства
         if (state.feeling === 'ЛЮБОВЬ')       { hHue = 340; sHue = 320; gHue = 340; }
         else if (state.feeling === 'НАДЕЖДА') { hHue = 200; sHue = 240; gHue = 220; }
         else if (state.feeling === 'СТРАХ')   { hHue = 40;  sHue = 280; gHue = 60; angry = true; }
         else if (state.feeling === 'ОТВРАЩЕНИЕ') { hHue = 0; sHue = 200; gHue = 10; angry = true; }
+        else if (state.feeling === 'СМЯТЕНИЕ')   { hHue = 120; sHue = 180; gHue = 150; }
 
-        // Еда корректирует оттенок
+        // Материал
+        if (state.material === 'ПЛОТЬ') hHue = 0;
+        else if (state.material === 'СВЕТ') { hHue = 60; sHue = 60; }
+        else if (state.material === 'ТЬМА') { hHue = 270; sHue = 270; }
+        else if (state.material === 'ПУСТОТА') { hHue = 180; sHue = 180; }
+
+        // Предназначение
+        if (state.purpose === 'ДЛЯ БИТВЫ') hHue = 0;
+        else if (state.purpose === 'ДЛЯ ЛЮБВИ') hHue = 330;
+        else if (state.purpose === 'ДЛЯ РАЗРУШЕНИЯ') { hHue = 15; sHue = 0; }
+
+        // Еда корректирует
         if (state.food === 'БОЛЬ') hHue = (hHue + 300) % 360;
         else if (state.food === 'ХОЛОД') hHue = (hHue + 180) % 360;
         else if (state.food === 'СЛАДКОЕ') hHue = (hHue + 15) % 360;
         else if (state.food === 'КИСЛОЕ') hHue = (hHue + 60) % 360;
 
-        // Цвет сосуда — влияет на спирали
-        if (state.color === 'СИНИЙ')      sHue = 220;
-        else if (state.color === 'ЗЕЛЕНЫЙ') sHue = 130;
-        else if (state.color === 'РОЗОВЫЙ') sHue = 330;
-        else if (state.color === 'КРАСНЫЙ') sHue = 0;
+        // Цвет из палитры (перебивает всё остальное)
+        if (state.colorHex) {
+            sHue = hexToHue(state.colorHex);
+        }
 
         personality.heartHue = hHue;
         personality.spiralHue = sHue;
@@ -2183,20 +2240,37 @@ function initApp() {
         { type: 'text', key: 'name', question: 'Как тебя зовут?', sub: 'Можно пропустить.',
           placeholder: 'ИМЯ', maxLength: 24, optional: true,
           reaction: (st) => st.name ? `Хорошо, ${st.name}.` : 'Хорошо.' },
+          
+        { type: 'choice', key: 'material', question: 'Из чего сделан этот сосуд?',
+          options: ['ПЛОТЬ', 'МЕТАЛЛ', 'СВЕТ', 'ТЬМА', 'СТЕКЛО', 'ПУСТОТА'], reaction: 'Материал принят.' },
+
         { type: 'choice', key: 'food', question: 'Какая любимая еда у сосуда?',
-          options: ['СЛАДКОЕ', 'МЯГКОЕ', 'КИСЛОЕ', 'СОЛЕНОЕ', 'БОЛЬ', 'ХОЛОД'], reaction: 'Записал.' },
-        { type: 'choice', key: 'color', question: 'Какой цвет ему нравится больше всего?',
-          options: ['КРАСНЫЙ', 'СИНИЙ', 'ЗЕЛЕНЫЙ', 'РОЗОВЫЙ'], reaction: 'Понял.' },
+          options: ['СЛАДКОЕ', 'МЯГКОЕ', 'КИСЛОЕ', 'СОЛЕНОЕ', 'ОСТРОЕ', 'ГОРЬКОЕ', 'МЕТАЛЛ', 'СВЕТ', 'ПЕПЕЛ', 'БОЛЬ', 'ХОЛОД'], reaction: 'Записал.' },
+          
+        { type: 'color', key: 'color', question: 'Какой цвет ему нравится больше всего?', 
+          sub: 'Выбери любой оттенок.', reaction: 'Красивый выбор.' },
+
+        { type: 'choice', key: 'purpose', question: 'Для чего ты его создаёшь?',
+          options: ['ДЛЯ БИТВЫ', 'ДЛЯ ЛЮБВИ', 'ДЛЯ РАЗРУШЕНИЯ', 'ДЛЯ ЗАЩИТЫ', 'ДЛЯ СТРАДАНИЙ', 'ЧТОБЫ ОН ЖИЛ'], reaction: 'Судьба предрешена.' },
+          
         { type: 'choice', key: 'gift', question: 'Какой дар ты ему преподнесёшь?',
-          options: ['ДОБРОТА', 'УМ', 'АМБИЦИИ', 'ХРАБРОСТЬ', 'ГОЛОС'], reaction: 'Принято.' },
+          options: ['ДОБРОТА', 'УМ', 'АМБИЦИИ', 'ХРАБРОСТЬ', 'ГОЛОС', 'СИЛА', 'МУДРОСТЬ', 'ЖИЗНЬ', 'СМЕРТЬ', 'ВРЕМЯ'], reaction: 'Принято.' },
+          
+        { type: 'choice', key: 'fear', question: 'Чего он будет бояться больше всего?',
+          options: ['ТЕМНОТЫ', 'СЕБЯ', 'ТЕБЯ', 'ПУСТОТЫ', 'НИЧЕГО'], reaction: 'Страх зафиксирован.' },
+          
         { type: 'choice', key: 'feeling', question: 'Что ты чувствуешь к своему творению?',
-          sub: '(Оно не услышит.)', options: ['ЛЮБОВЬ', 'НАДЕЖДА', 'СТРАХ', 'ОТВРАЩЕНИЕ'], reaction: 'Хорошо.' },
+          sub: '(Оно не услышит.)', options: ['ЛЮБОВЬ', 'НАДЕЖДА', 'СТРАХ', 'ОТВРАЩЕНИЕ', 'БЕЗРАЗЛИЧИЕ', 'СМЯТЕНИЕ'], reaction: 'Хорошо.' },
+          
         { type: 'choice', key: 'honest', question: 'Ты отвечал честно?',
           options: ['ДА', 'НЕТ'], reaction: 'Записал.' },
+          
         { type: 'choice', key: 'pain', question: 'Ты осознаёшь возможность боли и страданий?',
           options: ['ДА', 'НЕТ'], reaction: 'Понял.' },
+          
         { type: 'textarea', key: 'message', question: 'Расскажи о своём творении.',
           sub: 'Обязательное поле.', placeholder: 'Что это? Из чего? Зачем?', reaction: 'Понял.' },
+          
         { type: 'file', key: 'files', question: 'Есть ли у тебя референсы?',
           sub: 'До 5 МБ. Можно несколько.', optional: true, reaction: 'Записал.' }
     ];
@@ -3424,6 +3498,33 @@ function initApp() {
         playFountainShatterSound();
     }
 
+    function playFinalAcceptance() {
+        // 1. Кульминация: взрыв, свет, фонтан
+        triggerSoulBurst();
+        //playFinaleSound();
+
+        // 2. Прячем интерфейс (плавно)
+        dialogue.style.transition = 'opacity 1s ease';
+        dialogue.style.opacity = '0';
+
+        // 3. Через 1.5 секунды показываем финальный экран
+        setTimeout(() => {
+            const overlay = document.getElementById('dt-accept-overlay');
+            if (overlay) overlay.classList.add('visible');
+        }, 1500);
+
+        // 4. Через 6 секунд начинаем ПЛАВНОЕ ЗАТУХАНИЕ текста (fade-out)
+        setTimeout(() => {
+            const overlay = document.getElementById('dt-accept-overlay');
+            if (overlay) overlay.classList.add('fade-out');
+        }, 6000);
+
+        // 5. Еще через 3 секунды (когда всё растворилось) закрываем модалку
+        setTimeout(() => {
+            closeModal();
+        }, 9000); // 1.5 сек (появление) + 4.5 сек (чтение) + 3 сек (затухание) = 9 секунд
+    }
+
     function resetFinale() {
         finaleMode = 0;
         finaleBoost = 0;
@@ -3645,26 +3746,49 @@ function initApp() {
 
     // ---- TYPEWRITER ----
     let typeState = null;
-    function typeText(el, text, speed, done) {
+        function typeText(el, text, speed, done) {
         if (typeState && typeState.timer) clearTimeout(typeState.timer);
         el.innerHTML = '';
-        typeState = { el, text, i: 0, timer: null, done };
+        
+        // Разбиваем текст на слова и пробелы
+        const words = text.split(/(\s+)/);
+        typeState = { el, text, words, wordIndex: 0, charIndex: 0, timer: null, done, currentWordEl: null };
+
         (function step() {
             if (!typeState || typeState.el !== el) return;
-            if (typeState.i < text.length) {
-                const ch = text[typeState.i];
-                const span = document.createElement('span');
-                span.className = 'dt-char-pop';
-                span.textContent = ch === ' ' ? '\u00A0' : ch;
-                el.appendChild(span);
-                typeState.i++;
-                if (ch !== ' ' && typeState.i % 2 === 0) playTypeSound();
-                typeState.timer = setTimeout(step, speed);
-            } else {
+            
+            if (typeState.wordIndex >= typeState.words.length) {
                 const d = typeState.done;
                 typeState = null;
                 if (d) d();
+                return;
             }
+
+            const currentWord = typeState.words[typeState.wordIndex];
+
+            if (typeState.charIndex === 0) {
+                // Создаем обертку для слова
+                const wordSpan = document.createElement('span');
+                wordSpan.className = 'dt-word';
+                el.appendChild(wordSpan);
+                typeState.currentWordEl = wordSpan;
+            }
+
+            const ch = currentWord[typeState.charIndex];
+            const charSpan = document.createElement('span');
+            charSpan.className = 'dt-char-pop';
+            charSpan.textContent = ch === ' ' ? '\u00A0' : ch;
+            typeState.currentWordEl.appendChild(charSpan);
+            
+            typeState.charIndex++;
+            if (ch !== ' ' && typeState.charIndex % 2 === 0) playTypeSound();
+            
+            if (typeState.charIndex >= currentWord.length) {
+                typeState.wordIndex++;
+                typeState.charIndex = 0;
+            }
+            
+            typeState.timer = setTimeout(step, speed);
         })();
     }
     function skipTyping() {
@@ -3706,7 +3830,7 @@ function initApp() {
     }
 
     async function submitForm(sendBtn) {
-        triggerSoulBurst(); // ⬅ магический выплеск
+        //triggerSoulBurst(); // ⬅ магический выплеск
         sendBtn.disabled = true;
         sendBtn.textContent = '...';
         const status = document.createElement('div');
@@ -3726,15 +3850,17 @@ function initApp() {
         fd.append('honest', state.honest);
         fd.append('pain', state.pain);
         fd.append('message', state.message);
+        fd.append('material', state.material);
+        fd.append('purpose', state.purpose);
+        fd.append('fear', state.fear);
         if (state.files) state.files.forEach(f => fd.append('attachment', f));
 
         const result = await sendFormWithRetry(fd, 3);
 
         if (result.success) {
-            status.className = 'dt-status success';
-            status.textContent = '✅ Сосуд принят. Мы свяжемся с тобой.';
-            if (typeof playAchievementSound === 'function') playAchievementSound();
-            setTimeout(closeModal, 2800);
+            status.textContent = '✅ Связь установлена. Завершаем ритуал...';
+            // ⬇⬇⬇ ЗАПУСКАЕМ ФИНАЛЬНУЮ АНИМАЦИЮ ⬇⬇⬇
+            playFinalAcceptance();
         } else {
             status.className = 'dt-status error';
             status.innerHTML = `❌ Не удалось (${result.error || 'ошибка'}).<br>Попробуй альтернативную отправку.`;
@@ -3750,8 +3876,15 @@ function initApp() {
         const subject = encodeURIComponent('Godoined Archive новая заявка');
         const body = encodeURIComponent(
             `Имя: ${state.name || 'Аноним'}\n` +
-            `Еда: ${state.food}\nЦвет: ${state.color}\nДар: ${state.gift}\n` +
-            `Чувства: ${state.feeling}\nЧестность: ${state.honest}\nБоль: ${state.pain}\n\n` +
+            `Материал: ${state.material}\n` +
+            `Еда: ${state.food}\n` +
+            `Цвет: ${state.color}\n` +
+            `Предназначение: ${state.purpose}\n` +
+            `Дар: ${state.gift}\n` +
+            `Страх: ${state.fear}\n` +
+            `Чувства: ${state.feeling}\n` +
+            `Честность: ${state.honest}\n` +
+            `Боль: ${state.pain}\n\n` +
             `Описание:\n${state.message}\n\n---\nПрикрепите референсы к этому письму.`
         );
         window.open(`mailto:goodmopsreset@gmail.com?subject=${subject}&body=${body}`, '_blank');
@@ -3812,6 +3945,7 @@ function initApp() {
             else if (step.type === 'textarea') renderTextarea(step);
             else if (step.type === 'file') renderFileInput(step);
             else if (step.type === 'choice') renderChoices(step);
+            else if (step.type === 'color') renderColorInput(step); // ⬅ ДОБАВИТЬ ЭТУ СТРОКУ
         });
     }
 
@@ -4013,6 +4147,59 @@ function initApp() {
         document.addEventListener('keydown', window.dtKeyHandler);
     }
 
+    function renderColorInput(step) {
+        const wrap = document.createElement('div');
+        wrap.className = 'dt-color-wrap';
+
+        // 1. Палитра цветов (системная)
+        const colorPicker = document.createElement('input');
+        colorPicker.type = 'color';
+        colorPicker.className = 'dt-color-picker';
+        colorPicker.value = state.colorHex || '#ff00f2'; // Дефолтный розовый
+
+        // 2. Текстовое поле для названия (необязательно)
+        const colorNameInput = document.createElement('input');
+        colorNameInput.type = 'text';
+        colorNameInput.className = 'dt-input';
+        colorNameInput.placeholder = 'НАЗВАНИЕ ЦВЕТА...';
+        colorNameInput.maxLength = 20;
+        colorNameInput.style.textTransform = 'uppercase';
+        colorNameInput.style.fontSize = '1rem';
+        colorNameInput.style.marginTop = '10px';
+        colorNameInput.value = state.colorName || '';
+
+        // Синхронизация цвета текста с выбранным цветом в палитре
+        const updateColorUI = () => {
+            colorNameInput.style.color = colorPicker.value;
+            colorNameInput.style.textShadow = `0 0 10px ${colorPicker.value}`;
+            colorNameInput.style.borderBottomColor = colorPicker.value;
+        };
+        colorPicker.addEventListener('input', updateColorUI);
+        updateColorUI();
+
+        const actions = document.createElement('div');
+        actions.className = 'dt-actions';
+
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.className = 'dt-btn';
+        next.textContent = '▶ ДАЛЕЕ';
+        next.addEventListener('click', () => {
+            state.colorHex = colorPicker.value;
+            // Если игрок ввёл название — сохраняем его. Иначе показываем HEX-код.
+            const customName = colorNameInput.value.trim().toUpperCase();
+            state.color = customName || state.colorHex.toUpperCase();
+            playConfirm();
+            goNext(step);
+        });
+
+        actions.appendChild(next);
+        wrap.appendChild(colorPicker);
+        wrap.appendChild(colorNameInput);
+        dialogue.appendChild(wrap);
+        dialogue.appendChild(actions);
+    }
+
     async function goNext(step) {
         clearDialogue();
         await pause(300);
@@ -4030,18 +4217,23 @@ function initApp() {
     // ---- ФИНАЛ ----
     async function renderSummary() {
         updateProgress();
-        triggerSoulPour(); // ⬅ запускаем вливание души
+        triggerSoulPour();
         clearDialogue();
         await speak('Вот что я записал.');
 
         const sum = document.createElement('div');
         sum.className = 'dt-summary';
         const fileCount = state.files ? state.files.length : 0;
+        
+        // Собираем все данные для сводки
         sum.innerHTML = `
             <div><span class="dt-summary-label">ИМЯ:</span><span class="dt-summary-value">${escapeHtml(state.name || '— не указано —')}</span></div>
+            <div><span class="dt-summary-label">МАТЕРИАЛ:</span><span class="dt-summary-value">${state.material}</span></div>
             <div><span class="dt-summary-label">ЕДА:</span><span class="dt-summary-value">${state.food}</span></div>
-            <div><span class="dt-summary-label">ЦВЕТ:</span><span class="dt-summary-value">${state.color}</span></div>
+            <div><span class="dt-summary-label">ЦВЕТ:</span><span class="dt-summary-value" style="color: ${state.colorHex || '#fff'}; text-shadow: 0 0 10px ${state.colorHex || '#fff'};">${state.color}</span></div>
+            <div><span class="dt-summary-label">ПРЕДНАЗНАЧЕНИЕ:</span><span class="dt-summary-value">${state.purpose}</span></div>
             <div><span class="dt-summary-label">ДАР:</span><span class="dt-summary-value">${state.gift}</span></div>
+            <div><span class="dt-summary-label">СТРАХ:</span><span class="dt-summary-value">${state.fear}</span></div>
             <div><span class="dt-summary-label">ЧУВСТВА:</span><span class="dt-summary-value">${state.feeling}</span></div>
             <div><span class="dt-summary-label">ЧЕСТНОСТЬ:</span><span class="dt-summary-value">${state.honest}</span></div>
             <div><span class="dt-summary-label">БОЛЬ:</span><span class="dt-summary-value">${state.pain}</span></div>
@@ -4083,8 +4275,8 @@ function initApp() {
         alt.type = 'button';
         alt.className = 'dt-btn dt-btn-secondary';
         alt.id = 'dt-alt-send';
-        alt.style.display = 'none';
-        alt.textContent = '📧 АЛЬТЕРНАТИВНАЯ ОТПРАВКА';
+        alt.style.display = 'inline-block'; // Показываем сразу
+        alt.textContent = '📧 ПОЧТА';
         alt.addEventListener('click', sendViaMailto);
 
         actions.appendChild(back);
@@ -4100,6 +4292,16 @@ function initApp() {
         if (fog) fog.classList.add('active');
         document.body.classList.add('dt-active');
         document.body.style.overflow = 'hidden';
+
+        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
+        const acceptOverlay = document.getElementById('dt-accept-overlay');
+        if (acceptOverlay) {
+            acceptOverlay.classList.remove('visible', 'fade-out');
+        }
+        if (dialogue) {
+            dialogue.style.opacity = '1'; // Возвращаем видимость текста
+        }
+        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
 
         // 2) Все звуки — безопасно, по отдельности
         try { if (typeof playClickSound === 'function') playClickSound(); } catch (e) {}
@@ -4153,7 +4355,19 @@ function initApp() {
         // 3) Сбросы
         stopMusic();
         clearDialogue();
+        
+        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
+        const acceptOverlay = document.getElementById('dt-accept-overlay');
+        if (acceptOverlay) {
+            acceptOverlay.classList.remove('visible', 'fade-out');
+        }
+        if (dialogue) {
+            dialogue.style.opacity = '1';
+        }
+        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
+
         resetFinale();
+        clickEchoes.length = 0;
         clickEchoes.length = 0;
         targetProgress = 0;
         currentProgress = 0;

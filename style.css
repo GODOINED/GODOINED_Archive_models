@@ -2687,7 +2687,7 @@ body.dt-active #console-panel {
 }
 .dt-dialogue {
     width: 100%;
-    max-width: 660px;
+    max-width: 850px; /* ⬅ Увеличиваем ширину, чтобы словам было где развернуться */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2697,46 +2697,35 @@ body.dt-active #console-panel {
 
 /* ---- Текст (КРУПНЕЕ + пиксельные тени без блюра) ---- */
 .dt-question {
-    font-size: 1.7rem;
-    line-height: 1.9;
+    font-size: clamp(1.2rem, 3.5vw, 1.6rem); /* Чуть уменьшили максимальный размер */
+    line-height: 1.8;
     letter-spacing: 2px;
     color: #fff;
-    /* Пиксельная обводка + многоступенчатое свечение (без блюра) */
-    text-shadow:
-        /* 1. Чёрный контур — читаемость */
+    text-shadow: 
         -2px 0 0 #000, 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000,
-        /* 2. Яркое фиолетовое свечение вплотную — 8 направлений */
-        -3px 0 0 rgba(200, 120, 255, 0.9),
-         3px 0 0 rgba(200, 120, 255, 0.9),
-         0 -3px 0 rgba(200, 120, 255, 0.9),
-         0  3px 0 rgba(200, 120, 255, 0.9),
-        -3px -3px 0 rgba(200, 120, 255, 0.6),
-         3px  3px 0 rgba(200, 120, 255, 0.6),
-        -3px  3px 0 rgba(200, 120, 255, 0.6),
-         3px -3px 0 rgba(200, 120, 255, 0.6),
-        /* 3. Среднее свечение */
-        -5px 0 0 rgba(160, 70, 230, 0.5),
-         5px 0 0 rgba(160, 70, 230, 0.5),
-         0 -5px 0 rgba(160, 70, 230, 0.5),
-         0  5px 0 rgba(160, 70, 230, 0.5),
-        -5px -5px 0 rgba(160, 70, 230, 0.35),
-         5px  5px 0 rgba(160, 70, 230, 0.35),
-        -5px  5px 0 rgba(160, 70, 230, 0.35),
-         5px -5px 0 rgba(160, 70, 230, 0.35),
-        /* 4. Дальний ореол */
-        -8px 0 0 rgba(120, 30, 200, 0.25),
-         8px 0 0 rgba(120, 30, 200, 0.25),
-         0 -8px 0 rgba(120, 30, 200, 0.25),
-         0  8px 0 rgba(120, 30, 200, 0.25),
-        -11px 0 0 rgba(90, 0, 180, 0.12),
-         11px 0 0 rgba(90, 0, 180, 0.12),
-         0 -11px 0 rgba(90, 0, 180, 0.12),
-         0  11px 0 rgba(90, 0, 180, 0.12);
+        -3px 0 0 rgba(200, 120, 255, 0.9), 3px 0 0 rgba(200, 120, 255, 0.9),
+        0 -3px 0 rgba(200, 120, 255, 0.9), 0 3px 0 rgba(200, 120, 255, 0.9),
+        -5px 0 0 rgba(160, 70, 230, 0.5), 5px 0 0 rgba(160, 70, 230, 0.5),
+        0 -5px 0 rgba(160, 70, 230, 0.5), 0 5px 0 rgba(160, 70, 230, 0.5);
+    
     min-height: 2em;
-    animation:
+    animation: 
         dtFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both,
         dtTextPulse 3.2s ease-in-out infinite alternate,
         dtTextWobble 5.5s ease-in-out infinite;
+
+    /* ⬇ ЖЕСТКО ЗАПРЕЩАЕМ ЛОМАТЬ СЛОВА ⬇ */
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+}
+/* ⬇ ДОБАВЬ ЭТОТ КЛАСС, ЕСЛИ ЕГО ЕЩЕ НЕТ ⬇ */
+.dt-word {
+    display: inline-block;
+    white-space: nowrap; /* Запрещает разрыв слова */
 }
 
 .dt-sub {
@@ -3023,7 +3012,10 @@ body.dt-active #console-panel {
 
 /* ---- Мобилка ---- */
 @media (max-width: 700px) {
-    .dt-question { font-size: 1.35rem; }
+    .dt-question { 
+        font-size: 1.2rem; /* Уменьшаем на телефонах, чтобы влезало */
+        letter-spacing: 1px; 
+    }
     .dt-sub { font-size: 0.85rem; }
     .dt-reaction { font-size: 1.1rem; }
     .dt-btn { font-size: 0.85rem; padding: 12px 20px; }
@@ -3231,4 +3223,215 @@ body.dt-active #console-panel {
 @keyframes charPop {
     0%   { transform: scale(1.5) translateY(-3px); opacity: 0.5; text-shadow: 0 0 16px currentColor; }
     100% { transform: scale(1) translateY(0); opacity: 1; text-shadow: inherit; }
+}
+/* ===== ФИНАЛЬНЫЙ ЭКРАН ПРИНЯТИЯ ===== */
+.dt-accept-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10060;
+    /* Стартовый темный фон */
+    background: radial-gradient(circle at center, rgba(40, 10, 0, 0.95) 0%, rgba(0, 0, 0, 0.98) 60%, #000 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+}
+
+.dt-accept-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dt-accept-overlay.fade-out {
+    opacity: 0;
+    transition: opacity 2.5s ease;
+}
+
+/* ⬇⬇⬇ ПСЕВДОЭЛЕМЕНТ ДЛЯ ПУЛЬСАЦИИ ФОНА ⬇⬇⬇ */
+/* Это решает проблему "прыгающего" фона */
+.dt-accept-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255, 200, 50, 0.5) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 2s ease;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Фон начинает пульсировать только когда текст уже начал вылетать */
+.dt-accept-overlay.visible::before {
+    opacity: 1;
+    animation: bgPulse 3s ease-in-out infinite alternate 1s;
+}
+
+@keyframes bgPulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(1.1); opacity: 0.9; }
+}
+
+.dt-accept-text {
+    font-size: 2.5rem;
+    color: #fff;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    font-family: 'Press Start 2P', monospace;
+    
+    /* Базовое свечение (оно больше не будет прыгать) */
+    text-shadow: 
+        0 0 10px #fff,
+        0 0 20px #ffcc00,
+        0 0 40px #ff8800,
+        0 0 80px #ff4400;
+        
+    opacity: 0;
+    transform: scale(0.1);
+    
+    /* ⬇ ДАЕМ БРАУЗЕРУ ПОДСКАЗКУ, ЧТО ЭЛЕМЕНТ БУДЕТ АНИМИРОВАТЬСЯ (убирает лаги) ⬇ */
+    will-change: transform, opacity; 
+}
+
+.dt-accept-sub {
+    margin-top: 25px;
+    font-size: 0.85rem;
+    color: #ffffff;
+    letter-spacing: 4px;
+    font-family: 'Press Start 2P', monospace;
+    text-shadow: 
+        -2px -2px 0 #000, 2px -2px 0 #000, 
+        -2px 2px 0 #000, 2px 2px 0 #000,
+        0 0 10px rgba(255, 204, 0, 0.8);
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* ⬇ ЗАПУСК АНИМАЦИЙ ⬇ */
+.dt-accept-overlay.visible .dt-accept-text {
+    animation: 
+        textEntrance 3s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+        textBreathe 3s ease-in-out 3s infinite alternate;
+}
+
+.dt-accept-overlay.visible .dt-accept-sub {
+    animation: subEntrance 1.5s ease forwards 1s; /* Появляется чуть позже */
+}
+
+.dt-accept-overlay.fade-out .dt-accept-text {
+    animation: textExit 2s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+.dt-accept-overlay.fade-out .dt-accept-sub {
+    animation: subExit 1.5s ease forwards !important;
+}
+
+/* ===== КАДРЫ АНИМАЦИЙ ===== */
+
+/* 1. Плавный вылет, взрыв и остывание */
+@keyframes textEntrance {
+    0% {
+        opacity: 0;
+        transform: scale(0.1);
+        /* В начале тени минимальные, чтобы не грузить браузер */
+        text-shadow: 0 0 0px transparent;
+    }
+    30% {
+        opacity: 1;
+        /* Плавно долетает до нормального размера */
+        transform: scale(1);
+        /* ⬇ ПИК ЯРКОСТИ ⬇ */
+        text-shadow: 
+            0 0 30px #fff,
+            0 0 60px #ffcc00,
+            0 0 100px #ff8800,
+            0 0 150px #ff4400;
+    }
+    60% {
+        opacity: 1;
+        /* Легкое перерастание (эффект инерции) */
+        transform: scale(1.05); 
+        text-shadow: 
+            0 0 20px #fff,
+            0 0 40px #ffcc00,
+            0 0 70px #ff8800,
+            0 0 100px #ff4400;
+    }
+    100% {
+        opacity: 1;
+        /* Возвращается в идеальный размер */
+        transform: scale(1);
+        text-shadow: 
+            0 0 10px #fff,
+            0 0 20px #ffcc00,
+            0 0 40px #ff8800,
+            0 0 80px #ff4400;
+    }
+}
+
+/* Плавное дыхание (тоже стало мягче) */
+@keyframes textBreathe {
+    0% {
+        text-shadow: 0 0 10px #fff, 0 0 20px #ffcc00, 0 0 40px #ff8800, 0 0 80px #ff4400;
+        transform: scale(1);
+    }
+    100% {
+        text-shadow: 0 0 15px #fff, 0 0 35px #ffaa00, 0 0 70px #ff4400, 0 0 120px #ff0000;
+        transform: scale(1.03); /* Уменьшили амплитуду, чтобы не расплывалось */
+    }
+}
+
+@keyframes subEntrance {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes textExit {
+    0% { opacity: 1; transform: scale(1.08); filter: brightness(1); }
+    100% { opacity: 0; transform: scale(2) translateY(-40px); filter: brightness(3); }
+}
+
+@keyframes subExit {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
+}
+
+.dt-color-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    width: 100%;
+    max-width: 360px;
+}
+
+.dt-color-picker {
+    width: 60px;
+    height: 60px;
+    border: 3px solid #555;
+    background: #0a0014;
+    cursor: pointer;
+    border-radius: 0;
+    padding: 0;
+    transition: all 0.25s ease;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.dt-color-picker:hover {
+    border-color: #b3e0ff;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000, 0 0 15px rgba(179, 224, 255, 0.4);
+}
+
+.dt-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.dt-color-picker::-webkit-color-swatch {
+    border: none;
+}
+.dt-color-picker::-moz-color-swatch {
+    border: none;
 }
