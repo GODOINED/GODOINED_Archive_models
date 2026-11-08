@@ -3435,3 +3435,246 @@ body.dt-active #console-panel {
 .dt-color-picker::-moz-color-swatch {
     border: none;
 }
+
+/* ===== КАРТОЧКА "СКОРО" ===== */
+.model-card.coming-soon {
+    cursor: default;
+    border-color: #444;
+}
+
+/* Делаем превью и текст серыми по умолчанию */
+.model-card.coming-soon .preview,
+.model-card.coming-soon .model-info {
+    filter: grayscale(100%) opacity(0.8);
+    transition: filter 0.4s ease;
+}
+
+/* При наведении возвращаем цвета */
+.model-card.coming-soon:hover .preview,
+.model-card.coming-soon:hover .model-info {
+    filter: grayscale(0%) opacity(1);
+}
+
+.model-card.coming-soon:hover {
+    border-color: var(--border-color);
+    box-shadow: 6px 6px 0 var(--shadow);
+}
+
+/* ===== ПЛАШКА "СКОРО" ===== */
+.coming-soon-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'RetroFont', monospace;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    text-shadow: 0 0 5px #000, 0 0 10px #ff0000;
+    pointer-events: none; /* Чтобы клик проходил на карточку */
+    z-index: 1000 !important; 
+    background: rgba(0, 0, 0, 0.85); /* Сделал фон темнее, чтобы текст читался */
+    color: #ffffff;
+    font-size: 1.3rem;
+}
+
+/* При наведении надпись тускнеет, чтобы было видно картинку */
+.model-card.coming-soon:hover .coming-soon-overlay {
+    opacity: 0;
+}
+
+/* ===== NSFW КАРТОЧКИ ===== */
+.model-card.nsfw {
+    border-color: #ff0000 !important;
+    background: #1a0000 !important; 
+    box-shadow: 5px 5px 0 #4d0000, 0 0 20px rgba(255, 0, 0, 0.5) !important;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* УБИВАЕМ ЗЕЛЕНЫЕ ЭФФЕКТЫ ПРИ НАВЕДЕНИИ */
+.model-card.nsfw::before,
+.model-card.nsfw::after {
+    display: none !important; 
+}
+
+/* ПРИ НАВЕДЕНИИ: Вся карточка заливается красным */
+.model-card.nsfw:hover {
+    background: #ff0000 !important;
+    box-shadow: 8px 8px 0 #4d0000, 0 0 50px rgba(255, 0, 0, 1) !important;
+    border-color: #ffffff !important;
+}
+
+/* Прячем картинку (по умолчанию темная) */
+.model-card.nsfw .preview {
+    filter: blur(15px) grayscale(100%) brightness(0.15) !important;
+    transition: none !important;
+    border-bottom: none !important; /* Убираем зеленую рамку снизу картинки */
+}
+
+/* ПРИ НАВЕДЕНИИ: Картинка становится красной */
+.model-card.nsfw:hover .preview {
+    filter: blur(15px) grayscale(100%) brightness(0.5) sepia(100%) hue-rotate(-50deg) saturate(500%) !important;
+}
+
+/* ===== БЕГУЩАЯ СТРОКА ===== */
+.nsfw-marquee {
+    position: absolute;
+    top: 35% !important; /* Поднимаем строку выше, чтобы она была на картинке */
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    z-index: 50 !important; 
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.7) !important; 
+    padding: 6px 0; /* Чуть увеличили высоту для красоты */
+    transform: translateY(-50%);
+}
+
+/* И убираем рамки, если они есть */
+.nsfw-marquee-track { display: flex; width: max-content; animation: nsfwScroll 8s linear infinite; }
+
+.nsfw-marquee-track span {
+    font-family: 'RetroFont', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 10px #ff0000;
+    padding-right: 50px; /* Отступ между повторениями */
+}
+
+@keyframes nsfwScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); } /* Сдвиг ровно на половину */
+}
+
+/* ===== ЗНАЧОК 18+ ===== */
+.nsfw-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #ff0000;
+    color: #000;
+    padding: 2px 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    z-index: 999 !important;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+}
+
+/* Информация под картинкой */
+.model-card.nsfw .model-info {
+    background: transparent !important; /* Пропускаем красный фон карточки */
+    border-top: none !important; /* Убираем красную рамку сверху текста */
+    position: relative;
+    z-index: 2;
+    transition: background 0.3s ease !important;
+}
+
+.model-card.nsfw:hover .model-info {
+    background: transparent !important; 
+}
+
+.model-card.nsfw .model-info h3, 
+.model-card.nsfw .model-info p {
+    color: #ff5555 !important;
+    text-shadow: 1px 1px 0 #000;
+}
+.model-card.nsfw:hover .model-info h3, 
+.model-card.nsfw:hover .model-info p {
+    color: #ffffff !important;
+}
+.model-card.nsfw .tag {
+    border-color: #ff0000 !important;
+    color: #ff5555 !important;
+}
+
+/* ===== ПРОЗРАЧНОЕ ПРЕВЬЮ ===== */
+.model-card.transparent-preview .preview {
+    opacity: 0.9; /* Или можно сделать полностью прозрачным: opacity: 0; */
+    background: transparent !important; /* Убираем черный фон */
+    border-bottom: none !important; /* Убираем разделитель */
+}
+
+.model-card.transparent-preview {
+    background: rgba(0, 0, 0, 0.3) !important; /* Делаем фон самой карточки полупрозрачным */
+    backdrop-filter: blur(5px); /* Легкий эффект стекла */
+}
+
+/* ===== ОТКЛЮЧЕНИЕ РАЗМЫТИЯ ДЛЯ ПРОЗРАЧНЫХ NSFW КАРТОЧЕК ===== */
+.model-card.nsfw.transparent-preview .preview {
+    filter: none !important; /* Убираем блюр полностью */
+    opacity: 0.6; /* Оставляем легкую полупрозрачность для намека на NSFW */
+    background: transparent !important; 
+}
+
+.model-card.nsfw.transparent-preview:hover .preview {
+    filter: none !important; /* Убираем блюр при наведении */
+    opacity: 0.9; /* Делаем чуть ярче при наведении */
+}
+
+/* ===== ПРИОРИТЕТ COMING SOON НАД NSFW ===== */
+.model-card.nsfw.coming-soon {
+    border-color: #ff0000 !important; 
+    background: #1a0000 !important; /* Сплошной темно-красный фон */
+    box-shadow: 5px 5px 0 #4d0000, 0 0 20px rgba(255, 0, 0, 0.5) !important; 
+}
+
+.model-card.nsfw.coming-soon:hover {
+    border-color: #ff4444 !important; 
+    background: #330000 !important; 
+    box-shadow: 8px 8px 0 #4d0000, 0 0 60px rgba(255, 0, 0, 1) !important; 
+}
+
+/* 1. УБИРАЕМ ВСЕ ГРАНИЦЫ И ОТСТУПЫ У КАРТИНКИ (чтобы не было темных полос) */
+.model-card.nsfw.coming-soon .preview {
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    filter: grayscale(100%) opacity(0.4) !important;
+    transition: filter 0.3s ease !important;
+}
+
+/* 2. УБИРАЕМ ФОН И РАМКИ У БЛОКА С ТЕКСТОМ */
+.model-card.nsfw.coming-soon .model-info {
+    background: transparent !important; /* Пропускаем красный фон карточки */
+    border: none !important;
+    margin: 0 !important;
+}
+
+/* 3. КАРТИНКА ПРИ НАВЕДЕНИИ (Цветная) */
+.model-card.nsfw.coming-soon:hover .preview {
+    filter: grayscale(0%) opacity(1) !important;
+}
+
+/* 4. СТИЛИ ДЛЯ БЕГУЩЕЙ СТРОКИ (Серая) */
+.model-card.nsfw.coming-soon .nsfw-marquee {
+    display: block !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+}
+.model-card.nsfw.coming-soon .nsfw-marquee-track span {
+    color: #aaa !important;
+    text-shadow: none !important;
+}
+
+/* 5. Значок 18+ (Серый) */
+.model-card.nsfw.coming-soon .nsfw-badge {
+    background: #333 !important;
+    color: #aaa !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
+
+/* 6. ТЕКСТ "СКОРО" (Убираем черную плашку, делаем текст ярким с тенью) */
+.model-card.nsfw.coming-soon .coming-soon-overlay {
+    background: transparent !important; /* Убираем темный фон, который создавал полосы */
+    color: #ffffff !important;
+    font-size: 1.4rem;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 15px #ff0000 !important;
+    z-index: 1000 !important;
+}
