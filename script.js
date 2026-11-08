@@ -104,8 +104,6 @@
         } catch(e) {}
     }
 
-    //setTimeout(initFanSound, 300);
-
     let bootStarted = false;
     let justStartedUntil = 0;
 
@@ -345,7 +343,10 @@ const i18n = {
         acceptSub: ">> СИСТЕМА АРХИВА ПРИВЕТСТВУЕТ ТЕБЯ <<",
         initStatus: ">> ИНИЦИАЛИЗАЦИЯ...",
         initTicker: "ИНИЦИАЛИЗАЦИЯ АРХИВА...",
-
+        nsfwTitle: "⚠️ ВНИМАНИЕ: 18+",
+        nsfwText: "Этот контент может содержать материалы для взрослых. Вы подтверждаете, что вам исполнилось 18 лет?",
+        nsfwAccept: "МНЕ 18, ОТКРЫТЬ",
+        nsfwCancel: "ОТМЕНА",
         dialogs: {
             name: "Как тебя зовут?", nameSub: "Можно пропустить.", namePlaceholder: "ИМЯ",
             material: "Из чего сделан этот сосуд?",
@@ -412,7 +413,10 @@ const i18n = {
         acceptSub: ">> ARCHIVE SYSTEM WELCOMES YOU <<",
         initStatus: ">> INITIALIZATION...",
         initTicker: "INITIALIZING ARCHIVE...",
-
+        nsfwTitle: "⚠️ WARNING: 18+",
+        nsfwText: "This content may contain adult material. Do you confirm that you are 18 years or older?",
+        nsfwAccept: "I AM 18, OPEN",
+        nsfwCancel: "CANCEL",
         dialogs: {
             name: "What is your name?", nameSub: "You can skip this.", namePlaceholder: "NAME",
             material: "What is this vessel made of?",
@@ -611,7 +615,6 @@ function playAchievementSound() {
     ]);
 }
 
-
 function playBlip(freq = 900, vol = 0.04) {
     playSound(freq, 0.05, 'square', vol);
 }
@@ -733,6 +736,7 @@ async function fetchModels() {
         const data = await response.json();
         if (Array.isArray(data) && data.length) {
             allModels = data;
+
             console.log('[GODOINED ARCHIVE] Загружено моделей:', allModels.length);
             return allModels;
         } else {
@@ -821,15 +825,64 @@ function renderModelsGrid(models) {
     const pageItems = sortedModels.slice(start, end);
     grid.innerHTML = '';
     pageItems.forEach((model, idx) => {
+        const isNSFW = model.nsfw === true;
+        const isComingSoon = model.comingSoon === true;
+        const isTransparent = model.transparentPreview === true;
         const card = document.createElement('div');
-        card.className = 'model-card reveal';
+        
+        // ПРИМЕНЯЕМ ОБА КЛАССА, ЕСЛИ НУЖНО
+        card.className = 'model-card reveal' 
+            + (isNSFW ? ' nsfw' : '') 
+            + (isComingSoon ? ' coming-soon' : '') 
+            + (isTransparent ? ' transparent-preview' : '');
+
         card.style.setProperty('--stagger', (idx * 0.06).toFixed(2) + 's');
         setTimeout(() => card.classList.remove('reveal'), 1200 + idx * 60);
-        card.addEventListener('click', () => {
-            playOpenSound();
-            showModelDetail(model.name);
+
+        // ДОБАВЛЯЕМ ЭЛЕМЕНТЫ NSFW (если NSFW)
+        if (isNSFW) {
+            const marquee = document.createElement('div');
+            marquee.className = 'nsfw-marquee';
+            const text = 'WARNING 18+ NSFW // WARNING 18+ NSFW // ';
+            marquee.innerHTML = `<div class="nsfw-marquee-track"><span>${text}</span><span>${text}</span></div>`;
+            card.appendChild(marquee);
+
+            const badge = document.createElement('div');
+            badge.className = 'nsfw-badge';
+            badge.textContent = '18+';
+            card.appendChild(badge);
+        }
+
+        // ЕСЛИ ЭТО "СКОРО", ДОБАВЛЯЕМ ОВЕРЛЕЙ
+        if (isComingSoon) {
+            const overlay = document.createElement('div');
+            overlay.className = 'coming-soon-overlay';
+            overlay.textContent = currentLang === 'ru' ? 'СКОРО...' : 'SOON...';
+            card.appendChild(overlay);
+        }
+
+        // ОБРАБОТЧИК КЛИКА (ПРИОРИТЕТ У "СКОРО")
+        card.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (isComingSoon) {
+                if (typeof playCancel === 'function') playCancel();
+                if (window.RETRO && window.RETRO.toast) {
+                    window.RETRO.toast(
+                        currentLang === 'ru' ? 'СКОРО' : 'SOON', 
+                        currentLang === 'ru' ? 'Эта модель еще не готова!' : 'This model is not ready yet!'
+                    );
+                }
+            } else if (isNSFW) {
+                if (typeof window.showNsfwWarning === 'function') {
+                    window.showNsfwWarning(model.name);
+                }
+            } else {
+                playOpenSound();
+                showModelDetail(model.name);
+            }
         });
-        card.addEventListener('mouseenter', playHoverSound);
         card.addEventListener('mousemove', (e) => createParticles(e, card));
         card.addEventListener('mousemove', (e) => {
             const r = card.getBoundingClientRect();
@@ -842,14 +895,17 @@ function renderModelsGrid(models) {
             card.style.setProperty('--ry', '0deg');
             card.style.setProperty('--rx', '0deg');
         });
+        
         let previewUrl = model.preview || `models/${model.name}/frames/start/0001.webp`;
         if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/frames/idle/0001.webp`;
         if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `models/${model.name}/icon.webp`;
+        
         const img = document.createElement('img');
         img.className = 'preview';
         img.src = previewUrl;
         img.alt = model.displayName;
         img.onerror = () => { img.src = 'https://placehold.co/400x400?text=NO+PREVIEW'; };
+        
         const info = document.createElement('div');
         info.className = 'model-info';
         const tagsHtml = (model.tags || []).map(tag => {
@@ -870,8 +926,10 @@ function renderModelsGrid(models) {
             }
             return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
         }).join('');
+        
         const descHtml = parseBBCode(model.description).replace(/\n/g, '<br>');
         info.innerHTML = `<h3>${parseBBCode(model.displayName)}</h3><p>${descHtml}</p><div class="tags">${tagsHtml}</div>`;
+        
         card.appendChild(img);
         card.appendChild(info);
         grid.appendChild(card);
@@ -1308,16 +1366,13 @@ function navigateModal(direction) {
     }
     playClickSound();
 }
-// ============================================================
-//  ФУНКЦИИ ДЛЯ ПРОСМОТРА РЕНДЕРОВ (КАРТИНОК/ВИДЕО)
-// ============================================================
+
 function openModal(mediaArray, startIndex = 0) {
     if (!mediaArray || mediaArray.length === 0) return;
     modalMediaItems = mediaArray;
     modalCurrentIndex = Math.max(0, Math.min(startIndex, mediaArray.length - 1));
     modalIsOpen = true;
     const modal = document.getElementById('render-modal');
-    const wrapper = document.getElementById('modal-media-wrapper');
     const counter = document.getElementById('modal-counter');
     const prevBtn = document.getElementById('modal-prev');
     const nextBtn = document.getElementById('modal-next');
@@ -1360,7 +1415,6 @@ function closeModal() {
         document.body.style.overflow = '';
     }, 300);
 }
-// ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('render-modal');
@@ -1464,7 +1518,6 @@ function showModelDetail(modelName) {
 
     const allMedia = [];
 
-    // ============================================================
     renders.forEach(src => {
         allMedia.push({ type: 'image', src: src });
     });
@@ -2193,9 +2246,56 @@ function initApp() {
         }
     }).catch(e => console.error('[GODOINED ARCHIVE] initApp:', e));
 }
-
 // ============================================================
-//  ЭКРАН СОЗДАНИЯ СОСУДА — ПИКСЕЛИ + GHOSTING GLOW
+//  ЛОГИКА ПРЕДУПРЕЖДЕНИЯ 18+
+// ============================================================
+let pendingNsfwModel = null;
+
+window.showNsfwWarning = function(modelName) {
+    pendingNsfwModel = modelName;
+    const modal = document.getElementById('nsfw-warning-modal');
+    if (!modal) {
+        console.error("Модалка #nsfw-warning-modal не найдена в HTML!");
+        return;
+    }
+    
+    if (typeof playCancel === 'function') playCancel();
+    
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+};
+
+window.closeNsfwWarning = function() {
+    const modal = document.getElementById('nsfw-warning-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    setTimeout(() => { 
+        modal.style.display = 'none'; 
+    }, 300);
+    pendingNsfwModel = null;
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const nsfwModal = document.getElementById('nsfw-warning-modal');
+    if (nsfwModal) {
+        document.getElementById('nsfw-close')?.addEventListener('click', window.closeNsfwWarning);
+        document.getElementById('nsfw-overlay')?.addEventListener('click', window.closeNsfwWarning);
+        document.getElementById('nsfw-cancel')?.addEventListener('click', window.closeNsfwWarning);
+        
+        document.getElementById('nsfw-accept')?.addEventListener('click', () => {
+            if (pendingNsfwModel) {
+                const modelToOpen = pendingNsfwModel;
+                window.closeNsfwWarning();
+                if (typeof playOpenSound === 'function') playOpenSound();
+                if (typeof showModelDetail === 'function') showModelDetail(modelToOpen);
+            }
+        });
+    }
+});
+// ============================================================
+//  ЭКРАН СОЗДАНИЯ СОСУДА — PIXIJS (1:1 С ОРИГИНАЛОМ)
 // ============================================================
 (function initOrderModal() {
     const modal = document.getElementById('order-modal');
@@ -2203,7 +2303,6 @@ function initApp() {
     const closeBtn = document.getElementById('order-modal-close');
     const dialogue = document.getElementById('dt-dialogue');
     
-    // ---- ОБЪЯВЛЕНИЕ ФУНКЦИЙ ОТКРЫТИЯ / ЗАКРЫТИЯ ----
     function openModal() {
         const fog = document.getElementById('dt-fog-overlay');
         if (fog) fog.classList.add('active');
@@ -2215,7 +2314,6 @@ function initApp() {
         if (dialogue) dialogue.style.opacity = '1';
 
         try { if (typeof playClickSound === 'function') playClickSound(); } catch (e) {}
-        try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch (e) {}
 
         try {
             state.step = 0;
@@ -2272,7 +2370,6 @@ function initApp() {
             setTimeout(() => { if (fog) fog.classList.remove('active'); }, 500);
         }, 700);
     }
-    // ------------------------------------------------
 
     if (!modal || !openBtn || !dialogue) return;
 
@@ -2355,7 +2452,7 @@ function initApp() {
         };
         const handlerClick = (e) => {
             if (!modal.classList.contains('active')) return;
-            clickEchoes.push({ x: e.clientX, y: e.clientY, life: 0, maxLife: 38 });
+            clickEchoes.push({ x: e.clientX / 3, y: e.clientY / 3, life: 0, maxLife: 38 });
         };
         document.addEventListener('mousemove', handlerMove, { passive: true });
         document.addEventListener('pointerdown', handlerClick, { passive: true });
@@ -2422,44 +2519,142 @@ function initApp() {
     }
 
     // ============================================================
-    //  CANVAS'Ы: СМУЗ-ГЛОУ + ПИКСЕЛИ + ВЗРЫВНОЙ ФИНАЛ
+    //  PIXIJS 1:1 ИМИТАЦИЯ CANVAS 2D (ИСПРАВЛЕНО)
     // ============================================================
-    (function initCanvases() {
-        const staticCanvas = document.getElementById('dt-static-canvas');
-        const trailCanvas = document.getElementById('dt-trail-canvas');
-        const glowCanvas = document.getElementById('dt-glow-canvas');
-        if (!staticCanvas || !trailCanvas || !glowCanvas) return;
+    (function initPixiEffects() {
+        if (typeof PIXI === 'undefined') return;
 
-        const sctx = staticCanvas.getContext('2d');
-        const tctx = trailCanvas.getContext('2d');
-        const gctx = glowCanvas.getContext('2d');
+        const PX = 3;
         
+        // ВСЕ ПЕРЕМЕННЫЕ СОСТОЯНИЯ ОБЪЯВЛЕНЫ ЗДЕСЬ, ДО RESIZE
+        const particles = [];
+        const soulComets = [];
+        const soulSparks = [];
+        const fogPixels = [];
+        let fogInitialized = false;
+        let cometLastSpawn = 0;
+        let explosionStart = 0, lastExplosionSpark = 0;
+        let shatterLines = [], shatterTime = 0, isFountainActive = false;
+        const fountainParticles = [];
+        const MAX_PARTICLES = 75;
+        let time = 0;
+
+        const app = new PIXI.Application({
+            width: Math.max(2, Math.ceil(window.innerWidth / PX)),
+            height: Math.max(2, Math.ceil(window.innerHeight / PX)),
+            backgroundAlpha: 0,
+            antialias: false,
+            resolution: 1,
+            autoDensity: false
+        });
+
+        app.view.style.position = 'absolute';
+        app.view.style.top = '0';
+        app.view.style.left = '0';
+        app.view.style.width = '100vw';
+        app.view.style.height = '100vh';
+        app.view.style.zIndex = '1';
+        app.view.style.pointerEvents = 'none';
+        app.view.style.imageRendering = 'pixelated';
+
+        modal.querySelectorAll('canvas').forEach(c => c.remove());
+        modal.insertBefore(app.view, modal.firstChild);
+
+        const staticLayer = new PIXI.Container();
+        const trailLayer = new PIXI.Container();
+        const glowLayer = new PIXI.Container();
+
+        app.stage.addChild(staticLayer);
+        app.stage.addChild(trailLayer);
+        app.stage.addChild(glowLayer);
+
+        const trailCanvas = document.createElement('canvas');
+        const tctx = trailCanvas.getContext('2d');
+        let trailTexture = PIXI.Texture.from(trailCanvas); // ДОБАВИТЬ let
+        const trailSprite = new PIXI.Sprite(trailTexture);
+        trailLayer.addChild(trailSprite);
+
+        const glowCanvas = document.createElement('canvas');
+        const gctx = glowCanvas.getContext('2d');
+        let glowTexture = PIXI.Texture.from(glowCanvas); // ДОБАВИТЬ let
+        const glowSprite = new PIXI.Sprite(glowTexture);
+        glowLayer.addChild(glowSprite);
+
         const bloomCanvas = document.createElement('canvas');
         const bctx = bloomCanvas.getContext('2d');
-
-        const PX = 3; 
+        let bloomTexture = PIXI.Texture.from(bloomCanvas);
+        const bloomSprite = new PIXI.Sprite(bloomTexture);
+        staticLayer.addChild(bloomSprite);
 
         function resize() {
             const w = Math.max(2, Math.ceil(window.innerWidth / PX));
             const h = Math.max(2, Math.ceil(window.innerHeight / PX));
-            staticCanvas.width = w; staticCanvas.height = h;
+            
+            app.renderer.resize(w, h);
+            app.view.style.width = window.innerWidth + 'px';
+            app.view.style.height = window.innerHeight + 'px';
+            
+            // БЕЗОПАСНОЕ ПЕРЕСОЗДАНИЕ ШЛЕЙФА
             trailCanvas.width = w; trailCanvas.height = h;
-            glowCanvas.width = window.innerWidth;
-            glowCanvas.height = window.innerHeight;
-            
-            bloomCanvas.width = Math.max(2, Math.ceil(window.innerWidth / 4));
-            bloomCanvas.height = Math.max(2, Math.ceil(window.innerHeight / 4));
-            
-            sctx.imageSmoothingEnabled = false;
+            trailTexture.destroy(true);
+            trailTexture = PIXI.Texture.from(trailCanvas);
+            trailSprite.texture = trailTexture;
+            trailSprite.width = w; trailSprite.height = h;
+
+            // БЕЗОПАСНОЕ ПЕРЕСОЗДАНИЕ СВЕЧЕНИЯ
+            glowCanvas.width = w; glowCanvas.height = h;
+            glowTexture.destroy(true);
+            glowTexture = PIXI.Texture.from(glowCanvas);
+            glowSprite.texture = glowTexture;
+            glowSprite.width = w; glowSprite.height = h;
+
+            // БЕЗОПАСНОЕ ПЕРЕСОЗДАНИЕ БЛУМА
+            bloomCanvas.width = Math.max(2, Math.ceil(w / 4));
+            bloomCanvas.height = Math.max(2, Math.ceil(h / 4));
+            bloomTexture.destroy(true);
+            bloomTexture = PIXI.Texture.from(bloomCanvas);
+            bloomSprite.texture = bloomTexture;
+            bloomSprite.width = w; bloomSprite.height = h;
+
             tctx.imageSmoothingEnabled = false;
-            gctx.imageSmoothingEnabled = true;
+            gctx.imageSmoothingEnabled = false;
+
+            // Очищаем массивы, чтобы частицы пересоздались заново
+            fogInitialized = false;
+            particles.length = 0;
+            soulComets.length = 0;
+            soulSparks.length = 0;
+            clickEchoes.length = 0;
         }
         resize();
         window.addEventListener('resize', resize);
 
-        const particles = [];
-        const MAX_PARTICLES = 75;
-        let time = 0;
+        function hslToHex(h, s, l) {
+            l /= 100;
+            const a = s * Math.min(l, 1 - l) / 100;
+            const f = n => {
+                const k = (n + h / 30) % 12;
+                const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                return Math.round(255 * color).toString(16).padStart(2, '0');
+            };
+            return parseInt(`0x${f(0)}${f(8)}${f(4)}`, 16);
+        }
+
+        const fogGraphics = new PIXI.Graphics();
+        const auraGraphics = new PIXI.Graphics();
+        const magicCircleGraphics = new PIXI.Graphics();
+        const spiralGraphics = new PIXI.Graphics();
+        const rayGraphics = new PIXI.Graphics();
+        const cometGraphics = new PIXI.Graphics();
+        const heartGraphics = new PIXI.Graphics();
+        const mirrorHeartGraphics = new PIXI.Graphics();
+        const sparkGraphics = new PIXI.Graphics();
+        const shockwaveGraphics = new PIXI.Graphics();
+        const fountainGraphics = new PIXI.Graphics();
+        const clickEchoGraphics = new PIXI.Graphics();
+
+        staticLayer.addChild(fogGraphics, auraGraphics, magicCircleGraphics, spiralGraphics, rayGraphics, shockwaveGraphics, fountainGraphics, clickEchoGraphics);
+        trailLayer.addChild(cometGraphics, heartGraphics, mirrorHeartGraphics, sparkGraphics);
 
         function easeInOutQuad(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
         function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
@@ -2481,119 +2676,6 @@ function initApp() {
             spiralInitialized = true;
         }
 
-        function drawSpiralArms(ctx, cx, cy, w, h, energy, t) {
-            if (energy < 0.08) return;
-            if (!spiralInitialized) initSpiral();
-            const maxR = Math.min(w, h) * 0.72;
-            const revolutions = 2.3;
-            for (const p of SPIRAL_PARTICLES) {
-                p.s += p.speed * (0.3 + energy * 4);
-                if (p.s > 1) p.s -= 1;
-                const baseAngle = (p.arm / SPIRAL_ARMS) * Math.PI * 2;
-                const theta = baseAngle + p.s * revolutions * Math.PI * 2;
-                const r = (1 - p.s) * maxR;
-                const x = cx + Math.cos(theta) * r;
-                const y = cy + Math.sin(theta) * r * 0.55;
-                const intensity = 0.15 + p.s * 0.85;
-                const alpha = intensity * energy * 0.95;
-                const hue = p.hueBase + p.s * 55;
-                const light = 55 + p.s * 40;
-                if (p.s > 0.06) {
-                    for (let k = 1; k <= 2; k++) {
-                        const trailS = p.s - k * 0.014;
-                        if (trailS < 0) continue;
-                        const trailAngle = baseAngle + trailS * revolutions * Math.PI * 2;
-                        const trailR = (1 - trailS) * maxR;
-                        const tx = cx + Math.cos(trailAngle) * trailR;
-                        const ty = cy + Math.sin(trailAngle) * trailR * 0.55;
-                        ctx.fillStyle = `hsla(${hue}, 100%, ${light - 10}, ${alpha * (0.35 / k)})`;
-                        ctx.fillRect(Math.floor(tx), Math.floor(ty), p.size, p.size);
-                    }
-                }
-                ctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${alpha})`;
-                ctx.fillRect(Math.floor(x), Math.floor(y), p.size, p.size);
-            }
-        }
-
-        function drawMagicCircle(ctx, cx, cy, w, h, energy, t) {
-            if (energy < 0.12) return;
-            const groundY = cy + Math.min(w, h) * 0.28;
-            const radiusX = Math.min(w, h) * 0.5;
-            const radiusY = radiusX * 0.28;
-            const alpha = Math.min(1, (energy - 0.12) / 0.38);
-            const scale = 0.7 + Math.min(1, energy / 0.6) * 0.3;
-
-            function ellipse(rx, ry, hue, a, dashed) {
-                const seg = 80;
-                ctx.fillStyle = `hsla(${hue}, 100%, 75%, ${a})`;
-                for (let i = 0; i < seg; i++) {
-                    if (dashed && i % 4 >= 2) continue;
-                    const angle = (i / seg) * Math.PI * 2;
-                    const x = cx + Math.cos(angle) * rx;
-                    const y = groundY + Math.sin(angle) * ry;
-                    ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
-                }
-            }
-            const rx = radiusX * scale;
-            const ry = radiusY * scale;
-            ellipse(rx, ry, 280, alpha * 0.95, false);
-            if (energy > 0.3) ellipse(rx * 0.78, ry * 0.78, 300, alpha * Math.min(1, (energy - 0.3) / 0.4) * 0.7, true);
-            if (energy > 0.5) ellipse(rx * 0.52, ry * 0.52, 320, alpha * Math.min(1, (energy - 0.5) / 0.4) * 0.6, false);
-            
-            const hasName = state.name && state.name.length > 0;
-            if (hasName) {
-                drawNameRunes(ctx, cx, groundY, rx, ry, alpha, t);
-            } else {
-                const runeCount = Math.floor(6 + energy * 10);
-                const rot = t * (0.008 + energy * 0.025);
-                for (let i = 0; i < runeCount; i++) {
-                    const angle = (i / runeCount) * Math.PI * 2 + rot;
-                    const x = cx + Math.cos(angle) * rx * 0.88;
-                    const y = groundY + Math.sin(angle) * ry * 0.88;
-                    const flick = 0.4 + Math.sin(t * 0.08 + i * 1.7) * 0.6;
-                    ctx.fillStyle = `hsla(310, 100%, 82%, ${alpha * flick})`;
-                    ctx.fillRect(Math.floor(x), Math.floor(y - 2), 2, 5);
-                    ctx.fillRect(Math.floor(x - 2), Math.floor(y), 6, 2);
-                }
-            }
-            if (energy > 0.4) {
-                const triAlpha = Math.min(1, (energy - 0.4) / 0.3) * alpha;
-                const triRot = -t * (0.012 + energy * 0.02);
-                const triPts = [];
-                for (let i = 0; i < 3; i++) {
-                    const angle = triRot + (i / 3) * Math.PI * 2 - Math.PI / 2;
-                    triPts.push([cx + Math.cos(angle) * rx * 0.42, groundY + Math.sin(angle) * ry * 0.42]);
-                }
-                ctx.fillStyle = `hsla(290, 100%, 78%, ${triAlpha * 0.55})`;
-                for (let i = 0; i < 3; i++) {
-                    const a = triPts[i], b = triPts[(i + 1) % 3];
-                    for (let s = 0; s <= 24; s++) {
-                        const x = a[0] + (b[0] - a[0]) * (s / 24);
-                        const y = a[1] + (b[1] - a[1]) * (s / 24);
-                        ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
-                    }
-                }
-            }
-            if (energy > 0.55) {
-                const pillarIntensity = Math.min(1, (energy - 0.55) / 0.35);
-                const height = groundY - cy;
-                const numPixels = Math.floor(16 + pillarIntensity * 24);
-                for (let i = 0; i < numPixels; i++) {
-                    const phase = (t * (0.012 + pillarIntensity * 0.012) + i / numPixels) % 1;
-                    const y = groundY - phase * height;
-                    const x = cx + Math.sin(phase * 8 + t * 0.05) * 3 * pillarIntensity;
-                    const w2 = (1 - phase * 0.55) * 7 * pillarIntensity;
-                    const a = pillarIntensity * 0.65 * Math.sin(phase * Math.PI);
-                    if (a < 0.03) continue;
-                    ctx.fillStyle = `hsla(300, 100%, 78%, ${a})`;
-                    ctx.fillRect(Math.floor(x - w2), Math.floor(y), Math.max(1, Math.floor(w2 * 2)), 2);
-                }
-            }
-        }
-
-        const soulComets = [];
-        let cometLastSpawn = 0;
-
         function spawnSoulComet(w, h) {
             const side = Math.floor(Math.random() * 4);
             const padding = 60;
@@ -2605,102 +2687,53 @@ function initApp() {
             return { x, y, angle, speed: 1.4 + Math.random() * 0.9, size: 2 + Math.random() * 2, hue: 280 + Math.random() * 55, trail: [], age: 0 };
         }
 
-        function updateAndDrawComets(ctx, cx, cy, w, h, energy, t) {
-            if (energy < 0.3) return;
-            const now = performance.now();
-            const spawnInterval = Math.max(100, 500 - (energy - 0.3) * 570);
-            const maxComets = 1 + Math.floor((energy - 0.3) * 7);
-            if (now - cometLastSpawn > spawnInterval && soulComets.length < maxComets) {
-                cometLastSpawn = now;
-                soulComets.push(spawnSoulComet(w, h));
-            }
-            for (let i = soulComets.length - 1; i >= 0; i--) {
-                const c = soulComets[i];
-                c.age++;
-                const dx = cx - c.x, dy = cy - c.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const targetAngle = Math.atan2(dy, dx);
-                let da = targetAngle - c.angle;
-                while (da > Math.PI) da -= Math.PI * 2;
-                while (da < -Math.PI) da += Math.PI * 2;
-                c.angle += da * 0.06 * (1 + energy * 0.8);
-                const speedBoost = 1 + (1 - Math.min(1, dist / 320)) * energy * 2.2;
-                c.x += Math.cos(c.angle) * c.speed * speedBoost;
-                c.y += Math.sin(c.angle) * c.speed * speedBoost;
-                c.trail.unshift({ x: c.x, y: c.y });
-                if (c.trail.length > 26) c.trail.pop();
-                if (dist < 10) {
-                    for (let s = 0; s < 12; s++) {
-                        const sa = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 3.5;
-                        soulSparks.push({ x: cx, y: cy, vx: Math.cos(sa) * sp, vy: Math.sin(sa) * sp, life: 0, maxLife: 25 + Math.random() * 20, size: 1 + Math.random() * 2, hue: c.hue });
-                    }
-                    soulComets.splice(i, 1);
-                    continue;
-                }
-                for (let k = c.trail.length - 1; k >= 0; k--) {
-                    const p = c.trail[k], tp = 1 - k / c.trail.length;
-                    const trailAlpha = tp * tp * 0.85 * energy, trailLight = 42 + tp * 38;
-                    const sz = Math.ceil(c.size * tp);
-                    if (sz < 1) continue;
-                    ctx.fillStyle = `hsla(${c.hue}, 100%, ${trailLight}%, ${trailAlpha})`;
-                    ctx.fillRect(Math.floor(p.x - sz / 2), Math.floor(p.y - sz / 2), sz, sz);
-                }
-                const headAlpha = energy * (0.9 + Math.sin(t * 0.18 + c.age * 0.1) * 0.1), sz = Math.ceil(c.size);
-                ctx.fillStyle = `hsla(${c.hue}, 100%, 60%, ${headAlpha * 0.35})`;
-                ctx.fillRect(Math.floor(c.x - sz * 1.5), Math.floor(c.y - sz * 1.5), sz * 3, sz * 3);
-                ctx.fillStyle = `hsla(${c.hue}, 100%, 88%, ${headAlpha})`;
-                ctx.fillRect(Math.floor(c.x - sz / 2), Math.floor(c.y - sz / 2), sz, sz);
-                ctx.fillStyle = `hsla(0, 0%, 100%, ${headAlpha})`;
-                ctx.fillRect(Math.floor(c.x), Math.floor(c.y), 1, 1);
-            }
-        }
-
         const RAY_COUNT = 32;
         const rayAngles = [];
         for (let i = 0; i < RAY_COUNT; i++) rayAngles.push((i * Math.PI * 2 / RAY_COUNT) + Math.random() * 0.1);
-        
-        function drawRays(ctx, cx, cy, energy, t) {
-            if (energy < 0.05) return;
-            const maxR = Math.min(ctx.canvas.width, ctx.canvas.height) * 1.1;
-            const activeRays = Math.floor(RAY_COUNT * Math.min(1, energy / 0.6));
-            for (let i = 0; i < activeRays; i++) {
-                const angle = rayAngles[i];
-                const flicker = 0.7 + Math.sin(t * 0.03 + i * 0.7) * 0.3;
-                const len = maxR * Math.min(1, energy * 1.3) * flicker;
-                if (len < 3) continue;
-                const steps = Math.floor(len / 2.5);
-                for (let s = 0; s < steps; s++) {
-                    const t0 = s / steps;
-                    const x = cx + Math.cos(angle) * len * t0;
-                    const y = cy + Math.sin(angle) * len * t0 * 0.55;
-                    const segAlpha = (1 - t0) * 0.7 * energy * flicker;
-                    if (segAlpha < 0.03) continue;
-                    const hue = 280 + i * 4, light = 60 + 30 * (1 - t0);
-                    ctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${segAlpha})`;
-                    const sz = t0 < 0.15 ? 3 : (t0 < 0.4 ? 2 : 1);
-                    ctx.fillRect(Math.floor(x), Math.floor(y), sz, sz);
-                }
-            }
-        }
-
-        const soulSparks = [];
-        function updateAndDrawSparks(ctx) {
-            for (let i = soulSparks.length - 1; i >= 0; i--) {
-                const sp = soulSparks[i];
-                sp.life++;
-                if (sp.life > sp.maxLife) { soulSparks.splice(i, 1); continue; }
-                sp.x += sp.vx; sp.y += sp.vy; sp.vx *= 0.93; sp.vy *= 0.93;
-                const p = sp.life / sp.maxLife, alpha = (1 - p) * 0.95, light = 82 + p * 15;
-                const sz = Math.max(1, Math.ceil(sp.size * (1 - p * 0.5)));
-                ctx.fillStyle = `hsla(${sp.hue}, 100%, ${light}%, ${alpha})`;
-                ctx.fillRect(Math.floor(sp.x), Math.floor(sp.y), sz, sz);
-            }
-        }
 
         function resetCanvasEffects() {
-            soulComets.length = 0; soulSparks.length = 0; cometLastSpawn = 0;
-            explosionStart = 0; lastExplosionSpark = 0;
-            isFountainActive = false; fountainParticles.length = 0;
+            // 1. Очищаем все массивы
+            soulComets.length = 0; 
+            soulSparks.length = 0; 
+            particles.length = 0;
+            fountainParticles.length = 0;
+            fogPixels.length = 0;
+            clickEchoes.length = 0;
+
+            // 2. Сбрасываем таймеры и флаги
+            cometLastSpawn = 0;
+            explosionStart = 0; 
+            lastExplosionSpark = 0;
+            isFountainActive = false; 
+            shatterTime = 0; 
+            shatterLines = [];
+            fogInitialized = false;
+
+            // 3. Очищаем холст шлейфа (частицы)
+            if (trailCanvas.width > 0 && trailCanvas.height > 0) {
+                tctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+            }
+            trailTexture.update();
+            
+            // 4. ОЧИЩАЕМ ХОЛСТ СВЕЧЕНИЯ (ФОНТАНА)
+            if (bloomCanvas.width > 0 && bloomCanvas.height > 0) {
+                bctx.clearRect(0, 0, bloomCanvas.width, bloomCanvas.height);
+            }
+            bloomTexture.update();
+
+            // 5. Принудительно очищаем все графические слои PixiJS
+            fogGraphics.clear();
+            auraGraphics.clear();
+            magicCircleGraphics.clear();
+            spiralGraphics.clear();
+            rayGraphics.clear();
+            cometGraphics.clear();
+            heartGraphics.clear();
+            mirrorHeartGraphics.clear();
+            sparkGraphics.clear();
+            shockwaveGraphics.clear();
+            fountainGraphics.clear();
+            clickEchoGraphics.clear();
         }
         window.__dtResetCanvas = resetCanvasEffects;
 
@@ -2717,87 +2750,7 @@ function initApp() {
             [0,0,0,1,1,1,0,0,0],
             [0,0,0,0,1,0,0,0,0]
         ];
-        function drawPixelHeart(ctx, cx, cy, cell, glow) {
-            const hue = personality.heartHue;
-            const mapW = HEART_MAP[0].length, mapH = HEART_MAP.length;
-            const startX = Math.floor(cx - (mapW * cell) / 2), startY = Math.floor(cy - (mapH * cell) / 2);
-            if (glow > 0.05) {
-                ctx.fillStyle = `hsla(${hue}, 100%, 55%, ${0.16 * glow})`;
-                for (let y = 0; y < mapH; y++) {
-                    for (let x = 0; x < mapW; x++) {
-                        if (!HEART_MAP[y][x]) continue;
-                        ctx.fillRect(startX + x * cell - cell, startY + y * cell - cell, cell * 3, cell * 3);
-                    }
-                }
-            }
-            ctx.fillStyle = `hsl(${hue}, 100%, 55%)`;
-            for (let y = 0; y < mapH; y++) {
-                for (let x = 0; x < mapW; x++) {
-                    if (!HEART_MAP[y][x]) continue;
-                    ctx.fillRect(startX + x * cell, startY + y * cell, cell, cell);
-                }
-            }
-            if (glow > 0.5) {
-                ctx.fillStyle = `hsla(${hue}, 100%, 88%, ${0.6 * (glow - 0.5) * 2})`;
-                ctx.fillRect(startX + 2 * cell, startY + 2 * cell, cell, cell);
-                ctx.fillRect(startX + 3 * cell, startY + 2 * cell, cell, cell);
-            }
-        }
 
-        function drawAura(ctx, cx, cy, progress) {
-            const maxR = Math.min(cx, cy) * 0.95;
-            const bands = 7;
-            for (let i = bands; i >= 1; i--) {
-                const ratio = i / bands;
-                const radius = Math.floor(maxR * ratio * (0.4 + progress * 0.6));
-                const alpha = (1 - ratio) * 0.18 * (0.35 + progress * 0.65);
-                ctx.fillStyle = `rgba(110, 0, 190, ${alpha})`;
-                ctx.beginPath(); ctx.arc(Math.floor(cx), Math.floor(cy), radius, 0, Math.PI * 2); ctx.fill();
-            }
-            if (progress > 0.3) {
-                const innerP = (progress - 0.3) / 0.7;
-                ctx.fillStyle = `rgba(200, 100, 255, ${0.16 * innerP})`;
-                ctx.beginPath(); ctx.arc(Math.floor(cx), Math.floor(cy), Math.floor(maxR * 0.28 * innerP), 0, Math.PI * 2); ctx.fill();
-            }
-        }
-
-        function drawPixelRing(ctx, cx, cy, radius, alpha, rot) {
-            const points = Math.max(16, Math.floor(radius * 0.9));
-            ctx.fillStyle = `rgba(180, 100, 255, ${alpha})`;
-            for (let i = 0; i < points; i++) {
-                const a = (i / points) * Math.PI * 2 + rot;
-                ctx.fillRect(Math.floor(cx + Math.cos(a) * radius), Math.floor(cy + Math.sin(a) * radius), 2, 2);
-            }
-        }
-
-        function drawMirrorHeart(ctx, cx, cy, cell, hue, energy) {
-            if (energy < 0.3) return;
-            const mapW = HEART_MAP[0].length, mapH = HEART_MAP.length;
-            const gap = 75;
-            const startY = cy + (mapH * cell) / 2 + gap;
-            const startX = Math.floor(cx - (mapW * cell) / 2);
-            const squash = 0.35;
-            const waveSpeed = time * 0.05; 
-            ctx.save();
-            for (let y = 0; y < mapH; y++) {
-                for (let x = 0; x < mapW; x++) {
-                    if (!HEART_MAP[y][x]) continue;
-                    const depth = (mapH - 1 - y);
-                    const waveX = Math.sin(waveSpeed + depth * 0.8) * (cell * 0.6 + depth * 0.2);
-                    const py = startY + depth * cell * squash;
-                    const px = startX + x * cell + waveX;
-                    const fade = 1 - (depth / mapH);
-                    const alpha = fade * 0.35 * energy; 
-                    if (alpha < 0.02) continue;
-                    ctx.fillStyle = `hsla(${hue}, 100%, 55%, ${alpha})`;
-                    ctx.fillRect(Math.floor(px), Math.floor(py), Math.ceil(cell), Math.ceil(cell * squash) + 1);
-                }
-            }
-            ctx.restore();
-        }
-
-        const fogPixels = [];
-        let fogInitialized = false;
         function initFog(w, h) {
             fogPixels.length = 0;
             const count = Math.floor(w * 0.35);
@@ -2806,82 +2759,8 @@ function initApp() {
             }
             fogInitialized = true;
         }
-        function drawFog(ctx, w, h, energy) {
-            if (!fogInitialized) initFog(w, h);
-            const alpha = 0.06 + energy * 0.18;
-            for (const p of fogPixels) {
-                p.x += p.speed * (1 + energy * 1.5);
-                if (p.x > w * 1.2) p.x = -10;
-                const wobble = Math.sin(p.x * 0.02 + time * 0.02) * 3;
-                ctx.fillStyle = `hsla(${p.hue}, 80%, 55%, ${alpha})`;
-                ctx.fillRect(Math.floor(p.x), Math.floor(p.y + wobble), p.size, p.size);
-            }
-        }
-
-        function drawClickEchoes(ctx) {
-            for (let i = clickEchoes.length - 1; i >= 0; i--) {
-                const c = clickEchoes[i];
-                c.life++;
-                if (c.life > c.maxLife) { clickEchoes.splice(i, 1); continue; }
-                const p = c.life / c.maxLife, r = p * 90, seg = Math.floor(r * 0.6), alpha = (1 - p) * 0.7;
-                for (let s = 0; s < seg; s++) {
-                    const a = (s / seg) * Math.PI * 2;
-                    ctx.fillStyle = `hsla(${personality.glowHue}, 100%, 78%, ${alpha})`;
-                    ctx.fillRect(Math.floor(c.x + Math.cos(a) * r), Math.floor(c.y + Math.sin(a) * r), 2, 2);
-                }
-            }
-        }
-
-        function drawNameRunes(ctx, cx, groundY, rx, ry, energy, t) {
-            if (!state.name || state.name.length === 0) return false;
-            const name = state.name.toUpperCase().slice(0, 16);
-            const count = Math.max(name.length, 4);
-            const rot = t * (0.008 + energy * 0.025);
-            ctx.save();
-            ctx.font = 'bold 14px "Press Start 2P", monospace';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            for (let i = 0; i < count; i++) {
-                const char = name[i % name.length], angle = (i / count) * Math.PI * 2 + rot;
-                const x = cx + Math.cos(angle) * rx * 0.88, y = groundY + Math.sin(angle) * ry * 0.88;
-                const flick = 0.5 + Math.sin(t * 0.08 + i * 1.3) * 0.5, a = energy * flick;
-                ctx.fillStyle = `hsla(${310 + i * 4}, 100%, 85%, ${a})`;
-                ctx.fillText(char, Math.floor(x), Math.floor(y));
-            }
-            ctx.restore();
-            return true;
-        }
-
-        function drawGlowLayer(cx, cy, w, h, energy, explosionState) {
-            gctx.clearRect(0, 0, w, h);
-            const intensity = Math.min(1.5, energy * 0.45 + (explosionState ? explosionState.glowBoost * 1.2 : 0));
-            if (intensity < 0.01) return;
-            const coreR = Math.min(w, h) * (0.3 + energy * 0.35);
-            const grad = gctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-            grad.addColorStop(0, `hsla(320, 100%, 70%, ${Math.min(1, intensity) * 0.55})`);
-            grad.addColorStop(0.35, `hsla(280, 100%, 65%, ${Math.min(1, intensity) * 0.32})`);
-            grad.addColorStop(0.7, `hsla(260, 100%, 55%, ${Math.min(1, intensity) * 0.12})`);
-            grad.addColorStop(1, 'transparent');
-            gctx.fillStyle = grad; gctx.fillRect(0, 0, w, h);
-
-            if (explosionState && explosionState.phase === 'flash') {
-                const whiteR = Math.min(w, h) * 0.4;
-                const wg = gctx.createRadialGradient(cx, cy, 0, cx, cy, whiteR);
-                wg.addColorStop(0, `rgba(255, 255, 255, ${explosionState.flash})`);
-                wg.addColorStop(0.4, `rgba(255, 220, 255, ${explosionState.flash * 0.6})`);
-                wg.addColorStop(1, 'transparent');
-                gctx.fillStyle = wg; gctx.fillRect(0, 0, w, h);
-            }
-            if (explosionState && (explosionState.phase === 'explosion' || explosionState.phase === 'flash')) {
-                const t = explosionState.phase === 'flash' ? (explosionState.flash) : (1 - explosionState.glowBoost);
-                const ringR = Math.max(w, h) * 0.4 * Math.min(1, t * 1.2);
-                const rg = gctx.createRadialGradient(cx, cy, ringR * 0.7, cx, cy, ringR * 1.1);
-                rg.addColorStop(0, 'transparent'); rg.addColorStop(0.5, `hsla(300, 100%, 80%, ${(1 - t) * 0.7})`); rg.addColorStop(1, 'transparent');
-                gctx.fillStyle = rg; gctx.fillRect(0, 0, w, h);
-            }
-        }
 
         const EXPLOSION_DURATION = 1500;
-        let explosionStart = 0, lastExplosionSpark = 0;
         function getExplosionState() {
             if (!explosionStart) return null;
             const elapsed = performance.now() - explosionStart;
@@ -2894,22 +2773,39 @@ function initApp() {
             return { phase: 'afterglow', p, energyMult: 1 - p * 0.4, flash: 0, shake: 0, glowBoost: (1 - p) * 0.25 };
         }
 
-        function drawShockwave(ctx, cx, cy, elapsed) {
-            const rings = [ { start: 200, dur: 700, maxR: 1.15, hue: 300 }, { start: 280, dur: 600, maxR: 0.85, hue: 280 }, { start: 360, dur: 500, maxR: 0.55, hue: 320 } ];
-            for (const ring of rings) {
-                if (elapsed < ring.start || elapsed > ring.start + ring.dur) continue;
-                const t = (elapsed - ring.start) / ring.dur;
-                const r = easeOutCubic(t) * Math.min(ctx.canvas.width, ctx.canvas.height) * ring.maxR;
-                const alpha = (1 - t) * 0.95, thickness = (1 - t) * 6 + 1;
-                const seg = Math.floor(r * 0.7);
-                for (let i = 0; i < seg; i++) {
-                    const angle = (i / seg) * Math.PI * 2;
-                    const x = cx + Math.cos(angle) * r, y = cy + Math.sin(angle) * r * 0.55;
-                    ctx.fillStyle = `hsla(${ring.hue}, 100%, ${90 - t * 15}%, ${alpha})`;
-                    ctx.fillRect(Math.floor(x - thickness / 2), Math.floor(y - thickness / 2), Math.ceil(thickness), Math.ceil(thickness));
+        window.__dtStartExplosion = function() {
+            explosionStart = performance.now();
+            if (dtMusicSource && dtMusicSource.playbackRate && dtMusicSource.playbackRate.cancelScheduledValues) {
+                const ctx = initAudioContext();
+                if (ctx) {
+                    dtMusicSource.playbackRate.cancelScheduledValues(ctx.currentTime);
+                    dtMusicSource.playbackRate.linearRampToValueAtTime(1.4, ctx.currentTime + 0.3);
+                    dtMusicSource.playbackRate.linearRampToValueAtTime(0.6, ctx.currentTime + 1.5);
                 }
             }
-        }
+        };
+
+        window.__dtShatterFountain = function() {
+            shatterLines = []; shatterTime = 1; isFountainActive = true; fountainParticles.length = 0; 
+            const w = app.screen.width;
+            const h = app.screen.height;
+            const cx = w / 2, cy = h / 2;
+            const numCracks = 30 + Math.floor(Math.random() * 20);
+            for (let i = 0; i < numCracks; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const segments = [];
+                let currentX = cx, currentY = cy, currentAngle = angle;
+                const length = (Math.max(w, h) / 2) + 50;
+                let dist = 0;
+                while (dist < length) {
+                    const step = 15 + Math.random() * 30;
+                    currentAngle += (Math.random() - 0.5) * 0.6;
+                    currentX += Math.cos(currentAngle) * step; currentY += Math.sin(currentAngle) * step;
+                    segments.push({ x: currentX, y: currentY }); dist += step;
+                }
+                shatterLines.push(segments);
+            }
+        };
 
         const innerEl = modal.querySelector('.dt-inner');
         function applyShake(intensity) {
@@ -2921,8 +2817,14 @@ function initApp() {
             innerEl.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
         }
 
-        function drawFrame() {
-            const w = staticCanvas.width, h = staticCanvas.height;
+        // --- Основной цикл рендера ---
+        app.ticker.add(() => {
+            // ВСЕГДА БЕРЕМ АКТУАЛЬНЫЙ РАЗМЕР ОКНА (ИГНОРИРУЕМ КЭШ PIXI)
+            const w = Math.max(2, Math.ceil(window.innerWidth / PX));
+            const h = Math.max(2, Math.ceil(window.innerHeight / PX));
+            const cx = w / 2, cy = h / 2;
+            const gcx = w / 2, gcy = h / 2;
+            
             currentProgress += (targetProgress - currentProgress) * PROGRESS_LERP;
             if (Math.abs(targetProgress - currentProgress) < 0.001) currentProgress = targetProgress;
             const progress = currentProgress;
@@ -2940,23 +2842,260 @@ function initApp() {
 
             modal.style.setProperty('--dt-progress', progress.toFixed(3));
 
-            const cx = w / 2, cy = h / 2, gcx = glowCanvas.width / 2, gcy = glowCanvas.height / 2;
-            sctx.clearRect(0, 0, w, h);
-            
-            drawFog(sctx, w, h, energy);
-            drawRays(sctx, cx, cy, energy, time);
-            drawAura(sctx, cx, cy, Math.min(1, energy * 0.85));
-            drawMagicCircle(sctx, cx, cy, w, h, energy, time);
-            drawSpiralArms(sctx, cx, cy, w, h, energy, time);
+            fogGraphics.clear();
+            auraGraphics.clear();
+            magicCircleGraphics.clear();
+            spiralGraphics.clear();
+            rayGraphics.clear();
+            cometGraphics.clear();
+            heartGraphics.clear();
+            mirrorHeartGraphics.clear();
+            sparkGraphics.clear();
+            shockwaveGraphics.clear();
+            fountainGraphics.clear();
+            clickEchoGraphics.clear();
 
-            if (progress > 0.08 || energy > 0) {
-                const ringAlpha = Math.min(1, energy * 1.5), spinBoost = 1 + energy * 3;
-                drawPixelRing(sctx, cx, cy, (55 + progress * 15) * (1 + energy * 0.4), 0.15 + ringAlpha * 0.5, time * 0.006 * spinBoost);
-                drawPixelRing(sctx, cx, cy, (78 + progress * 20) * (1 + energy * 0.5), 0.10 + ringAlpha * 0.4, -time * 0.009 * spinBoost);
-                drawPixelRing(sctx, cx, cy, (40 + progress * 12) * (1 + energy * 0.6), 0.20 + ringAlpha * 0.6, time * 0.013 * spinBoost);
+            // 1. Туман (Fog)
+            if (!fogInitialized) initFog(w, h);
+            const fogAlpha = 0.06 + energy * 0.18;
+            for (const p of fogPixels) {
+                p.x += p.speed * (1 + energy * 1.5);
+                if (p.x > w * 1.2) p.x = -10;
+                const wobble = Math.sin(p.x * 0.02 + time * 0.02) * 3;
+                fogGraphics.beginFill(hslToHex(p.hue, 80, 55), fogAlpha);
+                fogGraphics.drawRect(Math.floor(p.x), Math.floor(p.y + wobble), p.size, p.size);
+                fogGraphics.endFill();
             }
-            updateAndDrawComets(sctx, cx, cy, w, h, energy, time);
 
+            // 2. Лучи (Rays)
+            if (energy > 0.05) {
+                const maxR = Math.min(w, h) * 1.1;
+                const activeRays = Math.floor(RAY_COUNT * Math.min(1, energy / 0.6));
+                for (let i = 0; i < activeRays; i++) {
+                    const angle = rayAngles[i];
+                    const flicker = 0.7 + Math.sin(time * 0.03 + i * 0.7) * 0.3;
+                    const len = maxR * Math.min(1, energy * 1.3) * flicker;
+                    if (len < 3) continue;
+                    const steps = Math.floor(len / 2.5);
+                    for (let s = 0; s < steps; s++) {
+                        const t0 = s / steps;
+                        const x = cx + Math.cos(angle) * len * t0;
+                        const y = cy + Math.sin(angle) * len * t0 * 0.55;
+                        const segAlpha = (1 - t0) * 0.7 * energy * flicker;
+                        if (segAlpha < 0.03) continue;
+                        const hue = 280 + i * 4, light = 60 + 30 * (1 - t0);
+                        const sz = t0 < 0.15 ? 3 : (t0 < 0.4 ? 2 : 1);
+                        rayGraphics.beginFill(hslToHex(hue, 100, light), segAlpha);
+                        rayGraphics.drawRect(Math.floor(x), Math.floor(y), sz, sz);
+                        rayGraphics.endFill();
+                    }
+                }
+            }
+
+            // 3. Аура (Aura)
+            const auraProg = Math.min(1, energy * 0.85);
+            if (auraProg > 0) {
+                // Центрируем строго по размерам холста
+                const maxR = Math.min(w, h) * 0.45; 
+                const bands = 7;
+                for (let i = bands; i >= 1; i--) {
+                    const ratio = i / bands;
+                    const radius = Math.floor(maxR * ratio * (0.4 + auraProg * 0.6));
+                    const alpha = (1 - ratio) * 0.18 * (0.35 + auraProg * 0.65);
+                    auraGraphics.beginFill(0x6e00be, alpha);
+                    auraGraphics.drawCircle(Math.floor(w / 2), Math.floor(h / 2), radius);
+                    auraGraphics.endFill();
+                }
+                if (auraProg > 0.3) {
+                    const innerP = (auraProg - 0.3) / 0.7;
+                    auraGraphics.beginFill(0xc864ff, 0.16 * innerP);
+                    auraGraphics.drawCircle(Math.floor(w / 2), Math.floor(h / 2), Math.floor(maxR * 0.28 * innerP));
+                    auraGraphics.endFill();
+                }
+            }
+
+            // 4. Магический круг (Magic Circle)
+            if (energy > 0.12) {
+                const groundY = cy + Math.min(w, h) * 0.28;
+                const radiusX = Math.min(w, h) * 0.5;
+                const radiusY = radiusX * 0.28;
+                const alpha = Math.min(1, (energy - 0.12) / 0.38);
+                const scale = 0.7 + Math.min(1, energy / 0.6) * 0.3;
+
+                const drawEllipse = (rx, ry, hue, a, dashed) => {
+                    magicCircleGraphics.beginFill(hslToHex(hue, 100, 75), a);
+                    const seg = 80;
+                    for (let i = 0; i < seg; i++) {
+                        if (dashed && i % 4 >= 2) continue;
+                        const angle = (i / seg) * Math.PI * 2;
+                        const x = cx + Math.cos(angle) * rx;
+                        const y = groundY + Math.sin(angle) * ry;
+                        magicCircleGraphics.drawRect(Math.floor(x), Math.floor(y), 2, 2);
+                    }
+                    magicCircleGraphics.endFill();
+                };
+                const rx = radiusX * scale;
+                const ry = radiusY * scale;
+                drawEllipse(rx, ry, 280, alpha * 0.95, false);
+                if (energy > 0.3) drawEllipse(rx * 0.78, ry * 0.78, 300, alpha * Math.min(1, (energy - 0.3) / 0.4) * 0.7, true);
+                if (energy > 0.5) drawEllipse(rx * 0.52, ry * 0.52, 320, alpha * Math.min(1, (energy - 0.5) / 0.4) * 0.6, false);
+                
+                const hasName = state.name && state.name.length > 0;
+                if (hasName) {
+                    const name = state.name.toUpperCase().slice(0, 16);
+                    const count = Math.max(name.length, 4);
+                    const rot = time * (0.008 + energy * 0.025);
+                    for (let i = 0; i < count; i++) {
+                        const char = name[i % name.length], angle = (i / count) * Math.PI * 2 + rot;
+                        const x = cx + Math.cos(angle) * rx * 0.88, y = groundY + Math.sin(angle) * ry * 0.88;
+                        const flick = 0.5 + Math.sin(time * 0.08 + i * 1.3) * 0.5, a = energy * flick;
+                        magicCircleGraphics.beginFill(hslToHex(310 + i * 4, 100, 85), a);
+                        magicCircleGraphics.drawRect(Math.floor(x - 2), Math.floor(y - 2), 4, 4);
+                        magicCircleGraphics.endFill();
+                    }
+                } else {
+                    const runeCount = Math.floor(6 + energy * 10);
+                    const rot = time * (0.008 + energy * 0.025);
+                    for (let i = 0; i < runeCount; i++) {
+                        const angle = (i / runeCount) * Math.PI * 2 + rot;
+                        const x = cx + Math.cos(angle) * rx * 0.88;
+                        const y = groundY + Math.sin(angle) * ry * 0.88;
+                        const flick = 0.4 + Math.sin(time * 0.08 + i * 1.7) * 0.6;
+                        magicCircleGraphics.beginFill(hslToHex(310, 100, 82), alpha * flick);
+                        magicCircleGraphics.drawRect(Math.floor(x), Math.floor(y - 2), 2, 5);
+                        magicCircleGraphics.drawRect(Math.floor(x - 2), Math.floor(y), 6, 2);
+                        magicCircleGraphics.endFill();
+                    }
+                }
+
+                if (energy > 0.4) {
+                    const triAlpha = Math.min(1, (energy - 0.4) / 0.3) * alpha;
+                    const triRot = -time * (0.012 + energy * 0.02);
+                    const triPts = [];
+                    for (let i = 0; i < 3; i++) {
+                        const angle = triRot + (i / 3) * Math.PI * 2 - Math.PI / 2;
+                        triPts.push([cx + Math.cos(angle) * rx * 0.42, groundY + Math.sin(angle) * ry * 0.42]);
+                    }
+                    magicCircleGraphics.beginFill(hslToHex(290, 100, 78), triAlpha * 0.55);
+                    for (let i = 0; i < 3; i++) {
+                        const a = triPts[i], b = triPts[(i + 1) % 3];
+                        for (let s = 0; s <= 24; s++) {
+                            const x = a[0] + (b[0] - a[0]) * (s / 24);
+                            const y = a[1] + (b[1] - a[1]) * (s / 24);
+                            magicCircleGraphics.drawRect(Math.floor(x), Math.floor(y), 2, 2);
+                        }
+                    }
+                    magicCircleGraphics.endFill();
+                }
+                if (energy > 0.55) {
+                    const pillarIntensity = Math.min(1, (energy - 0.55) / 0.35);
+                    const height = groundY - cy;
+                    const numPixels = Math.floor(16 + pillarIntensity * 24);
+                    for (let i = 0; i < numPixels; i++) {
+                        const phase = (time * (0.012 + pillarIntensity * 0.012) + i / numPixels) % 1;
+                        const y = groundY - phase * height;
+                        const x = cx + Math.sin(phase * 8 + time * 0.05) * 3 * pillarIntensity;
+                        const w2 = (1 - phase * 0.55) * 7 * pillarIntensity;
+                        const a = pillarIntensity * 0.65 * Math.sin(phase * Math.PI);
+                        if (a < 0.03) continue;
+                        magicCircleGraphics.beginFill(hslToHex(300, 100, 78), a);
+                        magicCircleGraphics.drawRect(Math.floor(x - w2), Math.floor(y), Math.max(1, Math.floor(w2 * 2)), 2);
+                        magicCircleGraphics.endFill();
+                    }
+                }
+            }
+
+            // 5. Спирали (Spirals)
+            if (energy > 0.08) {
+                if (!spiralInitialized) initSpiral();
+                const maxR = Math.min(w, h) * 0.72; // Круглая спираль в центре
+                const revolutions = 2.3;
+                for (const p of SPIRAL_PARTICLES) {
+                    p.s += p.speed * (0.3 + energy * 4);
+                    if (p.s > 1) p.s -= 1;
+                    const baseAngle = (p.arm / SPIRAL_ARMS) * Math.PI * 2;
+                    const theta = baseAngle + p.s * revolutions * Math.PI * 2;
+                    const r = (1 - p.s) * maxR;
+                    const x = cx + Math.cos(theta) * r;
+                    const y = cy + Math.sin(theta) * r * 0.55;
+                    const intensity = 0.15 + p.s * 0.85;
+                    const alpha = intensity * energy * 0.95;
+                    const hue = p.hueBase + p.s * 55;
+                    const light = 55 + p.s * 40;
+                    if (p.s > 0.06) {
+                        for (let k = 1; k <= 2; k++) {
+                            const trailS = p.s - k * 0.014;
+                            if (trailS < 0) continue;
+                            const trailAngle = baseAngle + trailS * revolutions * Math.PI * 2;
+                            const trailR = (1 - trailS) * maxR;
+                            const tx = cx + Math.cos(trailAngle) * trailR;
+                            const ty = cy + Math.sin(trailAngle) * trailR * 0.55;
+                            spiralGraphics.beginFill(hslToHex(hue, 100, light - 10), alpha * (0.35 / k));
+                            spiralGraphics.drawRect(Math.floor(tx), Math.floor(ty), p.size, p.size);
+                            spiralGraphics.endFill();
+                        }
+                    }
+                    spiralGraphics.beginFill(hslToHex(hue, 100, light), alpha);
+                    spiralGraphics.drawRect(Math.floor(x), Math.floor(y), p.size, p.size);
+                    spiralGraphics.endFill();
+                }
+            }
+
+            // 6. Кометы (Comets)
+            if (energy > 0.3) {
+                const now = performance.now();
+                const spawnInterval = Math.max(100, 500 - (energy - 0.3) * 570);
+                const maxComets = 1 + Math.floor((energy - 0.3) * 7);
+                if (now - cometLastSpawn > spawnInterval && soulComets.length < maxComets) {
+                    cometLastSpawn = now;
+                    soulComets.push(spawnSoulComet(w, h));
+                }
+                for (let i = soulComets.length - 1; i >= 0; i--) {
+                    const c = soulComets[i];
+                    c.age++;
+                    const dx = cx - c.x, dy = cy - c.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const targetAngle = Math.atan2(dy, dx);
+                    let da = targetAngle - c.angle;
+                    while (da > Math.PI) da -= Math.PI * 2;
+                    while (da < -Math.PI) da += Math.PI * 2;
+                    c.angle += da * 0.06 * (1 + energy * 0.8);
+                    const speedBoost = 1 + (1 - Math.min(1, dist / 320)) * energy * 2.2;
+                    c.x += Math.cos(c.angle) * c.speed * speedBoost;
+                    c.y += Math.sin(c.angle) * c.speed * speedBoost;
+                    c.trail.unshift({ x: c.x, y: c.y });
+                    if (c.trail.length > 26) c.trail.pop();
+                    if (dist < 10) {
+                        for (let s = 0; s < 12; s++) {
+                            const sa = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 3.5;
+                            soulSparks.push({ x: cx, y: cy, vx: Math.cos(sa) * sp, vy: Math.sin(sa) * sp, life: 0, maxLife: 25 + Math.random() * 20, size: 1 + Math.random() * 2, hue: c.hue });
+                        }
+                        soulComets.splice(i, 1);
+                        continue;
+                    }
+                    for (let k = c.trail.length - 1; k >= 0; k--) {
+                        const p = c.trail[k], tp = 1 - k / c.trail.length;
+                        const trailAlpha = tp * tp * 0.85 * energy, trailLight = 42 + tp * 38;
+                        const sz = Math.ceil(c.size * tp);
+                        if (sz < 1) continue;
+                        cometGraphics.beginFill(hslToHex(c.hue, 100, trailLight), trailAlpha);
+                        cometGraphics.drawRect(Math.floor(p.x - sz / 2), Math.floor(p.y - sz / 2), sz, sz);
+                        cometGraphics.endFill();
+                    }
+                    const headAlpha = energy * (0.9 + Math.sin(time * 0.18 + c.age * 0.1) * 0.1), sz = Math.ceil(c.size);
+                    cometGraphics.beginFill(hslToHex(c.hue, 100, 60), headAlpha * 0.35);
+                    cometGraphics.drawRect(Math.floor(c.x - sz * 1.5), Math.floor(c.y - sz * 1.5), sz * 3, sz * 3);
+                    cometGraphics.endFill();
+                    cometGraphics.beginFill(hslToHex(c.hue, 100, 88), headAlpha);
+                    cometGraphics.drawRect(Math.floor(c.x - sz / 2), Math.floor(c.y - sz / 2), sz, sz);
+                    cometGraphics.endFill();
+                    cometGraphics.beginFill(0xffffff, headAlpha);
+                    cometGraphics.drawRect(Math.floor(c.x), Math.floor(c.y), 1, 1);
+                    cometGraphics.endFill();
+                }
+            }
+
+            // 7. Сердце (Heart)
             if (progress > 0.45 || energy > 0.3) {
                 const hp = Math.max((progress - 0.45) / 0.55, Math.min(1, energy));
                 const baseCell = (1 + hp * 2) * (1 + energy * 0.5);
@@ -2964,57 +3103,211 @@ function initApp() {
                 const beatPhase = ((time * 0.016 * beatRate) % 1);
                 const beatPulse = Math.pow(Math.max(0, 1 - beatPhase * 4), 2);
                 const pulse = 1 + Math.sin(time * (0.08 + energy * 0.15)) * (0.08 + energy * 0.12) + beatPulse * 0.18;
-                drawPixelHeart(sctx, cx, cy, baseCell * pulse, Math.min(1, hp));
-                drawMirrorHeart(sctx, cx, cy, baseCell, personality.heartHue, energy);
-            }
+                const cell = baseCell * pulse;
+                const hue = personality.heartHue;
+                const mapW = HEART_MAP[0].length, mapH = HEART_MAP.length;
+                const startX = Math.floor(cx - (mapW * cell) / 2), startY = Math.floor(cy - (mapH * cell) / 2);
+                
+                if (Math.min(1, hp) > 0.05) {
+                    heartGraphics.beginFill(hslToHex(hue, 100, 55), 0.16 * Math.min(1, hp));
+                    for (let y = 0; y < mapH; y++) {
+                        for (let x = 0; x < mapW; x++) {
+                            if (!HEART_MAP[y][x]) continue;
+                            heartGraphics.drawRect(startX + x * cell - cell, startY + y * cell - cell, cell * 3, cell * 3);
+                        }
+                    }
+                    heartGraphics.endFill();
+                }
+                heartGraphics.beginFill(hslToHex(hue, 100, 55));
+                for (let y = 0; y < mapH; y++) {
+                    for (let x = 0; x < mapW; x++) {
+                        if (!HEART_MAP[y][x]) continue;
+                        heartGraphics.drawRect(startX + x * cell, startY + y * cell, cell, cell);
+                    }
+                }
+                heartGraphics.endFill();
+                if (Math.min(1, hp) > 0.5) {
+                    heartGraphics.beginFill(hslToHex(hue, 100, 88), 0.6 * (Math.min(1, hp) - 0.5) * 2);
+                    heartGraphics.drawRect(startX + 2 * cell, startY + 2 * cell, cell, cell);
+                    heartGraphics.drawRect(startX + 3 * cell, startY + 2 * cell, cell, cell);
+                    heartGraphics.endFill();
+                }
 
-            if (explosionStart) {
-                const elapsed = performance.now() - explosionStart;
-                drawShockwave(sctx, cx, cy, elapsed);
-                if (explosionState && (explosionState.phase === 'flash' || explosionState.phase === 'explosion')) {
-                    const now = performance.now();
-                    if (now - lastExplosionSpark > 25) {
-                        lastExplosionSpark = now;
-                        for (let i = 0; i < 6; i++) {
-                            const angle = Math.random() * Math.PI * 2, speed = 2 + Math.random() * 14;
-                            soulSparks.push({ x: cx, y: cy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0, maxLife: 30 + Math.random() * 45, size: 2 + Math.random() * 3, hue: 280 + Math.random() * 60 });
+                // Зеркальное сердце (отражение)
+                if (energy > 0.3) {
+                    const gap = 75;
+                    const staticCell = baseCell; // ИСПОЛЬЗУЕМ baseCell ВМЕСТО cell (чтобы не прыгало)
+                    const startY2 = cy + (mapH * staticCell) / 2 + gap;
+                    const startX2 = Math.floor(cx - (mapW * staticCell) / 2);
+                    const squash = 0.35;
+                    const waveSpeed = time * 0.05;
+                    for (let y = 0; y < mapH; y++) {
+                        for (let x = 0; x < mapW; x++) {
+                            if (!HEART_MAP[y][x]) continue;
+                            const depth = (mapH - 1 - y);
+                            // Волна покачивания (рябь на воде) остается
+                            const waveX = Math.sin(waveSpeed + depth * 0.8) * (staticCell * 0.6 + depth * 0.2);
+                            const py = startY2 + depth * staticCell * squash;
+                            const px = startX2 + x * staticCell + waveX;
+                            const fade = 1 - (depth / mapH);
+                            const alpha = fade * 0.35 * energy;
+                            if (alpha < 0.02) continue;
+                            mirrorHeartGraphics.beginFill(hslToHex(hue, 100, 55), alpha);
+                            mirrorHeartGraphics.drawRect(Math.floor(px), Math.floor(py), Math.ceil(staticCell), Math.ceil(staticCell * squash) + 1);
+                            mirrorHeartGraphics.endFill();
                         }
                     }
                 }
-                if (explosionState) applyShake(explosionState.shake);
-            } else {
-                if (innerEl && innerEl.style.transform) innerEl.style.transform = '';
             }
 
-            updateAndDrawSparks(sctx);
+            // 8. Ударная волна (Shockwave)
+            if (explosionStart) {
+                const elapsed = performance.now() - explosionStart;
+                const rings = [ { start: 200, dur: 700, maxR: 1.15, hue: 300 }, { start: 280, dur: 600, maxR: 0.85, hue: 280 }, { start: 360, dur: 500, maxR: 0.55, hue: 320 } ];
+                for (const ring of rings) {
+                    if (elapsed < ring.start || elapsed > ring.start + ring.dur) continue;
+                    const t = (elapsed - ring.start) / ring.dur;
+                    const r = easeOutCubic(t) * Math.min(w, h) * ring.maxR;
+                    const alpha = (1 - t) * 0.95, thickness = (1 - t) * 6 + 1;
+                    const seg = Math.floor(r * 0.7);
+                    for (let i = 0; i < seg; i++) {
+                        const angle = (i / seg) * Math.PI * 2;
+                        const x = cx + Math.cos(angle) * r, y = cy + Math.sin(angle) * r * 0.55;
+                        shockwaveGraphics.beginFill(hslToHex(ring.hue, 100, 90 - t * 15), alpha);
+                        shockwaveGraphics.drawRect(Math.floor(x - thickness / 2), Math.floor(y - thickness / 2), Math.ceil(thickness), Math.ceil(thickness));
+                        shockwaveGraphics.endFill();
+                    }
+                }
+            }
 
+            // 9. Искры (Sparks)
+            for (let i = soulSparks.length - 1; i >= 0; i--) {
+                const sp = soulSparks[i];
+                sp.life++;
+                if (sp.life > sp.maxLife) { soulSparks.splice(i, 1); continue; }
+                sp.x += sp.vx; sp.y += sp.vy; sp.vx *= 0.93; sp.vy *= 0.93;
+                const p = sp.life / sp.maxLife, alpha = (1 - p) * 0.95, light = 82 + p * 15;
+                const sz = Math.max(1, Math.ceil(sp.size * (1 - p * 0.5)));
+                sparkGraphics.beginFill(hslToHex(sp.hue, 100, light), alpha);
+                sparkGraphics.drawRect(Math.floor(sp.x), Math.floor(sp.y), sz, sz);
+                sparkGraphics.endFill();
+            }
+
+            // 10. Трещины (Shatter)
             if (shatterTime > 0 && shatterTime < 80) {
                 shatterTime++;
                 const alpha = Math.max(0, 1 - (shatterTime / 80));
-                sctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-                sctx.lineWidth = 2; sctx.shadowBlur = 15; sctx.shadowColor = 'white';
-                sctx.beginPath();
-                shatterLines.forEach(line => {
+                shockwaveGraphics.beginFill(0xffffff, alpha);
+                for (const line of shatterLines) {
                     if (line.length > 0) {
-                        sctx.moveTo(staticCanvas.width / 2, staticCanvas.height / 2);
-                        line.forEach(p => sctx.lineTo(p.x, p.y));
+                        for (let j = 0; j < line.length - 1; j++) {
+                            const p1 = line[j], p2 = line[j + 1];
+                            const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                            const steps = Math.floor(dist);
+                            for (let s = 0; s < steps; s++) {
+                                const t = s / steps;
+                                const x = p1.x + (p2.x - p1.x) * t;
+                                const y = p1.y + (p2.y - p1.y) * t;
+                                shockwaveGraphics.drawRect(Math.floor(x), Math.floor(y), 2, 2);
+                            }
+                        }
                     }
-                });
-                sctx.stroke(); sctx.shadowBlur = 0;
+                }
+                shockwaveGraphics.endFill();
             }
-            
-            drawFountain(sctx, cx, cy, w, h);
 
+            // 11. Фонтан (Fountain)
+            if (isFountainActive) {
+                const PX_F = 1.5;
+                const maxHeight = h * 1.2;
+                for (let y = 0; y < maxHeight; y += PX_F) {
+                    const yRatio = y / maxHeight; 
+                    const baseWidth = 10 + Math.pow(yRatio, 1.5) * 140;
+                    const wave = Math.sin(y * 0.03 - time * 0.15) * 30 * yRatio;
+                    for (let x = -baseWidth; x <= baseWidth; x += PX_F) {
+                        const distFromCenter = Math.abs(x) / Math.max(1, baseWidth);
+                        let spawnChance = 1 - Math.pow(distFromCenter, 1.5);
+                        spawnChance *= (1 - yRatio * 0.4);
+                        if (Math.random() > spawnChance) continue;
+                        let color = 0xffffff;
+                        if (distFromCenter < 0.2) color = 0xffffff;
+                        else if (distFromCenter < 0.6) color = 0xff00f2;
+                        else color = 0xff00dd;
+                        fountainGraphics.beginFill(color);
+                        fountainGraphics.drawRect(Math.floor((cx + x + wave) / PX_F) * PX_F, Math.floor((cy - y) / PX_F) * PX_F, PX_F, PX_F);
+                        fountainGraphics.endFill();
+                    }
+                }
+                for (let i = 0; i < 40; i++) {
+                    const seed = i * 13.37, timeOffset = time * 3 + seed * 10;
+                    const spawnY = cy - maxHeight * 0.9, spawnX = cx + (Math.random() - 0.5) * 200;
+                    const dropY = spawnY + (timeOffset % 150), dropX = spawnX + Math.sin(timeOffset) * 60;
+                    if (dropY < cy) {
+                        fountainGraphics.beginFill(0xff64ff, 1 - (dropY - spawnY) / 150);
+                        fountainGraphics.drawRect(Math.floor(dropX / PX_F) * PX_F, Math.floor(dropY / PX_F) * PX_F, PX_F, PX_F);
+                        fountainGraphics.endFill();
+                    }
+                }
+
+                // Bloom
+                bloomCanvas.width = w / 4;
+                bloomCanvas.height = h / 4;
+                const bw = bloomCanvas.width, bh = bloomCanvas.height;
+                const bcx = (cx / w) * bw, bcy = (cy / h) * bh;
+                const scale = bw / w;
+                
+                bctx.clearRect(0, 0, bw, bh);
+                bctx.save();
+                bctx.filter = 'blur(4px)'; 
+                bctx.globalCompositeOperation = 'lighter';
+                
+                const baseGrad = bctx.createRadialGradient(bcx, bcy, 0, bcx, bcy, 80 * scale);
+                baseGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                baseGrad.addColorStop(0.4, 'rgba(255, 0, 242, 0.8)');
+                baseGrad.addColorStop(1, 'transparent');
+                bctx.fillStyle = baseGrad; bctx.beginPath(); bctx.arc(bcx, bcy, 80 * scale, 0, Math.PI * 2); bctx.fill();
+                
+                bctx.fillStyle = 'rgba(255, 0, 242, 0.5)'; bctx.beginPath();
+                bctx.moveTo(bcx - 20 * scale, bcy); bctx.lineTo(bcx - 120 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 120 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 20 * scale, bcy); bctx.fill();
+                
+                bctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; bctx.beginPath();
+                bctx.moveTo(bcx - 5 * scale, bcy); bctx.lineTo(bcx - 30 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 30 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 5 * scale, bcy); bctx.fill();
+                
+                bctx.restore();
+                bloomTexture.update();
+                bloomSprite.width = w;
+                bloomSprite.height = h;
+            }
+
+            // 12. Клик-эхо (Click Echoes)
+            for (let i = clickEchoes.length - 1; i >= 0; i--) {
+                const c = clickEchoes[i];
+                c.life++;
+                if (c.life > c.maxLife) { clickEchoes.splice(i, 1); continue; }
+                const p = c.life / c.maxLife, r = p * 90, seg = Math.floor(r * 0.6), alpha = (1 - p) * 0.7;
+                for (let s = 0; s < seg; s++) {
+                    const a = (s / seg) * Math.PI * 2;
+                    clickEchoGraphics.beginFill(hslToHex(personality.glowHue, 100, 78), alpha);
+                    clickEchoGraphics.drawRect(Math.floor(c.x + Math.cos(a) * r), Math.floor(c.y + Math.sin(a) * r), 2, 2);
+                    clickEchoGraphics.endFill();
+                }
+            }
+
+            // 13. Trail Canvas (Шлейф частиц)
+            const tw = trailCanvas.width;
+            const th = trailCanvas.height;
             const fadeRate = Math.max(0.04, 0.12 - energy * 0.06);
             tctx.globalCompositeOperation = 'destination-out';
             tctx.fillStyle = `rgba(0, 0, 0, ${fadeRate})`;
-            tctx.fillRect(0, 0, w, h);
+            tctx.fillRect(0, 0, tw, th); 
             tctx.globalCompositeOperation = 'source-over';
 
             const maxP = MAX_PARTICLES + Math.floor(energy * 100);
             const target = Math.floor(progress * maxP);
             while (particles.length < target) particles.push(spawnParticle());
             while (particles.length > target) particles.pop();
+
+            const tcx = tw / 2, tcy = th / 2; 
 
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i]; p.life++;
@@ -3028,113 +3321,51 @@ function initApp() {
                 if (p.life > p.maxLife && finaleMode === 0) { particles[i] = spawnParticle(); continue; }
                 const ratio = p.life / p.maxLife;
                 const alpha = finaleMode === 0 ? Math.sin(ratio * Math.PI) * 0.9 : 0.9;
-                const x = cx + Math.cos(p.angle) * p.orbit, y = cy + Math.sin(p.angle) * p.orbit * 0.55;
+                const x = tcx + Math.cos(p.angle) * p.orbit, y = tcy + Math.sin(p.angle) * p.orbit * 0.55;
                 let hue = p.hue, light = 72;
                 if (energy > 0.2) { hue = p.hue - (p.hue - 330) * Math.min(1, energy); light = 72 + Math.min(50, energy * 30); }
                 tctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${alpha})`;
                 tctx.fillRect(Math.floor(x), Math.floor(y), p.size, p.size);
             }
+            trailTexture.update();
 
-            drawGlowLayer(gcx, gcy, glowCanvas.width, glowCanvas.height, energy, explosionState);
-            drawClickEchoes(sctx);
+            // 14. Glow Canvas (Свечение)
+            gctx.clearRect(0, 0, glowCanvas.width, glowCanvas.height);
+            const glowIntensity = Math.min(1.5, energy * 0.45 + (explosionState ? explosionState.glowBoost * 1.2 : 0));
+            if (glowIntensity > 0.01) {
+                // Берем минимум от w и h, чтобы свечение было идеальным кругом
+                const coreR = Math.min(w, h) * (0.3 + energy * 0.35); 
+                const grad = gctx.createRadialGradient(gcx, gcy, 0, gcx, gcy, coreR);
+                grad.addColorStop(0, `hsla(320, 100%, 70%, ${Math.min(1, glowIntensity) * 0.55})`);
+                grad.addColorStop(0.35, `hsla(280, 100%, 65%, ${Math.min(1, glowIntensity) * 0.32})`);
+                grad.addColorStop(0.7, `hsla(260, 100%, 55%, ${Math.min(1, glowIntensity) * 0.12})`);
+                grad.addColorStop(1, 'transparent');
+                gctx.fillStyle = grad; gctx.fillRect(0, 0, glowCanvas.width, glowCanvas.height);
+
+                if (explosionState && explosionState.phase === 'flash') {
+                    const whiteR = Math.min(w, h) * 0.4;
+                    const wg = gctx.createRadialGradient(gcx, gcy, 0, gcx, gcy, whiteR);
+                    wg.addColorStop(0, `rgba(255, 255, 255, ${explosionState.flash})`);
+                    wg.addColorStop(0.4, `rgba(255, 220, 255, ${explosionState.flash * 0.6})`);
+                    wg.addColorStop(1, 'transparent');
+                    gctx.fillStyle = wg; gctx.fillRect(0, 0, glowCanvas.width, glowCanvas.height);
+                }
+                if (explosionState && (explosionState.phase === 'explosion' || explosionState.phase === 'flash')) {
+                    const t = explosionState.phase === 'flash' ? (explosionState.flash) : (1 - explosionState.glowBoost);
+                    const ringR = Math.max(w, h) * 0.4 * Math.min(1, t * 1.2);
+                    const rg = gctx.createRadialGradient(gcx, gcy, ringR * 0.7, gcx, gcy, ringR * 1.1);
+                    rg.addColorStop(0, 'transparent'); rg.addColorStop(0.5, `hsla(300, 100%, 80%, ${(1 - t) * 0.7})`); rg.addColorStop(1, 'transparent');
+                    gctx.fillStyle = rg; gctx.fillRect(0, 0, glowCanvas.width, glowCanvas.height);
+                }
+            }
+            glowTexture.update();
+
+            // 15. Тряска
+            if (explosionState) applyShake(explosionState.shake);
+            else if (innerEl && innerEl.style.transform) innerEl.style.transform = '';
+
             time++;
-            requestAnimationFrame(drawFrame);
-        }
-
-        window.__dtStartExplosion = function() {
-            explosionStart = performance.now();
-            if (dtMusicSource && dtMusicSource.playbackRate && dtMusicSource.playbackRate.cancelScheduledValues) {
-                const ctx = initAudioContext();
-                if (ctx) {
-                    dtMusicSource.playbackRate.cancelScheduledValues(ctx.currentTime);
-                    dtMusicSource.playbackRate.linearRampToValueAtTime(1.4, ctx.currentTime + 0.3);
-                    dtMusicSource.playbackRate.linearRampToValueAtTime(0.6, ctx.currentTime + 1.5);
-                }
-            }
-        };
-
-        let shatterLines = [], shatterTime = 0, isFountainActive = false;
-        const fountainParticles = []; 
-
-        window.__dtShatterFountain = function() {
-            shatterLines = []; shatterTime = 1; isFountainActive = true; fountainParticles.length = 0; 
-            const numCracks = 30 + Math.floor(Math.random() * 20);
-            const cx = staticCanvas.width / 2, cy = staticCanvas.height / 2;
-            for (let i = 0; i < numCracks; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const segments = [];
-                let currentX = cx, currentY = cy, currentAngle = angle;
-                const length = (Math.max(staticCanvas.width, staticCanvas.height) / 2) + 50;
-                let dist = 0;
-                while (dist < length) {
-                    const step = 15 + Math.random() * 30;
-                    currentAngle += (Math.random() - 0.5) * 0.6;
-                    currentX += Math.cos(currentAngle) * step; currentY += Math.sin(currentAngle) * step;
-                    segments.push({ x: currentX, y: currentY }); dist += step;
-                }
-                shatterLines.push(segments);
-            }
-        };
-
-        function drawFountain(ctx, cx, cy, w, h) {
-            if (!isFountainActive) return;
-            const PX = 1.5; 
-            const maxHeight = h * 1.2; 
-            
-            ctx.save();
-            ctx.globalCompositeOperation = 'screen'; 
-            for (let y = 0; y < maxHeight; y += PX) {
-                const yRatio = y / maxHeight; 
-                const baseWidth = 10 + Math.pow(yRatio, 1.5) * 140;
-                const wave = Math.sin(y * 0.03 - time * 0.15) * 30 * yRatio;
-                for (let x = -baseWidth; x <= baseWidth; x += PX) {
-                    const distFromCenter = Math.abs(x) / Math.max(1, baseWidth);
-                    let spawnChance = 1 - Math.pow(distFromCenter, 1.5);
-                    spawnChance *= (1 - yRatio * 0.4);
-                    if (Math.random() > spawnChance) continue;
-                    let color;
-                    if (distFromCenter < 0.2) color = `rgba(255, 255, 255, 1)`;
-                    else if (distFromCenter < 0.6) color = `rgba(255, 0, 242, 0.9)`;
-                    else color = `rgba(255, 0, 221, 0.7)`;
-                    ctx.fillStyle = color;
-                    ctx.fillRect(Math.floor((cx + x + wave) / PX) * PX, Math.floor((cy - y) / PX) * PX, PX, PX);
-                }
-            }
-            for (let i = 0; i < 40; i++) {
-                const seed = i * 13.37, timeOffset = time * 3 + seed * 10;
-                const spawnY = cy - maxHeight * 0.9, spawnX = cx + (Math.random() - 0.5) * 200;
-                const dropY = spawnY + (timeOffset % 150), dropX = spawnX + Math.sin(timeOffset) * 60;
-                if (dropY < cy) {
-                    ctx.fillStyle = `rgba(255, 100, 255, ${1 - (dropY - spawnY) / 150})`;
-                    ctx.fillRect(Math.floor(dropX / PX) * PX, Math.floor(dropY / PX) * PX, PX, PX);
-                }
-            }
-            ctx.restore();
-
-            const bw = bloomCanvas.width, bh = bloomCanvas.height;
-            const bcx = (cx / w) * bw, bcy = (cy / h) * bh;
-            const scale = bw / w;
-            bctx.clearRect(0, 0, bw, bh);
-            bctx.save();
-            bctx.filter = 'blur(4px)'; 
-            bctx.globalCompositeOperation = 'lighter';
-            const baseGrad = bctx.createRadialGradient(bcx, bcy, 0, bcx, bcy, 80 * scale);
-            baseGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            baseGrad.addColorStop(0.4, 'rgba(255, 0, 242, 0.8)');
-            baseGrad.addColorStop(1, 'transparent');
-            bctx.fillStyle = baseGrad; bctx.beginPath(); bctx.arc(bcx, bcy, 80 * scale, 0, Math.PI * 2); bctx.fill();
-            bctx.fillStyle = 'rgba(255, 0, 242, 0.5)'; bctx.beginPath();
-            bctx.moveTo(bcx - 20 * scale, bcy); bctx.lineTo(bcx - 120 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 120 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 20 * scale, bcy); bctx.fill();
-            bctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; bctx.beginPath();
-            bctx.moveTo(bcx - 5 * scale, bcy); bctx.lineTo(bcx - 30 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 30 * scale, bcy - maxHeight * scale); bctx.lineTo(bcx + 5 * scale, bcy); bctx.fill();
-            bctx.restore();
-
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter'; 
-            ctx.drawImage(bloomCanvas, 0, 0, w, h); 
-            ctx.restore();
-        }
-        drawFrame();
+        });
     })();
 
     // ---- ФИНАЛЬНЫЕ ЭФФЕКТЫ ----

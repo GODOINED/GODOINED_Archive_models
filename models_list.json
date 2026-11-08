@@ -1,79 +1,143 @@
 [
-    {
-        "name": "Helix",
-        "displayName": "Helix",
-        "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]",
-        "tags": [
-            { "name": "gift", "color": "#ffaa44" },
-            { "name": "Dandy's world", "color": "rainbow" }
-        ],
-        "downloadable": true,
-        "downloadFile": "Helix.zip",
-        "fps": 24,
-        "startFrames": 2,
-        "idleFrames": 48,
-        "preview": "models/Helix/icon.webp",
-        "renders": [
-            "models/Helix/render_01.webp"
-        ],
-        "videos": []
-    },
-    {
-        "name": "Beez",
-        "displayName": "Beez",
-        "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby, Sandy, and Ant. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
-        "tags": [
-            { "name": "gift", "color": "#ffaa44" },
-            { "name": "Dandy's world", "color": "rainbow" }
-        ],
-        "downloadable": true,
-        "downloadFile": "beez_blender.zip",
-        "fps": 24,
-        "startFrames": 0,
-        "idleFrames": 0,
-        "preview": "models/Beez/icon.webp",
-        "renders": [
-            "models/Beez/render_1.png",
-            "models/Beez/render_2.png",
-            "models/Beez/render_3.png",
-            "models/Beez/render_4.png"
-        ],
-        "videos": [
-            "models/Beez/better_call_beez.mp4"
-        ]
-    },
-    {
-        "name": "Eliot",
-        "displayName": "Eliot",
-        "description": "Старый джазовый микрофон всегда знает толк в джазе и всегда готов вам [shake=0.2,0.3]спеть![/shake] Только будьте осторожны!! Он может вас схватить в свой романтичный джазовый \n[shake=0.2,0.6]танец!![/shake] \n\n[url=https://t.me/DOTPTHEDEVIL]Telegram[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
-        "tags": [
-            { "name": "gift", "color": "#ffaa44" },
-            { "name": "Dandy's world", "color": "rainbow" }
-        ],
-        "downloadable": true,
-        "downloadFile": "Eliot.blend",
-        "fps": 24,
-        "startFrames": 0,
-        "idleFrames": 0,
-        "preview": "models/Eliot/icon.webp",
-        "renders": [],
-        "videos": []
-    },
-    {
-        "name": "Jess",
-        "displayName": "Jess",
-        "description": "Просто циклоп, ничего необычного\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
-        "tags": [
-            { "name": "gift", "color": "#ffaa44" },
-            { "name": "OC", "color": "#ffaa44" }
-        ],
-        "downloadable": true,
-        "downloadFile": "model.blend",
-        "fps": 24,
-        "startFrames": 0,
-        "idleFrames": 0,
-        "preview": "models/Jess/icon.webp",
-        "renders": [],
-        "videos": []
-    }
+  {
+    "name": "Helix",
+    "displayName": "Helix",
+    "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]",
+    "comingSoon": false,
+    "nsfw": false,
+    "transparentPreview": false, 
+    "tags": [
+      {
+        "name": "gift",
+        "color": "#ffaa44"
+      },
+      {
+        "name": "Dandy's world",
+        "color": "rainbow"
+      }
+    ],
+    "downloadable": true,
+    "downloadFile": "Helix.zip",
+    "fps": 24,
+    "startFrames": 2,
+    "idleFrames": 48,
+    "preview": "models/Helix/icon.webp",
+    "renders": [
+      "models/Helix/render_01.webp"
+    ],
+    "videos": []
+  },
+  {
+    "name": "Beez",
+    "displayName": "Beez",
+    "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby, Sandy, and Ant. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
+    "comingSoon": false,
+    "nsfw": false,
+    "transparentPreview": false, 
+    "tags": [
+      {
+        "name": "gift",
+        "color": "#ffaa44"
+      },
+      {
+        "name": "Dandy's world",
+        "color": "rainbow"
+      }
+    ],
+    "downloadable": true,
+    "downloadFile": "beez_blender.zip",
+    "fps": 24,
+    "startFrames": 0,
+    "idleFrames": 0,
+    "preview": "models/Beez/icon.webp",
+    "renders": [
+      "models/Beez/render_1.png",
+      "models/Beez/render_2.png",
+      "models/Beez/render_3.png",
+      "models/Beez/render_4.png"
+    ],
+    "videos": [
+      "models/Beez/better_call_beez.mp4"
+    ]
+  },
+  {
+    "name": "Eliot",
+    "displayName": "Eliot",
+    "description": "Старый джазовый микрофон всегда знает толк в джазе и всегда готов вам [shake=0.2,0.3]спеть![/shake] Только будьте осторожны!! Он может вас схватить в свой романтичный джазовый \n[shake=0.2,0.6]танец!![/shake] \n\n[url=https://t.me/DOTPTHEDEVIL]Telegram[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
+    "comingSoon": false,
+    "nsfw": false,
+    "transparentPreview": false, 
+    "tags": [
+      {
+        "name": "gift",
+        "color": "#ffaa44"
+      },
+      {
+        "name": "Dandy's world",
+        "color": "rainbow"
+      }
+    ],
+    "downloadable": true,
+    "downloadFile": "Eliot.blend",
+    "fps": 24,
+    "startFrames": 0,
+    "idleFrames": 0,
+    "preview": "models/Eliot/icon.webp",
+    "renders": [],
+    "videos": []
+  },
+  {
+    "name": "Jess",
+    "displayName": "Jess",
+    "description": "Просто циклоп, ничего необычного\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
+    "comingSoon": false,
+    "nsfw": false,
+    "transparentPreview": false, 
+    "tags": [
+      {
+        "name": "gift",
+        "color": "#ffaa44"
+      },
+      {
+        "name": "OC",
+        "color": "#ffaa44"
+      }
+    ],
+    "downloadable": true,
+    "downloadFile": "model.blend",
+    "fps": 24,
+    "startFrames": 0,
+    "idleFrames": 0,
+    "preview": "models/Jess/icon.webp",
+    "renders": [],
+    "videos": []
+  },
+  {
+    "name": "Fizzy",
+    "displayName": "Fizzy",
+    "description": "Coming soon",
+    "comingSoon": true,
+    "nsfw": true, 
+    "transparentPreview": true, 
+    "tags": [
+      {
+        "name": "gift",
+        "color": "#ffc800"
+      },
+      {
+        "name": "OC",
+        "color": "#ffc800"
+      },
+      {
+        "name": "NSFW",
+        "color": "#ff0000"
+      }
+    ],
+    "startFrames": 0,
+    "idleFrames": 0,
+    "fps": 24,
+    "renders": [],
+    "videos": [],
+    "preview": "models/Fizzy/Main.png"
+  }
 ]

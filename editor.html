@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Полный редактор архива</title>
+    <title>Редактор Архива</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark: #050508;
-            --bg-panel: #0f1a0f;
-            --bg-card: #0a0f0a;
+            --bg-panel: rgba(10, 15, 10, 0.9);
+            --bg-input: #000000;
             --border-color: #3eff6e;
-            --text-primary: #b3ffb0;
-            --text-secondary: #8bc97f;
+            --text-primary: #d4ffd2;
+            --text-secondary: #79b86c;
             --accent: #3eff6e;
-            --accent-hover: #a0ff9e;
-            --shadow: #000000;
             --danger: #ff4444;
-            --input-bg: #000000;
+            --info: #5bc0ff;
+            --warning: #ffaa44;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
             background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(rgba(62, 255, 110, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(62, 255, 110, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
             color: var(--text-primary);
             font-family: 'Roboto Mono', monospace;
             padding: 20px;
@@ -31,332 +34,355 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            position: relative;
             overflow: hidden;
         }
 
-        /* Сканлайны как на сайте */
+        /* Легкий CRT эффект */
         body::after {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 4px);
-            pointer-events: none;
-            z-index: 100;
-            mix-blend-mode: multiply;
-            opacity: 0.6;
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 3px);
+            pointer-events: none; z-index: 1000; mix-blend-mode: multiply; opacity: 0.3;
         }
 
-        /* Шапка */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); }
+
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 15px;
-            z-index: 10;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px; z-index: 10; flex-wrap: wrap; gap: 10px;
         }
         h1 {
-            font-family: 'Press Start 2P', monospace;
-            color: #fff;
-            text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
-            font-size: 1.2rem;
-            letter-spacing: 2px;
+            font-family: 'Press Start 2P', monospace; color: #fff;
+            text-shadow: 0 0 10px var(--accent); font-size: 1.1rem;
         }
-        .header-btns { display: flex; gap: 15px; }
+        .header-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .layout { display: flex; gap: 20px; flex: 1; overflow: hidden; z-index: 10; }
         
-        /* Макет */
-        .layout {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            overflow: hidden;
-            z-index: 10;
-        }
-        
-        /* Левая панель (Список) */
+        /* Левая панель */
         .sidebar {
-            width: 320px;
-            background: var(--bg-panel);
-            border: 2px solid var(--border-color);
-            padding: 15px;
-            box-shadow: 6px 6px 0 var(--shadow);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
+            width: 280px; background: var(--bg-panel); border: 2px solid var(--border-color);
+            padding: 15px; display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(5px);
         }
-        .sidebar::before {
-            content: ""; position: absolute; inset: 0;
-            box-shadow: inset 0 0 15px rgba(62, 255, 110, 0.1);
-            pointer-events: none;
-        }
-
         .sidebar h2 {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-            letter-spacing: 1px;
+            font-family: 'Press Start 2P', monospace; font-size: 0.7rem;
+            color: var(--text-secondary); margin-bottom: 15px; display: flex; justify-content: space-between;
         }
-
-        .model-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-top: 5px;
-            padding-right: 5px;
-        }
-        .model-list::-webkit-scrollbar { width: 6px; }
-        .model-list::-webkit-scrollbar-track { background: transparent; }
-        .model-list::-webkit-scrollbar-thumb { background: var(--border-color); }
-        
+        .model-list { flex: 1; overflow-y: auto; padding-right: 5px; }
         .model-item {
-            background: var(--bg-card);
-            border: 2px solid #333;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.15s;
-            box-shadow: 3px 3px 0 var(--shadow);
+            background: rgba(0,0,0,0.4); border: 1px solid #333; padding: 10px;
+            margin-bottom: 8px; display: flex; justify-content: space-between;
+            align-items: center; cursor: pointer; transition: 0.2s;
         }
-        .model-item:hover { border-color: var(--accent); transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--shadow); }
-        .model-item.active { border-color: var(--accent); background: #1a2a1a; box-shadow: inset 0 0 10px var(--accent); }
-        
-        .model-info strong { display: block; font-size: 0.9rem; color: #fff; font-family: 'Press Start 2P', monospace; margin-bottom: 5px; }
-        .model-info span { font-size: 0.75rem; color: var(--text-secondary); }
-        
-        /* Правая панель (Форма) */
+        .model-item:hover { border-color: var(--accent); transform: translateX(-2px); }
+        .model-item.active { border-color: var(--accent); background: rgba(62, 255, 110, 0.1); }
+        .model-info strong { display: block; font-size: 0.8rem; color: #fff; font-family: 'Press Start 2P', monospace; }
+        .model-info span { font-size: 0.7rem; color: var(--text-secondary); }
+        .model-actions { display: flex; gap: 5px; }
+
+        /* Правая панель */
         .main-panel {
-            flex: 1;
-            background: var(--bg-panel);
-            border: 2px solid var(--border-color);
-            padding: 25px;
-            box-shadow: 6px 6px 0 var(--shadow);
-            overflow-y: auto;
-            position: relative;
+            flex: 1; background: var(--bg-panel); border: 2px solid var(--border-color);
+            padding: 20px; overflow-y: auto; display: flex; flex-direction: column; backdrop-filter: blur(5px);
         }
-        .main-panel::before {
-            content: ""; position: absolute; inset: 0;
-            box-shadow: inset 0 0 15px rgba(62, 255, 110, 0.1);
-            pointer-events: none;
-        }
-        .main-panel::-webkit-scrollbar { width: 8px; }
-        .main-panel::-webkit-scrollbar-track { background: transparent; }
-        .main-panel::-webkit-scrollbar-thumb { background: var(--border-color); }
 
+        /* Закрепленная шапка */
         .form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 2px dashed #333;
-            padding-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 2px dashed #333;
+            flex-wrap: wrap; gap: 10px; position: sticky; top: -20px;
+            background: #0a0f0a; z-index: 50;
         }
-        .form-title { 
-            font-family: 'Press Start 2P', monospace; 
-            font-size: 1rem; 
-            color: #fff;
-            text-shadow: 0 0 8px var(--accent);
+        .form-title-wrapper { display: flex; align-items: center; gap: 10px; }
+        .form-title { font-family: 'Press Start 2P', monospace; font-size: 0.9rem; color: #fff; }
+        
+        .dirty-dot {
+            width: 10px; height: 10px; background: var(--danger); border-radius: 50%;
+            display: none; box-shadow: 0 0 10px var(--danger); animation: pulse 1.5s infinite alternate;
         }
+        .dirty-dot.active { display: block; }
+        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* Элементы формы */
-        .form-group { margin-bottom: 20px; position: relative; z-index: 2; }
+        .form-header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* Поля ввода */
+        .form-group { margin-bottom: 15px; }
         label {
-            display: block;
-            font-size: 0.75rem;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-family: 'Press Start 2P', monospace;
+            display: block; font-size: 0.7rem; margin-bottom: 5px;
+            color: var(--text-secondary); text-transform: uppercase; font-family: 'Press Start 2P', monospace;
         }
         input[type="text"], input[type="number"], textarea {
-            width: 100%;
-            background: var(--input-bg);
-            border: 2px solid #444;
-            color: var(--text-primary);
-            padding: 12px;
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.9rem;
-            outline: none;
-            transition: all 0.2s;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+            width: 100%; background: var(--bg-input); border: 2px solid #333;
+            color: var(--text-primary); padding: 10px; font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem; outline: none; transition: border-color 0.2s;
         }
-        input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
-            border-color: var(--accent);
-            box-shadow: inset 0 0 10px var(--accent), 0 0 10px rgba(62, 255, 110, 0.2);
-            background: #050a05;
-        }
+        input:focus, textarea:focus { border-color: var(--accent); }
+        
         .row { display: flex; gap: 15px; }
         .row .form-group { flex: 1; }
 
-        /* Редактор BBCode */
-        .bb-editor {
-            border: 2px solid #444;
-            background: var(--input-bg);
-            box-shadow: inset 0 0 5px #000;
+        /* Drag&Drop */
+        .dropzone {
+            border: 2px dashed #555; background: rgba(0,0,0,0.4);
+            padding: 20px; text-align: center; cursor: pointer;
+            position: relative; margin-bottom: 10px;
         }
-        .bb-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            padding: 10px;
-            background: #111;
-            border-bottom: 2px solid #444;
+        .dropzone.dragover { border-color: var(--accent); background: rgba(62, 255, 110, 0.1); }
+        .dropzone p { font-size: 0.8rem; color: var(--text-secondary); z-index: 1; position: relative; }
+        .dropzone img {
+            max-height: 100%; max-width: 100%; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); opacity: 0.2; z-index: 0;
         }
+
+        /* Чекбоксы */
+        .checkbox-group { display: flex; gap: 15px; background: rgba(0,0,0,0.2); padding: 10px; border: 1px solid #333; flex-wrap: wrap; margin-bottom: 15px; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .checkbox-item input[type="checkbox"] {
+            appearance: none; width: 18px; height: 18px; border: 2px solid #555;
+            background: #000; cursor: pointer; position: relative;
+        }
+        .checkbox-item input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+        .checkbox-item input[type="checkbox"]:checked::after {
+            content: "✔"; position: absolute; color: #000; font-size: 12px;
+            top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold;
+        }
+        .checkbox-item label { margin: 0; cursor: pointer; font-family: 'Roboto Mono'; font-size: 0.8rem; }
+        .checkbox-item.nsfw-check label { color: var(--danger); }
+
+        /* BBCode */
+        .bb-editor { border: 2px solid #333; background: var(--bg-input); }
+        .bb-toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: #111; border-bottom: 1px solid #333; align-items: center; }
+        
         .bb-btn {
-            background: var(--bg-panel);
-            border: 2px solid #555;
-            color: var(--text-primary);
-            padding: 6px 12px;
-            cursor: pointer;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 0.6rem;
-            transition: all 0.1s;
+            background: transparent; border: 1px solid #555; color: var(--text-secondary);
+            padding: 4px 8px; cursor: pointer; font-family: 'Press Start 2P'; font-size: 0.55rem;
+            transition: 0.1s;
         }
-        .bb-btn:hover { border-color: var(--accent); background: var(--accent); color: #000; transform: translateY(-1px); }
-        .bb-btn.btn-color { border-color: #ff00ff; color: #ff00ff; }
-        .bb-btn.btn-color:hover { background: #ff00ff; color: #fff; }
-        .bb-btn.btn-rainbow { background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet); border-color: #fff; color: #fff; text-shadow: 1px 1px 0 #000; }
-        .bb-btn.btn-rainbow:hover { filter: brightness(1.3); }
-        .bb-btn.btn-shake { border-color: #ffb347; color: #ffb347; }
-        .bb-btn.btn-shake:hover { background: #ffb347; color: #000; }
-        
-        .bb-body { display: flex; gap: 2px; background: #444; }
-        .bb-body textarea {
-            flex: 1;
-            min-height: 180px;
-            border: none;
-            resize: vertical;
-            background: var(--input-bg);
-            padding: 15px;
-            box-shadow: none;
-        }
-        .bb-body textarea:focus { box-shadow: inset 0 0 10px rgba(62, 255, 110, 0.2); }
-        
-        .bb-preview {
-            flex: 1;
-            min-height: 180px;
-            background: #050508;
-            padding: 15px;
-            word-wrap: break-word;
-            overflow-y: auto;
-            border-left: 1px solid #444;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
+        .bb-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        /* Стили BBCode для превью (синхронизированы с сайтом) */
-        .bbcode-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
-        .rainbow-text {
-            display: inline-block;
-            background-image: linear-gradient(to right, #ff0000, #ff7700, #ffff00, #00ff00, #0000ff, #8b00ff, #ff0000);
-            background-size: 300% 100%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            animation: rainbowMove 4s linear infinite;
-            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        /* Стили для выбора цвета */
+        .bb-color-input {
+            width: 24px; height: 24px; padding: 0; border: 1px solid #555;
+            background: transparent; cursor: pointer; outline: none;
         }
-        @keyframes rainbowMove { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
-        .shake-letter {
-            display: inline-block;
-            animation: letterShake var(--shake-duration, 0.1s) infinite alternate;
-            --shake-distance: 1px;
-        }
-        @keyframes letterShake {
-            0%   { transform: translate(0, 0); }
-            25%  { transform: translate(calc(-1 * var(--shake-distance)), var(--shake-distance)); }
-            50%  { transform: translate(var(--shake-distance), calc(-1 * var(--shake-distance))); }
-            75%  { transform: translate(calc(-1 * var(--shake-distance)), calc(-1 * var(--shake-distance))); }
-            100% { transform: translate(var(--shake-distance), var(--shake-distance)); }
-        }
+        .bb-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+        .bb-color-input::-webkit-color-swatch { border: none; }
 
-        /* Менеджер тегов */
-        .tag-creator { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tag-creator input[type="text"] { flex: 1; }
-        .tag-creator input[type="color"] { 
-            width: 50px; height: 44px; padding: 0; cursor: pointer; 
-            background: #000; border: 2px solid #444; box-shadow: inset 0 0 5px #000;
+        /* Стили для селекта тряски */
+        .bb-select {
+            background: transparent; border: 1px solid #555; color: var(--text-secondary);
+            padding: 4px; cursor: pointer; font-family: 'Press Start 2P'; font-size: 0.55rem;
+            outline: none;
         }
-        .tag-list { 
-            display: flex; flex-wrap: wrap; gap: 10px; min-height: 50px; 
-            padding: 12px; background: var(--input-bg); border: 2px dashed #444; 
-        }
-        .tag-item {
-            display: flex; align-items: center; gap: 8px;
-            background: var(--bg-panel); border: 1px solid #555;
-            padding: 6px 10px; font-size: 0.75rem; box-shadow: 2px 2px 0 #000;
-        }
-        .tag-remove { color: var(--danger); cursor: pointer; font-weight: bold; font-size: 1rem; }
-        .tag-remove:hover { color: #fff; background: var(--danger); padding: 0 4px; }
+        .bb-select:hover { border-color: var(--accent); color: var(--accent); }
+        .bb-select option { background: #000; color: #fff; font-family: 'Roboto Mono'; font-size: 0.8rem; }
+
+        .bb-body { display: flex; flex-direction: column; }
+        @media (min-width: 900px) { .bb-body { flex-direction: row; } }
+        .bb-body textarea { flex: 1; min-height: 120px; border: none; padding: 10px; resize: vertical; }
+        .bb-preview { flex: 1; min-height: 120px; background: #000; padding: 10px; overflow-y: auto; font-size: 0.85rem; border-left: 1px solid #333; }
+
+        /* Теги */
+        .tag-creator { display: flex; gap: 10px; margin-bottom: 10px; }
+        .tag-creator input[type="color"] { width: 40px; height: 38px; padding: 0; border: 2px solid #333; background: #000; cursor: pointer; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; padding: 10px; background: rgba(0,0,0,0.2); border: 1px dashed #333; }
+        .tag-item { display: flex; align-items: center; gap: 5px; background: rgba(62,255,110,0.1); border: 1px solid #333; padding: 4px 8px; font-size: 0.7rem; }
+        .tag-remove { color: var(--danger); cursor: pointer; }
 
         /* Кнопки */
         button {
-            background: var(--bg-panel);
-            border: 2px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 12px 20px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: all 0.15s;
-            box-shadow: 4px 4px 0 var(--shadow);
-            text-transform: uppercase;
+            background: #0a0f0a; border: 2px solid var(--border-color); color: var(--text-primary);
+            padding: 10px 15px; font-family: 'Press Start 2P', monospace; font-size: 0.65rem;
+            cursor: pointer; transition: 0.1s;
         }
-        button:hover { background: var(--accent); color: #000; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--shadow); }
-        button:active { transform: translate(2px, 2px); box-shadow: none; }
+        button:hover { background: var(--accent); color: #000; }
         
-        .btn-sm { padding: 8px 12px; font-size: 0.6rem; box-shadow: 2px 2px 0 var(--shadow); }
-        .btn-del { border-color: var(--danger); color: var(--danger); box-shadow: none; }
-        .btn-del:hover { background: var(--danger); color: #000; transform: none; }
+        .btn-sm { padding: 6px 10px; font-size: 0.55rem; }
+        .btn-del { border-color: var(--danger); color: var(--danger); }
+        .btn-del:hover { background: var(--danger); color: #000; }
+        .btn-eye { border-color: var(--info); color: var(--info); }
+        .btn-eye:hover { background: var(--info); color: #000; }
         
-        .btn-save { width: 100%; margin-top: 20px; background: #1a2a1a; font-size: 0.9rem; padding: 15px; }
-        .btn-save:hover { background: var(--accent); box-shadow: 0 0 20px var(--accent); }
+        .btn-save { background: rgba(62, 255, 110, 0.15); border-color: var(--accent); color: var(--accent); }
+        .btn-save:hover { background: var(--accent); color: #000; }
         
-        .btn-download { background: #1a2a3a; border-color: #5bc0ff; color: #5bc0ff; }
-        .btn-download:hover { background: #5bc0ff; color: #000; box-shadow: 0 0 15px #5bc0ff; }
-        
+        .btn-connect { border-color: var(--warning); color: var(--warning); }
+        .btn-connect:hover { background: var(--warning); color: #000; }
+        .btn-connect.connected { border-color: var(--accent); color: var(--accent); }
+
+        details.json-preview { margin-top: 20px; border-top: 1px dashed #333; padding-top: 10px; }
+        details.json-preview summary { cursor: pointer; font-family: 'Press Start 2P'; font-size: 0.6rem; color: var(--text-secondary); }
+        details.json-preview textarea { height: 150px; background: #000; color: #666; font-size: 0.8rem; margin-top: 10px; }
+
         .hidden { display: none !important; }
+
+        /* Модалки */
+        .preview-modal, .detail-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); z-index: 2000; display: none;
+            flex-direction: column; align-items: center; padding: 30px 15px; overflow-y: auto;
+        }
+        .preview-modal.active, .detail-modal.active { display: flex; }
+        .preview-modal-content, .detail-wrapper { width: 100%; max-width: 1200px; }
+        
+        .preview-close, .detail-close {
+            position: fixed; top: 15px; right: 15px; background: #000; border: 2px solid var(--danger);
+            color: var(--danger); font-size: 1.2rem; padding: 5px 12px; cursor: pointer; z-index: 2002;
+        }
+        .preview-close:hover, .detail-close:hover { background: var(--danger); color: #000; }
+
+        /* Карточки */
+        .models-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 15px; }
+        .model-card { background: #0a0f0a; border: 2px solid var(--border-color); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .model-card .preview { aspect-ratio: 1 / 1; width: 100%; object-fit: cover; background: #000; border-bottom: 2px solid var(--border-color); }
+        .model-info { padding: 12px; flex: 1; }
+        .model-info h3 { font-size: 1rem; font-family: 'Press Start 2P'; margin-bottom: 5px; color: var(--text-primary); }
+        .model-info p { font-size: 0.75rem; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+        .tag { background: rgba(0,0,0,0.5); padding: 2px 6px; font-size: 0.6rem; border: 1px solid var(--border-color); font-family: 'Press Start 2P'; }
+
+        .bbcode-link { color: var(--accent); text-decoration: underline; }
+        .rainbow-text { background-image: linear-gradient(to right, #ff0000, #ff7700, #ffff00, #00ff00, #0000ff, #8b00ff, #ff0000); background-size: 300% 100%; -webkit-background-clip: text; color: transparent; animation: rainbowMove 4s linear infinite; }
+        @keyframes rainbowMove { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+        .shake-letter { display: inline-block; animation: letterShake var(--shake-duration, 0.1s) infinite alternate; }
+        @keyframes letterShake { 0% { transform: translate(0, 0); } 25% { transform: translate(-1px, 1px); } 50% { transform: translate(1px, -1px); } 75% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, 1px); } }
+
+        /* Детали */
+        .model-detail-header { text-align: center; margin-bottom: 20px; }
+        .model-detail-header h1 { font-size: 1.5rem; font-family: 'Press Start 2P'; }
+        .model-detail-content { display: flex; flex-wrap: wrap; gap: 20px; background: #0a0f0a; padding: 20px; border: 2px solid var(--border-color); }
+        .animation-area { flex: 1; min-width: 250px; background: #000; display: flex; align-items: center; justify-content: center; padding: 10px; border: 1px solid var(--border-color); }
+        .animation-area canvas { width: 100%; max-width: 300px; border: 2px solid var(--border-color); }
+        .info-area { flex: 1; }
+        .info-area h2 { font-size: 1.4rem; font-family: 'Press Start 2P'; }
+        .description-text { margin: 10px 0; color: var(--text-secondary); }
+        .download-button, .share-button { background: #000; border: 2px solid var(--border-color); color: var(--accent); padding: 8px 15px; font-family: 'Press Start 2P'; font-size: 0.7rem; cursor: pointer; }
+        .download-button:hover, .share-button:hover { background: var(--accent); color: #000; }
+        .render-gallery { margin-top: 15px; border-top: 1px dashed #333; padding-top: 10px; }
+        .render-thumbnails { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .render-thumbnail { width: 50px; height: 50px; object-fit: cover; border: 2px solid var(--border-color); cursor: pointer; background: #000; }
+        .video-thumbnail { position: relative; display: flex; align-items: center; justify-content: center; background: #111; cursor: pointer; }
+        .video-thumbnail span { color: var(--accent); font-size: 1.2rem; position: absolute; }
+
+        /* NSFW / Coming Soon */
+        .model-card.nsfw { border-color: var(--danger) !important; background: #1a0000 !important; }
+        .model-card.nsfw .preview { filter: blur(15px) grayscale(100%) brightness(0.15) !important; border-bottom: none !important; }
+        .model-card.nsfw .model-info { background: transparent !important; z-index: 2; }
+        .model-card.nsfw .model-info h3, .model-card.nsfw .model-info p { color: #ff5555 !important; }
+        .model-card.nsfw .tag { border-color: var(--danger) !important; color: #ff5555 !important; }
+        .nsfw-marquee { position: absolute; top: 35% !important; left: 0; width: 100%; overflow: hidden; white-space: nowrap; z-index: 50 !important; background: rgba(0, 0, 0, 0.7) !important; padding: 4px 0; transform: translateY(-50%); }
+        .nsfw-marquee-track { display: flex; width: max-content; animation: nsfwScroll 8s linear infinite; }
+        .nsfw-marquee-track span { color: #aaa !important; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; padding-right: 15px;}
+        @keyframes nsfwScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .nsfw-badge { position: absolute; top: 8px; left: 8px; background: #333 !important; color: #aaa !important; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; z-index: 10; }
+        
+        .model-card.coming-soon { cursor: default; border-color: #444; }
+        .model-card.coming-soon .preview, .model-card.coming-soon .model-info { filter: grayscale(100%) opacity(0.8); }
+        .coming-soon-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.2) !important; color: #fff !important; font-family: 'Press Start 2P', monospace; font-size: 1.1rem; text-shadow: 0 0 5px #000 !important; z-index: 1000 !important; }
+        
+        .model-card.nsfw.coming-soon { border-color: var(--danger) !important; background: #0a0f0a !important; }
+        .model-card.nsfw.coming-soon .preview { filter: grayscale(100%) opacity(0.8) !important; }
+        .model-card.nsfw.coming-soon .model-info h3, .model-card.nsfw.coming-soon .model-info p { color: var(--text-primary) !important; }
+        .model-card.nsfw.coming-soon .nsfw-marquee { display: block !important; }
+        .model-card.nsfw.coming-soon .nsfw-badge { background: #333 !important; color: #aaa !important; }
+        
+        .model-card.transparent-preview .preview { opacity: 0.5; background: transparent !important; }
+        .model-card.transparent-preview { background: rgba(0, 0, 0, 0.3) !important; }
+        .model-card.nsfw.transparent-preview .preview { filter: none !important; opacity: 0.6; }
+
     </style>
 </head>
 <body>
 
     <header>
-        <h1>> ПОЛНЫЙ РЕДАКТОР</h1>
+        <h1>> АРХИВ РЕДАКТОР</h1>
         <div class="header-btns">
             <input type="file" id="fileInput" accept=".json" style="display: none;">
             <button onclick="document.getElementById('fileInput').click()">📂 ЗАГРУЗИТЬ</button>
-            <button class="btn-download" onclick="downloadJSON()">💾 СКАЧАТЬ JSON</button>
+            <button id="btn-connect-folder" class="btn-connect" onclick="connectFolder()">📂 ПАПКА</button>
+            <button id="btn-save-disk" onclick="saveJsonToDisk()">💾 JSON НА ДИСК</button>
+            <button onclick="openPreviewModal()" style="border-color:var(--info); color:var(--info);">👁️ ГАЛЕРЕЯ</button>
         </div>
     </header>
 
     <div class="layout">
-        <!-- ЛЕВАЯ ПАНЕЛЬ -->
         <div class="sidebar">
-            <h2>>> СПИСОК МОДЕЛЕЙ (<span id="model-count">0</span>)</h2>
+            <h2>СПИСОК <span id="model-count" style="color:#fff;">[0]</span></h2>
             <div class="model-list" id="model-list"></div>
         </div>
 
-        <!-- ПРАВАЯ ПАНЕЛЬ -->
-        <div class="main-panel">
+        <div class="main-panel" id="main-panel">
             <div class="form-header">
-                <h2 class="form-title" id="form-title">НОВАЯ МОДЕЛЬ</h2>
-                <button class="btn-sm hidden" id="btn-cancel" onclick="resetForm()">ОТМЕНА</button>
+                <div class="form-title-wrapper">
+                    <h2 class="form-title" id="form-title">НОВАЯ МОДЕЛЬ</h2>
+                    <div class="dirty-dot" id="dirty-indicator" title="Есть несохраненные изменения"></div>
+                </div>
+                
+                <div class="form-header-actions">
+                    <button class="btn-sm" onclick="previewCurrentDetail()" style="border-color:var(--info); color:var(--info);">👁️ ДЕТАЛИ</button>
+                    <button class="btn-sm btn-del hidden" id="btn-cancel" onclick="resetForm()">✕ ОТМЕНА</button>
+                    <button class="btn-save" id="btn-save" onclick="saveModel()">+ ДОБАВИТЬ</button>
+                </div>
             </div>
 
             <div class="row">
                 <div class="form-group">
                     <label>Системное имя (папка)</label>
-                    <input type="text" id="f-name" placeholder="my_model">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="f-name" placeholder="my_model">
+                        <button class="btn-sm" onclick="autoName()" title="Сгенерировать из имени">⚡</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Отображаемое имя</label>
                     <input type="text" id="f-displayName" placeholder="Моя Модель">
+                </div>
+            </div>
+
+            <div class="checkbox-group">
+                <div class="checkbox-item nsfw-check">
+                    <input type="checkbox" id="f-nsfw">
+                    <label for="f-nsfw">NSFW (18+)</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="f-comingSoon">
+                    <label for="f-comingSoon">COMING SOON</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="f-transparentPreview">
+                    <label for="f-transparentPreview">ПРОЗРАЧНОЕ</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="f-downloadable" onchange="toggleDownload()">
+                    <label for="f-downloadable">РАЗРЕШИТЬ СКАЧИВАНИЕ</label>
+                </div>
+            </div>
+
+            <div class="form-group hidden" id="download-group">
+                <label>Имя файла для скачивания</label>
+                <input type="text" id="f-downloadFile" placeholder="model.zip">
+            </div>
+
+            <div class="form-group">
+                <label>Превью (Картинка)</label>
+                <div class="dropzone" id="dropzone" onclick="document.getElementById('imageInput').click()">
+                    <img id="dropzone-img" class="hidden" src="" alt="">
+                    <p id="dropzone-text">Перетащите файл сюда или нажмите</p>
+                </div>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                <input type="text" id="f-preview" placeholder="models/name/main.png">
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Рендеры (каждый с новой строки)</label>
+                    <textarea id="f-renders" style="min-height: 60px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Видео (каждый с новой строки)</label>
+                    <textarea id="f-videos" style="min-height: 60px;"></textarea>
                 </div>
             </div>
 
@@ -367,9 +393,20 @@
                         <button class="bb-btn" onclick="wrapText('[b]', '[/b]')">B</button>
                         <button class="bb-btn" onclick="wrapText('[i]', '[/i]')">I</button>
                         <button class="bb-btn" onclick="wrapText('[u]', '[/u]')">U</button>
-                        <button class="bb-btn btn-color" onclick="applyColor()">ЦВЕТ</button>
-                        <button class="bb-btn btn-rainbow" onclick="wrapText('[rainbow]', '[/rainbow]')">РАДУГА</button>
-                        <button class="bb-btn btn-shake" onclick="applyShake()">ТРЯСКА</button>
+                        
+                        <!-- УПРОЩЕННЫЙ ВЫБОР ЦВЕТА -->
+                        <input type="color" id="bb-color-input" class="bb-color-input" onchange="applyColor(this.value)" title="Выбрать цвет">
+                        
+                        <button class="bb-btn" onclick="wrapText('[rainbow]', '[/rainbow]')">РАДУГА</button>
+                        
+                        <!-- УПРОЩЕННЫЙ ВЫБОР ТРЯСКИ -->
+                        <select id="bb-shake-select" class="bb-select">
+                            <option value="0.1,1">Тряска: Слабая</option>
+                            <option value="0.2,2">Тряска: Средняя</option>
+                            <option value="0.3,3">Тряска: Сильная</option>
+                        </select>
+                        <button class="bb-btn" onclick="applyShake()" title="Применить тряску">▶</button>
+                        
                         <button class="bb-btn" onclick="applyLink()">ССЫЛКА</button>
                     </div>
                     <div class="bb-body">
@@ -380,10 +417,10 @@
             </div>
 
             <div class="form-group">
-                <label>Теги модели</label>
+                <label>Теги</label>
                 <div class="tag-creator">
                     <input type="text" id="new-tag-name" placeholder="Название тега...">
-                    <input type="color" id="new-tag-color" value="#3eff6e" title="Цвет тега">
+                    <input type="color" id="new-tag-color" value="#3eff6e">
                     <button class="btn-sm" onclick="addTag()">+</button>
                 </div>
                 <div class="tag-list" id="current-tags"></div>
@@ -404,42 +441,91 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Ссылка на превью (если нет кадров)</label>
-                <input type="text" id="f-preview" placeholder="models/name/preview.webp">
-            </div>
-            <div class="form-group">
-                <label>Рендеры (каждый с новой строки)</label>
-                <textarea id="f-renders" style="min-height: 60px;"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Видео (каждый с новой строки)</label>
-                <textarea id="f-videos" style="min-height: 60px;"></textarea>
-            </div>
+            <details class="json-preview">
+                <summary>▼ ПОКАЗАТЬ JSON</summary>
+                <textarea id="json-output" readonly></textarea>
+            </details>
+        </div>
+    </div>
 
-            <div class="row" style="align-items: center; margin-bottom: 15px;">
-                <input type="checkbox" id="f-downloadable" onchange="toggleDownload()" style="width: 20px; height: 20px; margin-right: 10px; accent-color: var(--accent); cursor: pointer;">
-                <label for="f-downloadable" style="margin: 0; cursor: pointer;">Разрешить скачивание</label>
-            </div>
-            <div class="form-group hidden" id="download-group">
-                <label>Имя файла (в папке модели)</label>
-                <input type="text" id="f-downloadFile" placeholder="model.zip">
-            </div>
+    <!-- Модалки -->
+    <div id="preview-modal" class="preview-modal">
+        <button class="preview-close" onclick="closePreviewModal()">✕</button>
+        <div class="preview-modal-content">
+            <h2 id="preview-modal-title" style="text-align:center; margin-bottom:15px; font-family:'Press Start 2P';">ГАЛЕРЕЯ</h2>
+            <div id="preview-grid" class="models-grid"></div>
+        </div>
+    </div>
 
-            <button class="btn-save" id="btn-save" onclick="saveModel()">+ ДОБАВИТЬ В СПИСОК</button>
+    <div id="detail-preview-modal" class="detail-modal">
+        <button class="detail-close" onclick="closeDetailPreview()">✕</button>
+        <div class="detail-wrapper">
+            <div class="model-detail-header">
+                <h1 id="dp-title">ЗАГРУЗКА...</h1>
+            </div>
+            <div class="model-detail-content">
+                <div class="animation-area">
+                    <canvas id="dp-canvas" width="400" height="400"></canvas>
+                </div>
+                <div class="info-area">
+                    <h2 id="dp-name"></h2>
+                    <div id="dp-tags" class="tags"></div>
+                    <p id="dp-desc" class="description-text"></p>
+                    <div id="dp-renders" class="render-gallery" style="display: none;">
+                        <h3 style="font-size: 0.7rem; text-transform:uppercase; color:var(--text-secondary);">>> РЕНДЕРЫ</h3>
+                        <div id="dp-thumbnails" class="render-thumbnails"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button id="dp-download" class="download-button" style="display: none;">СКАЧАТЬ</button>
+                        <button class="share-button">ПОДЕЛИТЬСЯ</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 1. СОСТОЯНИЕ И ЗАГРУЗКА
-        // ==========================================
         let models = [];
         let editIndex = -1;
-        let currentTags = []; // Теги для текущей редактируемой модели
+        let currentTags = [];
+        let isDirty = false;
+        let currentPreviewFile = null; 
+        let currentPreviewName = "";   
+        let rootDirHandle = null;
 
         const fileInput = document.getElementById('fileInput');
-        
+        const imageInput = document.getElementById('imageInput');
+        const dropzone = document.getElementById('dropzone');
+        const dropzoneImg = document.getElementById('dropzone-img');
+        const dropzoneText = document.getElementById('dropzone-text');
+        const previewInput = document.getElementById('f-preview');
+        const dirtyIndicator = document.getElementById('dirty-indicator');
+
+        if (!window.showDirectoryPicker) {
+            document.getElementById('btn-connect-folder').style.display = 'none';
+            document.getElementById('btn-save-disk').style.display = 'none';
+        }
+
+        window.addEventListener('beforeunload', (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ''; } });
+
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', () => setDirty(true));
+        });
+
+        function setDirty(state) {
+            isDirty = state;
+            dirtyIndicator.classList.toggle('active', state);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (document.getElementById('f-name').value.trim()) saveModel();
+                else saveJsonToDisk();
+            }
+        });
+
+        // Загрузка JSON
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -448,126 +534,80 @@
                 try {
                     const parsed = JSON.parse(event.target.result);
                     if (Array.isArray(parsed)) {
-                        models = parsed;
-                        renderList();
-                        resetForm();
-                    } else alert('Ошибка: JSON должен быть массивом [ ... ]');
-                } catch (err) { alert('Ошибка чтения JSON: ' + err.message); }
+                        models = parsed; setDirty(true); renderList(); resetForm();
+                    } else alert('Ошибка: JSON должен быть массивом');
+                } catch (err) { alert('Ошибка: ' + err.message); }
             };
             reader.readAsText(file);
             fileInput.value = '';
         });
 
-        function downloadJSON() {
-            if (models.length === 0) return alert('Список пуст.');
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(models, null, 2));
-            const a = document.createElement('a');
-            a.href = dataStr;
-            a.download = "models_list.json";
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+        async function connectFolder() {
+            try {
+                rootDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                const btn = document.getElementById('btn-connect-folder');
+                btn.textContent = '📂 ПОДКЛЮЧЕНО'; btn.style.color = 'var(--accent)'; btn.style.borderColor = 'var(--accent)';
+            } catch (err) { if (err.name !== 'AbortError') alert('Ошибка: ' + err.message); }
         }
 
-        // ==========================================
-        // 2. СПИСОК МОДЕЛЕЙ
-        // ==========================================
-        function renderList() {
-            document.getElementById('model-count').textContent = models.length;
-            const list = document.getElementById('model-list');
-            list.innerHTML = '';
-            if (models.length === 0) {
-                list.innerHTML = '<p style="color:#666;font-size:0.8rem;text-align:center;margin-top:20px;">Список пуст</p>';
-                return;
+        async function saveJsonToDisk() {
+            if (!rootDirHandle) return alert('Сначала подключите папку!');
+            try {
+                const fileHandle = await rootDirHandle.getFileHandle('models_list.json', { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(JSON.stringify(models, null, 2));
+                await writable.close();
+                alert('models_list.json сохранен!'); setDirty(false);
+            } catch (e) { alert('Ошибка сохранения: ' + e.message); }
+        }
+
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+        dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('dragover'); });
+        dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); if (e.dataTransfer.files.length) handleImageFile(e.dataTransfer.files[0]); });
+        imageInput.addEventListener('change', (e) => { if (e.target.files.length) handleImageFile(e.target.files[0]); });
+
+        async function handleImageFile(file) {
+            if (!file.type.startsWith('image/')) return alert('Выберите изображение!');
+            const modelName = document.getElementById('f-name').value.trim();
+            if (!modelName) { alert('Сначала введите "Системное имя"!'); document.getElementById('f-name').focus(); return; }
+            
+            currentPreviewFile = file;
+            currentPreviewName = file.name;
+            let savedToDisk = false;
+            
+            if (rootDirHandle) {
+                try {
+                    const modelsDir = await rootDirHandle.getDirectoryHandle('models', { create: true });
+                    const modelDir = await modelsDir.getDirectoryHandle(modelName, { create: true });
+                    const fileHandle = await modelDir.getFileHandle(currentPreviewName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(file); await writable.close(); savedToDisk = true;
+                } catch (e) { alert('Ошибка записи: ' + e.message); }
             }
-            models.forEach((m, i) => {
-                const div = document.createElement('div');
-                div.className = `model-item ${i === editIndex ? 'active' : ''}`;
-                div.onclick = () => editModel(i);
-                div.innerHTML = `
-                    <div class="model-info">
-                        <strong>${m.displayName || m.name}</strong>
-                        <span>${m.name}</span>
-                    </div>
-                    <button class="btn-sm btn-del" onclick="event.stopPropagation(); deleteModel(${i})">✕</button>
-                `;
-                list.appendChild(div);
-            });
+            
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                dropzoneImg.src = e.target.result; 
+                dropzoneImg.classList.remove('hidden'); 
+                dropzoneText.innerHTML = `<strong>${file.name}</strong><br>${savedToDisk ? '<span style="color:var(--accent)">[На диске]</span>' : '<span style="color:var(--warning)">[В памяти]</span>'}`; 
+            };
+            reader.readAsDataURL(file);
+            updatePreviewPath();
+            setDirty(true);
         }
 
-        function editModel(index) {
-            editIndex = index;
-            const m = models[index];
-            
-            document.getElementById('f-name').value = m.name || '';
-            document.getElementById('f-displayName').value = m.displayName || '';
-            document.getElementById('f-description').value = m.description || '';
-            document.getElementById('f-startFrames').value = m.startFrames || 0;
-            document.getElementById('f-idleFrames').value = m.idleFrames || 0;
-            document.getElementById('f-fps').value = m.fps || 24;
-            document.getElementById('f-preview').value = m.preview || '';
-            document.getElementById('f-renders').value = (m.renders || []).join('\n');
-            document.getElementById('f-videos').value = (m.videos || []).join('\n');
-            document.getElementById('f-downloadable').checked = !!m.downloadable;
-            document.getElementById('f-downloadFile').value = m.downloadFile || '';
-            toggleDownload();
-            
-            // Теги
-            currentTags = m.tags ? JSON.parse(JSON.stringify(m.tags)) : [];
-            renderCurrentTags();
-            updatePreview();
-
-            document.getElementById('form-title').textContent = 'РЕДАКТИРОВАНИЕ';
-            document.getElementById('btn-save').textContent = '💾 СОХРАНИТЬ';
-            document.getElementById('btn-cancel').classList.remove('hidden');
-            
-            renderList();
-            document.querySelector('.main-panel').scrollTo(0, 0);
+        function updatePreviewPath() {
+            const modelName = document.getElementById('f-name').value.trim() || 'name';
+            if (currentPreviewFile) previewInput.value = `models/${modelName}/${currentPreviewName}`;
         }
+        document.getElementById('f-name').addEventListener('input', updatePreviewPath);
 
-        function deleteModel(index) {
-            if (!confirm('Удалить модель ' + models[index].name + '?')) return;
-            models.splice(index, 1);
-            if (editIndex === index) resetForm();
-            else if (editIndex > index) editIndex--;
-            renderList();
-        }
-
-        function resetForm() {
-            editIndex = -1;
-            document.getElementById('f-name').value = '';
-            document.getElementById('f-displayName').value = '';
-            document.getElementById('f-description').value = '';
-            document.getElementById('f-startFrames').value = '0';
-            document.getElementById('f-idleFrames').value = '0';
-            document.getElementById('f-fps').value = '24';
-            document.getElementById('f-preview').value = '';
-            document.getElementById('f-renders').value = '';
-            document.getElementById('f-videos').value = '';
-            document.getElementById('f-downloadable').checked = false;
-            document.getElementById('f-downloadFile').value = '';
-            toggleDownload();
-            
-            currentTags = [];
-            renderCurrentTags();
-            updatePreview();
-
-            document.getElementById('form-title').textContent = 'НОВАЯ МОДЕЛЬ';
-            document.getElementById('btn-save').textContent = '+ ДОБАВИТЬ В СПИСОК';
-            document.getElementById('btn-cancel').classList.add('hidden');
-            
-            renderList();
-        }
-
-        function saveModel() {
+        function getCurrentFormData() {
             const name = document.getElementById('f-name').value.trim();
-            if (!name) return alert('Введите системное имя!');
-            if (editIndex === -1 && models.some(m => m.name === name)) return alert('Модель с таким именем уже есть!');
-
             const model = {
-                name: name,
+                name: name, 
                 displayName: document.getElementById('f-displayName').value.trim() || name,
-                description: document.getElementById('f-description').value.trim(),
+                description: document.getElementById('f-description').value.trim(), 
                 tags: currentTags,
                 startFrames: parseInt(document.getElementById('f-startFrames').value) || 0,
                 idleFrames: parseInt(document.getElementById('f-idleFrames').value) || 0,
@@ -575,194 +615,338 @@
                 renders: document.getElementById('f-renders').value.split('\n').map(s=>s.trim()).filter(Boolean),
                 videos: document.getElementById('f-videos').value.split('\n').map(s=>s.trim()).filter(Boolean)
             };
-
-            const preview = document.getElementById('f-preview').value.trim();
-            if (preview) model.preview = preview;
+            
+            if (document.getElementById('f-comingSoon').checked) model.comingSoon = true;
+            if (document.getElementById('f-nsfw').checked) model.nsfw = true;
+            if (document.getElementById('f-transparentPreview').checked) model.transparentPreview = true;
+            
+            if (previewInput.value.trim()) {
+                model.preview = previewInput.value.trim();
+                if (currentPreviewFile) model._dataURL = dropzoneImg.src; 
+            }
 
             if (document.getElementById('f-downloadable').checked) {
                 const df = document.getElementById('f-downloadFile').value.trim();
                 if (df) { model.downloadable = true; model.downloadFile = df; }
             }
+            return model;
+        }
 
-            if (editIndex === -1) models.push(model);
+        function fillForm(m) {
+            document.getElementById('f-name').value = m.name || ''; 
+            document.getElementById('f-displayName').value = m.displayName || '';
+            document.getElementById('f-description').value = m.description || ''; 
+            document.getElementById('f-startFrames').value = m.startFrames || 0;
+            document.getElementById('f-idleFrames').value = m.idleFrames || 0; 
+            document.getElementById('f-fps').value = m.fps || 24;
+            previewInput.value = m.preview || ''; 
+            document.getElementById('f-renders').value = (m.renders || []).join('\n');
+            document.getElementById('f-videos').value = (m.videos || []).join('\n');
+            document.getElementById('f-downloadable').checked = !!m.downloadable;
+            document.getElementById('f-downloadFile').value = m.downloadFile || ''; 
+            document.getElementById('f-comingSoon').checked = !!m.comingSoon;
+            document.getElementById('f-nsfw').checked = !!m.nsfw; 
+            document.getElementById('f-transparentPreview').checked = !!m.transparentPreview;
+            
+            currentPreviewFile = null;
+            if (m.preview) { dropzoneImg.src = m.preview; dropzoneImg.classList.remove('hidden'); dropzoneText.innerHTML = `Текущее превью:<br>${m.preview}`; }
+            else { dropzoneImg.classList.add('hidden'); dropzoneText.innerHTML = 'Перетащите файл сюда или нажмите'; }
+            
+            toggleDownload(); 
+            currentTags = m.tags ? JSON.parse(JSON.stringify(m.tags)) : []; 
+            renderCurrentTags(); 
+            updatePreview();
+        }
+
+        function saveModel() {
+            const nameInput = document.getElementById('f-name');
+            const name = nameInput.value.trim();
+            
+            if (!name) { 
+                nameInput.style.borderColor = 'var(--danger)';
+                setTimeout(() => nameInput.style.borderColor = '#333', 500);
+                return alert('Введите системное имя!'); 
+            }
+            if (editIndex === -1 && models.some(m => m.name === name)) return alert('Модель с таким именем уже есть!');
+            
+            const model = getCurrentFormData();
+            delete model._dataURL;
+            
+            if (editIndex === -1) models.push(model); 
             else models[editIndex] = model;
-
+            
+            setDirty(false); 
             resetForm();
         }
 
-        // ==========================================
-        // 3. ТЕГИ
-        // ==========================================
+        function autoName() {
+            const disp = document.getElementById('f-displayName').value.trim();
+            if (!disp) return alert('Сначала введите Отображаемое имя!');
+            document.getElementById('f-name').value = disp.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            updatePreviewPath(); setDirty(true);
+        }
+
+        function resetForm() {
+            editIndex = -1; 
+            document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(el => el.value = '');
+            document.getElementById('f-startFrames').value = '0';
+            document.getElementById('f-idleFrames').value = '0';
+            document.getElementById('f-fps').value = '24';
+            document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+            
+            currentPreviewFile = null; currentPreviewName = ""; 
+            dropzoneImg.classList.add('hidden'); dropzoneText.innerHTML = 'Перетащите файл сюда или нажмите';
+            toggleDownload(); currentTags = []; renderCurrentTags(); updatePreview();
+            
+            document.getElementById('form-title').textContent = 'НОВАЯ МОДЕЛЬ'; 
+            document.getElementById('btn-save').textContent = '+ ДОБАВИТЬ'; 
+            document.getElementById('btn-cancel').classList.add('hidden');
+            
+            setDirty(false);
+            renderList();
+        }
+
+        function renderList() {
+            document.getElementById('model-count').textContent = `[${models.length}]`;
+            const list = document.getElementById('model-list'); list.innerHTML = '';
+            if (models.length === 0) { list.innerHTML = '<p style="color:#555;text-align:center;margin-top:20px;font-size:0.8rem;">ПУСТО</p>'; updateJSONPreview(); return; }
+            
+            models.forEach((m, i) => {
+                const div = document.createElement('div');
+                div.className = `model-item ${i === editIndex ? 'active' : ''}`;
+                div.onclick = () => editModel(i);
+                
+                let flags = ''; if (m.nsfw) flags += '<span style="color:#ff4444;font-weight:bold;margin-right:4px;">[18+]</span>'; if (m.comingSoon) flags += '<span style="color:#888;font-weight:bold;margin-right:4px;">[SOON]</span>';
+                
+                div.innerHTML = `
+                    <div class="model-info">
+                        <strong>${flags}${m.displayName || m.name}</strong>
+                        <span>${m.name}</span>
+                    </div>
+                    <div class="model-actions">
+                        <button class="btn-sm btn-eye" onclick="event.stopPropagation(); openDetailPreview(m, false)" title="Детали">👁</button>
+                        <button class="btn-sm btn-del" onclick="event.stopPropagation(); deleteModel(${i})" title="Удалить">✕</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            updateJSONPreview();
+        }
+
+        function editModel(index) {
+            editIndex = index; 
+            fillForm(models[index]);
+            document.getElementById('form-title').textContent = 'РЕДАКТИРОВАНИЕ'; 
+            document.getElementById('btn-save').textContent = '💾 ОБНОВИТЬ'; 
+            document.getElementById('btn-cancel').classList.remove('hidden');
+            
+            setDirty(false);
+            renderList(); 
+            document.getElementById('main-panel').scrollTo(0, 0);
+        }
+
+        function deleteModel(index) { 
+            if (!confirm('Удалить модель ' + models[index].name + '?')) return; 
+            models.splice(index, 1); setDirty(true); 
+            if (editIndex === index) resetForm(); else if (editIndex > index) editIndex--; 
+            renderList(); 
+        }
+
+        function updateJSONPreview() { document.getElementById('json-output').value = JSON.stringify(models, null, 2); }
+
         function addTag() {
-            const name = document.getElementById('new-tag-name').value.trim();
+            const name = document.getElementById('new-tag-name').value.trim(); 
             const color = document.getElementById('new-tag-color').value;
-            if (!name) return;
+            if (!name) return; 
             if (currentTags.some(t => (typeof t === 'string' ? t : t.name) === name)) return alert('Такой тег уже есть!');
-
-            if (color === '#3eff6e') currentTags.push(name);
+            
+            if (color === '#3eff6e') currentTags.push(name); 
             else currentTags.push({ name: name, color: color });
-
-            document.getElementById('new-tag-name').value = '';
-            renderCurrentTags();
+            
+            document.getElementById('new-tag-name').value = ''; 
+            setDirty(true); renderCurrentTags();
         }
 
-        function removeTag(index) {
-            currentTags.splice(index, 1);
-            renderCurrentTags();
-        }
+        function removeTag(index) { currentTags.splice(index, 1); setDirty(true); renderCurrentTags(); }
 
         function renderCurrentTags() {
-            const list = document.getElementById('current-tags');
-            list.innerHTML = '';
+            const list = document.getElementById('current-tags'); list.innerHTML = '';
             currentTags.forEach((tag, i) => {
-                const isObj = typeof tag === 'object';
-                const name = isObj ? tag.name : tag;
+                const isObj = typeof tag === 'object'; 
+                const name = isObj ? tag.name : tag; 
                 const color = isObj ? tag.color : 'var(--text-primary)';
-                
-                const el = document.createElement('div');
-                el.className = 'tag-item';
-                el.innerHTML = `
-                    <span style="color: ${color}; border: 1px solid ${color}; padding: 2px 5px;">${name}</span>
-                    <span class="tag-remove" onclick="removeTag(${i})">✕</span>
-                `;
+                const el = document.createElement('div'); el.className = 'tag-item';
+                el.innerHTML = `<span style="color: ${color}; border: 1px solid ${color}; padding: 2px 6px; font-size:0.65rem;">${name}</span><span class="tag-remove" onclick="removeTag(${i})">✕</span>`;
                 list.appendChild(el);
             });
         }
 
-        function toggleDownload() {
+        function toggleDownload() { 
             const isChecked = document.getElementById('f-downloadable').checked;
-            document.getElementById('download-group').classList.toggle('hidden', !isChecked);
+            document.getElementById('download-group').classList.toggle('hidden', !isChecked); 
+            setDirty(true); 
         }
 
-        // ==========================================
-        // 4. BBCode РЕДАКТОР
-        // ==========================================
-        const descInput = document.getElementById('f-description');
+        const descInput = document.getElementById('f-description'); 
         const descPreview = document.getElementById('desc-preview');
-
+        
         function wrapText(openTag, closeTag) {
-            const start = descInput.selectionStart;
-            const end = descInput.selectionEnd;
-            const text = descInput.value;
-            
-            if (start === end) {
-                descInput.value = text.substring(0, start) + openTag + closeTag + text.substring(start);
-                descInput.focus();
-                descInput.selectionStart = start + openTag.length;
-                descInput.selectionEnd = start + openTag.length;
-            } else {
-                const selected = text.substring(start, end);
-                descInput.value = text.substring(0, start) + openTag + selected + closeTag + text.substring(end);
-                descInput.focus();
-                descInput.selectionStart = start;
-                descInput.selectionEnd = end + openTag.length + closeTag.length;
-            }
-            updatePreview();
+            const start = descInput.selectionStart; const end = descInput.selectionEnd; const text = descInput.value;
+            if (start === end) { descInput.value = text.substring(0, start) + openTag + closeTag + text.substring(start); descInput.focus(); descInput.selectionStart = start + openTag.length; descInput.selectionEnd = start + openTag.length; }
+            else { const selected = text.substring(start, end); descInput.value = text.substring(0, start) + openTag + selected + closeTag + text.substring(end); descInput.focus(); descInput.selectionStart = start; descInput.selectionEnd = end + openTag.length + closeTag.length; }
+            setDirty(true); updatePreview();
         }
 
-        function applyColor() {
-            const color = prompt("HEX-код или название цвета (например, #ff0000):", "#ff00f2");
+        // УПРОЩЕННЫЙ ЦВЕТ
+        function applyColor(color) {
             if (color) wrapText(`[color=${color}]`, `[/color]`);
         }
 
+        // УПРОЩЕННАЯ ТРЯСКА
         function applyShake() {
-            const dur = prompt("Длительность (сек):", "0.1");
-            const dist = prompt("Амплитуда (пиксели):", "1");
-            if (dur && dist) wrapText(`[shake=${dur},${dist}]`, `[/shake]`);
+            const val = document.getElementById('bb-shake-select').value;
+            const [dur, dist] = val.split(',');
+            wrapText(`[shake=${dur},${dist}]`, `[/shake]`);
         }
 
         function applyLink() {
-            const url = prompt("URL ссылки:", "https://");
-            if (!url) return;
-            const start = descInput.selectionStart;
-            const end = descInput.selectionEnd;
-            const text = descInput.value;
-            
-            if (start === end) {
-                descInput.value = text.substring(0, start) + `[url=${url}]${url}[/url]` + text.substring(start);
-            } else {
-                descInput.value = text.substring(0, start) + `[url=${url}]${text.substring(start, end)}[/url]` + text.substring(end);
-            }
-            updatePreview();
+            const url = prompt("URL ссылки:", "https://"); if (!url) return;
+            const start = descInput.selectionStart; const end = descInput.selectionEnd; const text = descInput.value;
+            if (start === end) descInput.value = text.substring(0, start) + `[url=${url}]${url}[/url]` + text.substring(start);
+            else descInput.value = text.substring(0, start) + `[url=${url}]${text.substring(start, end)}[/url]` + text.substring(end);
+            setDirty(true); updatePreview();
         }
 
-        // ==========================================
-        // 5. ПАРСЕР BB-КОДОВ (Взят из script.js)
-        // ==========================================
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-        }
-
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+        
         function parseBBCode(text) {
-            if (!text) return '';
-            let safe = escapeHtml(text);
-            let changed = true;
-            let iter = 0;
+            if (!text) return ''; let safe = escapeHtml(text); let changed = true; let iter = 0;
             while (changed && iter < 50) {
-                changed = false;
-                iter++;
-                
-                let bMatch = /\[b\]([\s\S]*?)\[\/b\]/i.exec(safe);
-                if (bMatch) { safe = safe.substring(0, bMatch.index) + `<b>${parseBBCode(bMatch[1])}</b>` + safe.substring(bMatch.index + bMatch[0].length); changed = true; continue; }
-                
-                let iMatch = /\[i\]([\s\S]*?)\[\/i\]/i.exec(safe);
-                if (iMatch) { safe = safe.substring(0, iMatch.index) + `<i>${parseBBCode(iMatch[1])}</i>` + safe.substring(iMatch.index + iMatch[0].length); changed = true; continue; }
-                
-                let uMatch = /\[u\]([\s\S]*?)\[\/u\]/i.exec(safe);
-                if (uMatch) { safe = safe.substring(0, uMatch.index) + `<u>${parseBBCode(uMatch[1])}</u>` + safe.substring(uMatch.index + uMatch[0].length); changed = true; continue; }
-                
-                let urlMatch = /\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/i.exec(safe);
-                if (urlMatch) { safe = safe.substring(0, urlMatch.index) + `<a href="${urlMatch[1].trim()}" target="_blank" class="bbcode-link">${parseBBCode(urlMatch[2])}</a>` + safe.substring(urlMatch.index + urlMatch[0].length); changed = true; continue; }
-                
-                let urlSimple = /\[url\]([\s\S]*?)\[\/url\]/i.exec(safe);
-                if (urlSimple) { 
-                    let href = urlSimple[1].trim();
-                    if (!/^https?:\/\//i.test(href)) href = 'https://' + href;
-                    safe = safe.substring(0, urlSimple.index) + `<a href="${href}" target="_blank" class="bbcode-link">${parseBBCode(urlSimple[1])}</a>` + safe.substring(urlSimple.index + urlSimple[0].length); changed = true; continue; 
-                }
-                
-                let colorMatch = /\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/i.exec(safe);
-                if (colorMatch) { 
-                    const color = colorMatch[1].trim();
-                    safe = safe.substring(0, colorMatch.index) + `<span style="color: ${color}; text-shadow: 0 0 2px ${color}, 0 0 6px ${color}; display:inline-block;">${parseBBCode(colorMatch[2])}</span>` + safe.substring(colorMatch.index + colorMatch[0].length); changed = true; continue; 
-                }
-                
-                let rainbowMatch = /\[rainbow\]([\s\S]*?)\[\/rainbow\]/i.exec(safe);
-                if (rainbowMatch) { safe = safe.substring(0, rainbowMatch.index) + `<span class="rainbow-text">${parseBBCode(rainbowMatch[1])}</span>` + safe.substring(rainbowMatch.index + rainbowMatch[0].length); changed = true; continue; }
-                
+                changed = false; iter++;
+                let bMatch = /\[b\]([\s\S]*?)\[\/b\]/i.exec(safe); if (bMatch) { safe = safe.substring(0, bMatch.index) + `<b>${parseBBCode(bMatch[1])}</b>` + safe.substring(bMatch.index + bMatch[0].length); changed = true; continue; }
+                let iMatch = /\[i\]([\s\S]*?)\[\/i\]/i.exec(safe); if (iMatch) { safe = safe.substring(0, iMatch.index) + `<i>${parseBBCode(iMatch[1])}</i>` + safe.substring(iMatch.index + iMatch[0].length); changed = true; continue; }
+                let uMatch = /\[u\]([\s\S]*?)\[\/u\]/i.exec(safe); if (uMatch) { safe = safe.substring(0, uMatch.index) + `<u>${parseBBCode(uMatch[1])}</u>` + safe.substring(uMatch.index + uMatch[0].length); changed = true; continue; }
+                let urlMatch = /\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/i.exec(safe); if (urlMatch) { safe = safe.substring(0, urlMatch.index) + `<a href="${urlMatch[1].trim()}" target="_blank" class="bbcode-link">${parseBBCode(urlMatch[2])}</a>` + safe.substring(urlMatch.index + urlMatch[0].length); changed = true; continue; }
+                let urlSimple = /\[url\]([\s\S]*?)\[\/url\]/i.exec(safe); if (urlSimple) { let href = urlSimple[1].trim(); if (!/^https?:\/\//i.test(href)) href = 'https://' + href; safe = safe.substring(0, urlSimple.index) + `<a href="${href}" target="_blank" class="bbcode-link">${parseBBCode(urlSimple[1])}</a>` + safe.substring(urlSimple.index + urlSimple[0].length); changed = true; continue; }
+                let colorMatch = /\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/i.exec(safe); if (colorMatch) { const color = colorMatch[1].trim(); safe = safe.substring(0, colorMatch.index) + `<span style="color: ${color}; text-shadow: 0 0 2px ${color}, 0 0 6px ${color}; display:inline-block;">${parseBBCode(colorMatch[2])}</span>` + safe.substring(colorMatch.index + colorMatch[0].length); changed = true; continue; }
+                let rainbowMatch = /\[rainbow\]([\s\S]*?)\[\/rainbow\]/i.exec(safe); if (rainbowMatch) { safe = safe.substring(0, rainbowMatch.index) + `<span class="rainbow-text">${parseBBCode(rainbowMatch[1])}</span>` + safe.substring(rainbowMatch.index + rainbowMatch[0].length); changed = true; continue; }
                 let shakeMatch = /\[shake(?:=([\d.]+)(?:,([\d.]+))?)?\]([\s\S]*?)\[\/shake\]/i.exec(safe);
                 if (shakeMatch) {
-                    const duration = shakeMatch[1] ? parseFloat(shakeMatch[1]) : 0.1;
-                    const distance = shakeMatch[2] ? parseFloat(shakeMatch[2]) : 1;
-                    const innerHtml = parseBBCode(shakeMatch[3]);
-                    
-                    let processed = '';
-                    if (innerHtml.includes('<') && innerHtml.includes('>')) {
-                        processed = `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; display: inline-block;">${innerHtml}</span>`;
-                    } else {
-                        const chars = innerHtml.split('');
-                        for (let i = 0; i < chars.length; i++) {
-                            const ch = chars[i];
-                            if (ch === ' ') { processed += ' '; continue; }
-                            const delay = (i * 0.03).toFixed(3);
-                            processed += `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; animation-delay: ${delay}s;">${ch}</span>`;
-                        }
-                    }
-                    safe = safe.substring(0, shakeMatch.index) + processed + safe.substring(shakeMatch.index + shakeMatch[0].length);
-                    changed = true; 
-                    continue;
+                    const duration = shakeMatch[1] ? parseFloat(shakeMatch[1]) : 0.1; const distance = shakeMatch[2] ? parseFloat(shakeMatch[2]) : 1; const innerHtml = parseBBCode(shakeMatch[3]); let processed = '';
+                    if (innerHtml.includes('<') && innerHtml.includes('>')) processed = `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; display: inline-block;">${innerHtml}</span>`;
+                    else { const chars = innerHtml.split(''); for (let i = 0; i < chars.length; i++) { const ch = chars[i]; if (ch === ' ') { processed += ' '; continue; } const delay = (i * 0.03).toFixed(3); processed += `<span class="shake-letter" style="animation-duration: ${duration}s; --shake-distance: ${distance}px; animation-delay: ${delay}s;">${ch}</span>`; } }
+                    safe = safe.substring(0, shakeMatch.index) + processed + safe.substring(shakeMatch.index + shakeMatch[0].length); changed = true; continue;
                 }
             }
             return safe;
         }
+        
+        function updatePreview() { descPreview.innerHTML = parseBBCode(descInput.value).replace(/\n/g, '<br>'); }
 
-        function updatePreview() {
-            descPreview.innerHTML = parseBBCode(descInput.value).replace(/\n/g, '<br>');
+        function createCardElement(model) {
+            const card = document.createElement('div');
+            const isNSFW = model.nsfw === true; const isComingSoon = model.comingSoon === true; const isTransparent = model.transparentPreview === true;
+            card.className = 'model-card' + (isNSFW ? ' nsfw' : '') + (isComingSoon ? ' coming-soon' : '') + (isTransparent ? ' transparent-preview' : '');
+            let imgSrc = 'https://placehold.co/400x400?text=NO+PREVIEW';
+            if (model._dataURL) imgSrc = model._dataURL; else if (model.preview) imgSrc = model.preview; else if (model.name) imgSrc = `models/${model.name}/icon.webp`;
+            const img = document.createElement('img'); img.className = 'preview'; img.src = imgSrc; img.onerror = () => { img.src = 'https://placehold.co/400x400?text=NO+PREVIEW'; };
+            const tagsHtml = (model.tags || []).map(tag => {
+                let tagName = typeof tag === 'string' ? tag : tag.name; let tagColor = typeof tag === 'string' ? null : tag.color; let colorStyle = ''; let extraClass = '';
+                if (tagColor === 'rainbow') extraClass = 'rainbow-text'; else if (tagColor) colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor};"`;
+                return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
+            }).join('');
+            const descHtml = parseBBCode(model.description || '').replace(/\n/g, '<br>');
+            const info = document.createElement('div'); info.className = 'model-info';
+            info.innerHTML = `<h3>${parseBBCode(model.displayName || model.name)}</h3><p>${descHtml}</p><div class="tags">${tagsHtml}</div>`;
+            if (isNSFW) {
+                const marquee = document.createElement('div'); marquee.className = 'nsfw-marquee';
+                const text = 'WARNING 18+ NSFW // WARNING 18+ NSFW // ';
+                marquee.innerHTML = `<div class="nsfw-marquee-track"><span>${text}</span><span>${text}</span></div>`;
+                card.appendChild(marquee);
+                const badge = document.createElement('div'); badge.className = 'nsfw-badge'; badge.textContent = '18+'; card.appendChild(badge);
+            }
+            if (isComingSoon) {
+                const overlay = document.createElement('div'); overlay.className = 'coming-soon-overlay'; overlay.textContent = 'СКОРО...'; card.appendChild(overlay);
+            }
+            card.appendChild(img); card.appendChild(info);
+            return card;
         }
 
+        function openPreviewModal() {
+            document.getElementById('preview-modal-title').textContent = 'ГАЛЕРЕЯ';
+            const grid = document.getElementById('preview-grid'); grid.innerHTML = '';
+            if (models.length === 0) grid.innerHTML = '<p style="color:#fff; text-align:center;">НЕТ МОДЕЛЕЙ</p>';
+            else models.forEach(model => { grid.appendChild(createCardElement(model)); });
+            document.getElementById('preview-modal').classList.add('active');
+        }
+        function closePreviewModal() { document.getElementById('preview-modal').classList.remove('active'); }
+
+        function openDetailPreview(model, isFormData) {
+            let data = model;
+            if (isFormData) data = getCurrentFormData();
+
+            document.getElementById('dp-title').textContent = data.displayName || data.name || 'БЕЗ ИМЕНИ';
+            document.getElementById('dp-name').textContent = data.displayName || data.name || '';
+            document.getElementById('dp-desc').innerHTML = parseBBCode(data.description || '').replace(/\n/g, '<br>');
+            
+            const tagsHtml = (data.tags || []).map(tag => {
+                let tagName = typeof tag === 'string' ? tag : tag.name; let tagColor = typeof tag === 'string' ? null : tag.color; let colorStyle = ''; let extraClass = '';
+                if (tagColor === 'rainbow') extraClass = 'rainbow-text'; else if (tagColor) colorStyle = ` style="color: ${tagColor}; border-color: ${tagColor};"`;
+                return `<span class="tag ${extraClass}"${colorStyle}>${escapeHtml(tagName)}</span>`;
+            }).join('');
+            document.getElementById('dp-tags').innerHTML = tagsHtml;
+
+            document.getElementById('dp-download').style.display = data.downloadable ? 'inline-block' : 'none';
+
+            const rendersDiv = document.getElementById('dp-renders');
+            const thumbnailsDiv = document.getElementById('dp-thumbnails');
+            thumbnailsDiv.innerHTML = '';
+            const renders = data.renders || [];
+            const videos = data.videos || [];
+            
+            if (renders.length > 0 || videos.length > 0) {
+                rendersDiv.style.display = 'block';
+                renders.forEach(url => {
+                    const img = document.createElement('img'); img.className = 'render-thumbnail'; img.src = url; thumbnailsDiv.appendChild(img);
+                });
+                videos.forEach(url => {
+                    const div = document.createElement('div'); div.className = 'render-thumbnail video-thumbnail';
+                    div.innerHTML = '<span>▶</span>'; thumbnailsDiv.appendChild(div);
+                });
+            } else {
+                rendersDiv.style.display = 'none';
+            }
+
+            const canvas = document.getElementById('dp-canvas');
+            const ctx = canvas.getContext('2d');
+            let imgSrc = data._dataURL || data.preview;
+            
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (imgSrc) {
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = imgSrc;
+            } else {
+                ctx.fillStyle = '#fff';
+                ctx.font = '16px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('НЕТ ПРЕВЬЮ', canvas.width/2, canvas.height/2);
+            }
+
+            document.getElementById('detail-preview-modal').classList.add('active');
+        }
+
+        function previewCurrentDetail() { openDetailPreview(null, true); }
+        function closeDetailPreview() { document.getElementById('detail-preview-modal').classList.remove('active'); }
+
         // Инициализация
-        renderList();
         resetForm();
     </script>
 </body>

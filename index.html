@@ -6,6 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     <title data-i18n="pageTitle">Архив моделей</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%23050508'/><rect x='18' y='18' width='64' height='64' rx='6' fill='none' stroke='%233eff6e' stroke-width='6'/><rect x='38' y='18' width='24' height='18' fill='%233eff6e'/></svg>">
     <meta property="og:title" content="Архив 3D моделей — ретро портфолио">
@@ -394,6 +395,19 @@
         })();
     </script>
     <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+    <!-- ===== МОДАЛКА ПРЕДУПРЕЖДЕНИЯ 18+ ===== -->
+    <div id="nsfw-warning-modal" class="render-modal" style="display: none;">
+        <div class="modal-overlay" id="nsfw-overlay"></div>
+        <div class="modal-content order-modal-content" style="max-width: 450px; text-align: center; border-color: #ff3333; box-shadow: 8px 8px 0 #330000; z-index: 10005;">
+            <button class="modal-close" id="nsfw-close">✕</button>
+            <h2 style="color: #ff3333; text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem;" data-i18n="nsfwTitle">⚠️ ВНИМАНИЕ: 18+</h2>
+            <p style="color: var(--text-secondary); margin-top: 1rem;" data-i18n="nsfwText">Этот контент может содержать материалы для взрослых. Вы подтверждаете, что вам исполнилось 18 лет?</p>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;">
+                <button id="nsfw-accept" class="order-submit-btn" style="background: #ff3333; color: #000; border-color: #ff3333;" data-i18n="nsfwAccept">МНЕ 18, ОТКРЫТЬ</button>
+                <button id="nsfw-cancel" class="order-submit-btn dt-btn-secondary" data-i18n="nsfwCancel">ОТМЕНА</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
