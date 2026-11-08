@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <title>Архив моделей</title>
+    <title data-i18n="pageTitle">Архив моделей</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%23050508'/><rect x='18' y='18' width='64' height='64' rx='6' fill='none' stroke='%233eff6e' stroke-width='6'/><rect x='38' y='18' width='24' height='18' fill='%233eff6e'/></svg>">
     <meta property="og:title" content="Архив 3D моделей — ретро портфолио">
     <meta property="og:description" content="Мой архив 3D моделей с анимацией, поиском и ретро-стилем.">
@@ -16,7 +16,7 @@
 
     <script src="version.js"></script>
 
-    <!-- ===== ДИАГНОСТИКА: пишем всё важное и в консоль, и на экран ===== -->
+    <!-- ===== ДИАГНОСТИКА ===== -->
     <script>
         (function() {
             'use strict';
@@ -53,7 +53,6 @@
                     window.__SITE_ERRORS__.push(text);
                 }
                 render();
-                // при ошибке на старте сразу показываем панель
                 if (level === 'error' && errorCount === 1) {
                     document.addEventListener('DOMContentLoaded', function() {
                         var p = document.getElementById('console-panel');
@@ -77,8 +76,7 @@
             window.addEventListener('unhandledrejection', function(e) {
                 addEntry('error', 'ОТКЛОНЁННЫЙ PROMISE: ' + toText(e.reason));
             });
-            addEntry('log', 'ДИАГНОСТИКА АКТИВНА — все сообщения дублируются на экран (кнопка КОНСОЛЬ в HUD)');
-            // панель появится только после разбора DOM — перерисовываем журнал
+            addEntry('log', 'ДИАГНОСТИКА АКТИВНА');
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', render);
             } else {
@@ -96,7 +94,6 @@
                 document.documentElement.classList.add('theme-green');
             }
             document.documentElement.style.backgroundColor = '#050508';
-            // document.body в <head> ещё не существует — фон body наживём после разбора разметки
             if (document.body) {
                 document.body.style.backgroundColor = '#050508';
             } else {
@@ -125,7 +122,7 @@
                 <span class="terminal-prompt">></span>
                 <span class="terminal-cursor">█</span>
             </div>
-            <div class="terminal-status" id="terminal-status">>> ИНИЦИАЛИЗАЦИЯ...</div>
+            <div class="terminal-status" id="terminal-status" data-i18n="initStatus">>> ИНИЦИАЛИЗАЦИЯ...</div>
         </div>
     </div>
 
@@ -137,27 +134,30 @@
         </div>
         <div class="hud-ticker" id="hud-ticker">
             <div class="ticker-track" id="ticker-track">
-                <span class="ticker-seg">ИНИЦИАЛИЗАЦИЯ АРХИВА...</span>
-                <span class="ticker-seg">ИНИЦИАЛИЗАЦИЯ АРХИВА...</span>
+                <span class="ticker-seg" data-i18n="initTicker">ИНИЦИАЛИЗАЦИЯ АРХИВА...</span>
+                <span class="ticker-seg" data-i18n="initTicker">ИНИЦИАЛИЗАЦИЯ АРХИВА...</span>
             </div>
         </div>
         <div class="hud-right">
             <span class="hud-fps" id="hud-fps">-- FPS</span>
-            <button class="hud-btn" id="console-toggle" title="Показать / скрыть системный журнал">КОНСОЛЬ</button>
+            <button class="hud-btn" id="console-toggle" data-i18n="hudConsole">КОНСОЛЬ</button>
+            <button class="hud-btn" id="lang-toggle" title="Switch Language / Сменить язык">EN</button>
             <button class="hud-btn" id="sound-toggle" title="Включить / выключить звук">🔊</button>
         </div>
     </div>
+    
     <!-- ===== ТУМАН ПЕРЕХОДА ===== -->
     <div class="dt-fog-overlay" id="dt-fog-overlay"></div>
+    
     <div id="dt-accept-overlay" class="dt-accept-overlay">
-        <div class="dt-accept-text">СОСУД ПРИНЯТ</div>
-        <div class="dt-accept-sub">>> СИСТЕМА АРХИВА ПРИВЕТСТВУЕТ ТЕБЯ <<</div>
+        <div class="dt-accept-text" data-i18n="acceptTitle">СОСУД ПРИНЯТ</div>
+        <div class="dt-accept-sub" data-i18n="acceptSub">>> СИСТЕМА АРХИВА ПРИВЕТСТВУЕТ ТЕБЯ <<</div>
     </div>
 
     <!-- ===== ЭКРАННЫЙ СИСТЕМНЫЙ ЖУРНАЛ ===== -->
     <div id="console-panel" class="console-panel" aria-live="polite">
         <div class="console-panel-head">
-            <span class="console-panel-title">> СИСТЕМНЫЙ ЖУРНАЛ</span>
+            <span class="console-panel-title" data-i18n="consoleTitle">> СИСТЕМНЫЙ ЖУРНАЛ</span>
             <button class="hud-btn" id="console-close">✕</button>
         </div>
         <div id="console-output" class="console-output"></div>
@@ -171,87 +171,87 @@
 
         <header id="main-header">
             <div class="header-container">
-                <h1 class="header-title glitch-title" data-text="АРХИВ">АРХИВ<span class="cursor">█</span></h1>
-                <button id="order-btn" class="order-btn">ЗАКАЗАТЬ 3D-ГИФТ</button>
+                <h1 class="header-title glitch-title" data-text="АРХИВ"><span data-i18n="headerTitle">АРХИВ</span><span class="cursor">█</span></h1>
+                <button id="order-btn" class="order-btn" data-i18n="orderBtn">ЗАКАЗАТЬ 3D-ГИФТ</button>
             </div>
-            <p>По приколу мой архив всяких моих работ 3D</p>
+            <p data-i18n="headerSub">По приколу мой архив всяких моих работ 3D</p>
         </header>
 
         <div id="gallery-container">
             <main>
                 <section class="description">
-                    <h2>> О сайте</h2>
-                    <p>Сделал я этот сайт специально для того чтобы хранить свои 3D модели, так же будут разные пополнения или типа того, МОЙ АРХИИИИИИИИВ!!</p>
+                    <h2 data-i18n="aboutTitle">> О сайте</h2>
+                    <p data-i18n="aboutText">Сделал я этот сайт специально для того чтобы хранить свои 3D модели, так же будут разные пополнения или типа того, МОЙ АРХИИИИИИИИВ!!</p>
                 </section>
 
-                <!-- ===== ПАНЕЛЬ СТАТИСТИКИ (В СТИЛЕ CHECKPOINT) ===== -->
+                <!-- ===== ПАНЕЛЬ СТАТИСТИКИ ===== -->
                 <section class="checkpoint-panel" id="checkpoint-panel">
                     <div class="cp-head">
                         <span class="cp-badge">CHECKPOINT</span>
-                        <h2 class="cp-title">> ТВОЙ АРХИВ ЗА ВСЁ ВРЕМЯ</h2>
+                        <h2 class="cp-title" data-i18n="cpTitle">> ТВОЙ АРХИВ ЗА ВСЁ ВРЕМЯ</h2>
                     </div>
                     <div class="cp-grid">
                         <div class="cp-card">
                             <span class="cp-num" id="stat-models">0</span>
-                            <span class="cp-label">МОДЕЛЕЙ</span>
+                            <span class="cp-label" data-i18n="cpModels">МОДЕЛЕЙ</span>
                         </div>
                         <div class="cp-card">
                             <span class="cp-num" id="stat-renders">0</span>
-                            <span class="cp-label">РЕНДЕРОВ</span>
+                            <span class="cp-label" data-i18n="cpRenders">РЕНДЕРОВ</span>
                         </div>
                         <div class="cp-card">
                             <span class="cp-num" id="stat-videos">0</span>
-                            <span class="cp-label">ВИДЕО</span>
+                            <span class="cp-label" data-i18n="cpVideos">ВИДЕО</span>
                         </div>
                         <div class="cp-card">
                             <span class="cp-num" id="stat-visits">0</span>
-                            <span class="cp-label">ТВОИХ ВИЗИТОВ</span>
+                            <span class="cp-label" data-i18n="cpVisits">ТВОИХ ВИЗИТОВ</span>
                         </div>
                         <div class="cp-card">
                             <span class="cp-num" id="stat-opens">0</span>
-                            <span class="cp-label">ОТКРЫТИЙ МОДЕЛЕЙ</span>
+                            <span class="cp-label" data-i18n="cpOpens">ОТКРЫТИЙ МОДЕЛЕЙ</span>
                         </div>
                     </div>
                     <div class="cp-foot">
-                        <span class="cp-foot-item">>> СЕССИЯ АКТИВНА</span>
-                        <span class="cp-foot-item" id="cp-level">>> УРОВЕНЬ: НОВИЧОК</span>
-                        <span class="cp-foot-item" id="cp-next">>> СЛЕД. ЧЕКПОИНТ ЧЕРЕЗ 5 ОТКРЫТИЙ</span>
+                        <span class="cp-foot-item" data-i18n="cpSession">>> СЕССИЯ АКТИВНА</span>
+                        <span class="cp-foot-item" id="cp-level" data-i18n="cpLevel">>> УРОВЕНЬ: НОВИЧОК</span>
+                        <span class="cp-foot-item" id="cp-next" data-i18n="cpNext">>> СЛЕД. ЧЕКПОИНТ ЧЕРЕЗ 5 ОТКРЫТИЙ</span>
                     </div>
                 </section>
 
                 <section class="gallery">
-                    <h2>> ДОСТУПНЫЕ МОДЕЛИ</h2>
+                    <h2 data-i18n="galleryTitle">> ДОСТУПНЫЕ МОДЕЛИ</h2>
                     <div class="info-bar">
-                        <span id="model-count">Всего: 0</span>
+                        <span id="model-count" data-i18n="galleryTotal">Всего: 0</span>
                     </div>
                     <div id="tag-filters" class="tag-filters"></div>
                     <div class="sort-bar">
-                        <label for="sort-select">Сортировка:</label>
+                        <label for="sort-select" data-i18n="sortLabel">Сортировка:</label>
                         <select id="sort-select" class="sort-select">
-                            <option value="random" selected>Случайно</option>
-                            <option value="default">Без сортировки</option>
-                            <option value="name-asc">По имени (А→Я)</option>
-                            <option value="name-desc">По имени (Я→А)</option>
+                            <option value="random" selected data-i18n="sortRandom">Случайно</option>
+                            <option value="default" data-i18n="sortDefault">Без сортировки</option>
+                            <option value="name-asc" data-i18n="sortNameAsc">По имени (А→Я)</option>
+                            <option value="name-desc" data-i18n="sortNameDesc">По имени (Я→А)</option>
                         </select>
                     </div>
                     <div class="search-bar">
-                        <input type="text" id="search-input" placeholder="🔍 ПОИСК ПО НАЗВАНИЮ ИЛИ ОПИСАНИЮ..." class="search-input">
+                        <input type="text" id="search-input" placeholder="🔍 ПОИСК ПО НАЗВАНИЮ ИЛИ ОПИСАНИЮ..." class="search-input" data-i18n-placeholder="searchPlaceholder">
                         <button id="clear-search" class="clear-search">✕</button>
                     </div>
                     <div id="models-grid" class="models-grid">
-                        <div class="loading">ЗАГРУЗКА ДАННЫХ...</div>
+                        <div class="loading" data-i18n="loadingData">ЗАГРУЗКА ДАННЫХ...</div>
                     </div>
                     <div id="pagination-controls" class="pagination-controls">
                         <button id="prev-page" class="pagination-btn" disabled>◀</button>
-                        <span id="page-info">Страница 1 из 1</span>
+                        <span id="page-info" data-i18n="pageInfo">Страница 1 из 1</span>
                         <button id="next-page" class="pagination-btn" disabled>▶</button>
                     </div>
                 </section>
             </main>
 
             <header>
-                <h1>>Прочитайте</h1>
-                <p>Все доступные модели вы можете скачать если сам автор или владелец разрешил их вам скачивать через сам сайт, пожалуйста уважайте чужое творчество, так же будут оставлены ссылки на автора персонажа или модели</p>
+                <h1 data-i18n="readTitle">>Прочитайте</h1>
+                <p data-i18n="readText">Все доступные модели вы можете скачать если сам автор или владелец разрешил их вам скачивать через сам сайт, пожалуйста уважайте чужое творчество, так же будут оставлены ссылки на автора персонажа или модели</p>
             </header>
         </div>
 
@@ -259,15 +259,15 @@
             <div class="model-detail-wrapper">
                 <div class="model-detail-header">
                     <div class="detail-nav">
-                        <button id="back-to-gallery" class="back-link">← Назад в галерею</button>
+                        <button id="back-to-gallery" class="back-link" data-i18n="backToGallery">← Назад в галерею</button>
                     </div>
-                    <h1 id="detail-title">ЗАГРУЗКА МОДЕЛИ...</h1>
+                    <h1 id="detail-title" data-i18n="detailLoading">ЗАГРУЗКА МОДЕЛИ...</h1>
                 </div>
                 <div class="model-detail-content">
                     <div class="animation-area">
                         <canvas id="animation-canvas" width="400" height="400"></canvas>
                         <div id="frame-loader" class="frame-loader" style="display: none;">
-                            <span>ЗАГРУЗКА КАДРОВ</span>
+                            <span data-i18n="loaderText">ЗАГРУЗКА КАДРОВ</span>
                             <div class="loader-progress"><div class="loader-fill"></div></div>
                             <span id="loader-percent">0%</span>
                         </div>
@@ -277,17 +277,17 @@
                         <div id="model-tags" class="tags"></div>
                         <p id="model-description" class="description-text"></p>
 
-                        <!-- ГАЛЕРЕЯ РЕНДЕРОВ (только миниатюры) -->
+                        <!-- ГАЛЕРЕЯ РЕНДЕРОВ -->
                         <div id="render-gallery" class="render-gallery" style="display: none;">
-                            <h3 style="font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">>> РЕНДЕРЫ</h3>
+                            <h3 style="font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;" data-i18n="rendersTitle">>> РЕНДЕРЫ</h3>
                             <div id="render-thumbnails" class="render-thumbnails"></div>
                         </div>
 
                         <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
-                            <button id="download-btn" class="download-button" style="display: none;">СКАЧАТЬ МОДЕЛЬ</button>
-                            <button id="share-btn" class="share-button">ПОДЕЛИТЬСЯ</button>
+                            <button id="download-btn" class="download-button" style="display: none;" data-i18n="btnDownload">СКАЧАТЬ МОДЕЛЬ</button>
+                            <button id="share-btn" class="share-button" data-i18n="btnShare">ПОДЕЛИТЬСЯ</button>
                         </div>
-                        <div id="share-message" class="share-message" style="display: none;">Ссылка скопирована!</div>
+                        <div id="share-message" class="share-message" style="display: none;" data-i18n="shareMsg">Ссылка скопирована!</div>
                     </div>
                 </div>
             </div>
@@ -297,14 +297,14 @@
         <footer id="retro-footer">
             <div class="footer-marquee">
                 <div class="footer-marquee-track">
-                    <span>★ GODOINED ARCHIVE ★ СПАСИБО ЗА ПОСЕЩЕНИЕ ★ НОВЫЕ МОДЕЛИ СКОРО ★ УВАЖАЙ ЧУЖОЕ ТВОРЧЕСТВО ★ СДЕЛАНО С ЛЮБОВЬЮ К РЕТРО ★ </span>
-                    <span>★ GODOINED ARCHIVE ★ СПАСИБО ЗА ПОСЕЩЕНИЕ ★ НОВЫЕ МОДЕЛИ СКОРО ★ УВАЖАЙ ЧУЖОЕ ТВОРЧЕСТВО ★ СДЕЛАНО С ЛЮБОВЬЮ К РЕТРО ★ </span>
+                    <span data-i18n="footerMarquee">★ GODOINED ARCHIVE ★ СПАСИБО ЗА ПОСЕЩЕНИЕ ★ НОВЫЕ МОДЕЛИ СКОРО ★ УВАЖАЙ ЧУЖОЕ ТВОРЧЕСТВО ★ СДЕЛАНО С ЛЮБОВЬЮ К РЕТРО ★ </span>
+                    <span data-i18n="footerMarquee">★ GODOINED ARCHIVE ★ СПАСИБО ЗА ПОСЕЩЕНИЕ ★ НОВЫЕ МОДЕЛИ СКОРО ★ УВАЖАЙ ЧУЖОЕ ТВОРЧЕСТВО ★ СДЕЛАНО С ЛЮБОВЬЮ К РЕТРО ★ </span>
                 </div>
             </div>
             <div class="footer-row">
-                <span id="footer-status">СИСТЕМА: В СЕТИ</span>
-                <span id="footer-uptime">АПТАЙМ: 00:00:00</span>
-                <span id="footer-version">ВЕРСИЯ: 2.4</span>
+                <span id="footer-status" data-i18n="footerStatus">СИСТЕМА: В СЕТИ</span>
+                <span id="footer-uptime" data-i18n="footerUptime">АПТАЙМ: 00:00:00</span>
+                <span id="footer-version" data-i18n="footerVersion">ВЕРСИЯ: 2.4</span>
             </div>
         </footer>
 
@@ -330,10 +330,7 @@
             <button class="modal-close" id="modal-close">✕</button>
             <button class="modal-nav modal-prev" id="modal-prev">◀</button>
             <button class="modal-nav modal-next" id="modal-next">▶</button>
-            <div class="modal-media-wrapper" id="modal-media-wrapper">
-                <!-- сюда вставляется img или video -->
-            </div>
-            <!-- КАСТОМНЫЙ ПЛЕЕР (скрыт по умолчанию, показывается для видео) -->
+            <div class="modal-media-wrapper" id="modal-media-wrapper"></div>
             <div class="custom-player" id="custom-player" style="display: none;">
                 <div class="player-controls">
                     <button class="player-btn" id="player-play">▶</button>
@@ -360,7 +357,6 @@
         <canvas class="dt-trail-canvas" id="dt-trail-canvas"></canvas>
         <div class="dt-noise"></div>
         <button type="button" class="dt-exit" id="order-modal-close" title="Уйти">✕</button>
-        <!-- ДОБАВИТЬ ПЕРЕД .dt-inner -->
         <div class="dt-soul-pour" id="dt-soul-pour"></div>
         <div class="dt-magic-flash" id="dt-magic-flash"></div>
         <div class="dt-inner">
@@ -368,14 +364,14 @@
         </div>
     </div>
 
-    <!-- Сообщение о временном отключении заказов (показывается при клике на кнопку, если заказы отключены) -->
+    <!-- Сообщение о временном отключении заказов -->
     <div id="orders-disabled-overlay" class="render-modal" style="display: none;">
         <div class="modal-overlay"></div>
         <div class="modal-content order-modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close" id="orders-disabled-close">✕</button>
-            <h2 style="color: var(--text-primary); text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem;">⛔ ЗАКАЗЫ ВРЕМЕННО НЕ ПРИНИМАЮТСЯ</h2>
-            <p style="color: var(--text-secondary); margin-top: 1rem;">Приносим извинения, но сейчас мы не принимаем новые заявки. Загляните позже!</p>
-            <button id="orders-disabled-ok" class="order-submit-btn" style="margin-top: 1.5rem;">ПОНЯТНО</button>
+            <h2 style="color: var(--text-primary); text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem;" data-i18n="ordersDisabledTitle">⛔ ЗАКАЗЫ ВРЕМЕННО НЕ ПРИНИМАЮТСЯ</h2>
+            <p style="color: var(--text-secondary); margin-top: 1rem;" data-i18n="ordersDisabledText">Приносим извинения, но сейчас мы не принимаем новые заявки. Загляните позже!</p>
+            <button id="orders-disabled-ok" class="order-submit-btn" style="margin-top: 1.5rem;" data-i18n="ordersDisabledBtn">ПОНЯТНО</button>
         </div>
     </div>
 
@@ -397,6 +393,7 @@
             document.documentElement.style.backgroundColor = '';
         })();
     </script>
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
     <script src="script.js"></script>
 </body>
 </html>

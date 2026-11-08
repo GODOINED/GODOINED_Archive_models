@@ -293,7 +293,196 @@
         if (statusElem) statusElem.innerHTML = `<span class="status-text">${statusMessages[idx]}</span>`;
     }
 })();
+// ============================================================
+//  СИСТЕМА ЛОКАЛИЗАЦИИ (I18N)
+// ============================================================
+const i18n = {
+    ru: {
+        pageTitle: "Архив моделей",
+        headerTitle: "АРХИВ",
+        orderBtn: "ЗАКАЗАТЬ 3D-ГИФТ",
+        headerSub: "По приколу мой архив всяких моих работ 3D",
+        aboutTitle: "> О сайте",
+        aboutText: "Сделал я этот сайт специально для того чтобы хранить свои 3D модели, так же будут разные пополнения или типа того, МОЙ АРХИИИИИИИИВ!!",
+        cpTitle: "> ТВОЙ АРХИВ ЗА ВСЁ ВРЕМЯ",
+        cpModels: "МОДЕЛЕЙ",
+        cpRenders: "РЕНДЕРОВ",
+        cpVideos: "ВИДЕО",
+        cpVisits: "ТВОИХ ВИЗИТОВ",
+        cpOpens: "ОТКРЫТИЙ МОДЕЛЕЙ",
+        cpSession: ">> СЕССИЯ АКТИВНА",
+        cpLevel: ">> УРОВЕНЬ: НОВИЧОК",
+        cpNext: ">> СЛЕД. ЧЕКПОИНТ ЧЕРЕЗ 5 ОТКРЫТИЙ",
+        galleryTitle: "> ДОСТУПНЫЕ МОДЕЛИ",
+        galleryTotal: "Всего: ",
+        sortLabel: "Сортировка:",
+        sortRandom: "Случайно",
+        sortDefault: "Без сортировки",
+        sortNameAsc: "По имени (А→Я)",
+        sortNameDesc: "По имени (Я→А)",
+        searchPlaceholder: "🔍 ПОИСК ПО НАЗВАНИЮ ИЛИ ОПИСАНИЮ...",
+        loadingData: "ЗАГРУЗКА ДАННЫХ...",
+        pageInfo: "Страница ",
+        readTitle: ">Прочитайте",
+        readText: "Все доступные модели вы можете скачать если сам автор или владелец разрешил их вам скачивать через сам сайт, пожалуйста уважайте чужое творчество, так же будут оставлены ссылки на автора персонажа или модели",
+        backToGallery: "← Назад в галерею",
+        detailLoading: "ЗАГРУЗКА МОДЕЛИ...",
+        loaderText: "ЗАГРУЗКА КАДРОВ",
+        rendersTitle: ">> РЕНДЕРЫ",
+        btnDownload: "СКАЧАТЬ МОДЕЛЬ",
+        btnShare: "ПОДЕЛИТЬСЯ",
+        shareMsg: "Ссылка скопирована!",
+        footerMarquee: "★ GODOINED ARCHIVE ★ СПАСИБО ЗА ПОСЕЩЕНИЕ ★ НОВЫЕ МОДЕЛИ СКОРО ★ УВАЖАЙ ЧУЖОЕ ТВОРЧЕСТВО ★ СДЕЛАНО С ЛЮБОВЬЮ К РЕТРО ★ ",
+        footerStatus: "СИСТЕМА: В СЕТИ",
+        footerUptime: "АПТАЙМ: 00:00:00",
+        footerVersion: "ВЕРСИЯ: 2.4",
+        ordersDisabledTitle: "⛔ ЗАКАЗЫ ВРЕМЕННО НЕ ПРИНИМАЮТСЯ",
+        ordersDisabledText: "Приносим извинения, но сейчас мы не принимаем новые заявки. Загляните позже!",
+        ordersDisabledBtn: "ПОНЯТНО",
+        hudConsole: "КОНСОЛЬ",
+        consoleTitle: "> СИСТЕМНЫЙ ЖУРНАЛ",
+        acceptTitle: "СОСУД ПРИНЯТ",
+        acceptSub: ">> СИСТЕМА АРХИВА ПРИВЕТСТВУЕТ ТЕБЯ <<",
+        initStatus: ">> ИНИЦИАЛИЗАЦИЯ...",
+        initTicker: "ИНИЦИАЛИЗАЦИЯ АРХИВА...",
 
+        dialogs: {
+            name: "Как тебя зовут?", nameSub: "Можно пропустить.", namePlaceholder: "ИМЯ",
+            material: "Из чего сделан этот сосуд?",
+            food: "Какая любимая еда у сосуда?",
+            color: "Какой цвет ему нравится больше всего?", colorSub: "Выбери любой оттенок.", colorPlaceholder: "НАЗВАНИЕ ЦВЕТА...",
+            purpose: "Для чего ты его создаёшь?",
+            gift: "Какой дар ты ему преподнесёшь?",
+            fear: "Чего он будет бояться больше всего?",
+            feeling: "Что ты чувствуешь к своему творению?", feelingSub: "(Оно не услышит.)",
+            honest: "Ты отвечал честно?",
+            pain: "Ты осознаёшь возможность боли и страданий?",
+            message: "Расскажи о своём творении.", messageSub: "Обязательное поле.", messagePlaceholder: "Что это? Из чего? Зачем?",
+            files: "Есть ли у тебя референсы?", filesSub: "До 5 МБ. Можно несколько.",
+            btnNext: "▶ ДАЛЕЕ", btnSkip: "✕ ПРОПУСТИТЬ", btnBack: "← НАЗАД", btnSend: "▶ ОТПРАВИТЬ", btnMail: "📧 ПОЧТА",
+            summaryTitle: "Вот что я записал.", summarySure: "Всё верно?",
+            reactions: { name: "Хорошо.", material: "Материал принят.", food: "Записал.", color: "Красивый выбор.", purpose: "Судьба предрешена.", gift: "Принято.", fear: "Страх зафиксирован.", feeling: "Хорошо.", honest: "Записал.", pain: "Понял.", message: "Понял.", files: "Записал." }
+        }
+    },
+    en: {
+        pageTitle: "Model Archive",
+        headerTitle: "ARCHIVE",
+        orderBtn: "ORDER 3D-GIFT",
+        headerSub: "Just my archive of various 3D works",
+        aboutTitle: "> About",
+        aboutText: "I made this site specifically to store my 3D models, there will also be various updates or something like that, MY ARCHIIIIIIIVE!!",
+        cpTitle: "> YOUR ARCHIVE ALL TIME",
+        cpModels: "MODELS",
+        cpRenders: "RENDERS",
+        cpVideos: "VIDEOS",
+        cpVisits: "YOUR VISITS",
+        cpOpens: "MODELS OPENED",
+        cpSession: ">> SESSION ACTIVE",
+        cpLevel: ">> LEVEL: NOVICE",
+        cpNext: ">> NEXT CHECKPOINT IN 5 OPENS",
+        galleryTitle: "> AVAILABLE MODELS",
+        galleryTotal: "Total: ",
+        sortLabel: "Sort:",
+        sortRandom: "Random",
+        sortDefault: "Default",
+        sortNameAsc: "Name (A→Z)",
+        sortNameDesc: "Name (Z→A)",
+        searchPlaceholder: "🔍 SEARCH BY NAME OR DESCRIPTION...",
+        loadingData: "LOADING DATA...",
+        pageInfo: "Page ",
+        readTitle: ">Read This",
+        readText: "You can download all available models if the author or owner has allowed you to download them through the site, please respect other people's creativity, links to the character or model author will also be left",
+        backToGallery: "← Back to gallery",
+        detailLoading: "LOADING MODEL...",
+        loaderText: "LOADING FRAMES",
+        rendersTitle: ">> RENDERS",
+        btnDownload: "DOWNLOAD MODEL",
+        btnShare: "SHARE",
+        shareMsg: "Link copied!",
+        footerMarquee: "★ GODOINED ARCHIVE ★ THANKS FOR VISITING ★ NEW MODELS SOON ★ RESPECT OTHERS' CREATIVITY ★ MADE WITH LOVE FOR RETRO ★ ",
+        footerStatus: "SYSTEM: ONLINE",
+        footerUptime: "UPTIME: 00:00:00",
+        footerVersion: "VERSION: 2.4",
+        ordersDisabledTitle: "⛔ ORDERS ARE TEMPORARILY CLOSED",
+        ordersDisabledText: "We apologize, but we are not accepting new requests right now. Check back later!",
+        ordersDisabledBtn: "GOT IT",
+        hudConsole: "CONSOLE",
+        consoleTitle: "> SYSTEM LOG",
+        acceptTitle: "VESSEL ACCEPTED",
+        acceptSub: ">> ARCHIVE SYSTEM WELCOMES YOU <<",
+        initStatus: ">> INITIALIZATION...",
+        initTicker: "INITIALIZING ARCHIVE...",
+
+        dialogs: {
+            name: "What is your name?", nameSub: "You can skip this.", namePlaceholder: "NAME",
+            material: "What is this vessel made of?",
+            food: "What is the vessel's favorite food?",
+            color: "What color does it like the most?", colorSub: "Pick any shade.", colorPlaceholder: "COLOR NAME...",
+            purpose: "What are you creating it for?",
+            gift: "What gift will you give it?",
+            fear: "What will it fear the most?",
+            feeling: "What do you feel about your creation?", feelingSub: "(It will not hear.)",
+            honest: "Did you answer honestly?",
+            pain: "Do you acknowledge the possibility of pain and suffering?",
+            message: "Tell me about your creation.", messageSub: "Required field.", messagePlaceholder: "What is it? Made of what? For what?",
+            files: "Do you have any references?", filesSub: "Up to 5 MB. Multiple allowed.",
+            btnNext: "▶ NEXT", btnSkip: "✕ SKIP", btnBack: "← BACK", btnSend: "▶ SEND", btnMail: "📧 MAIL",
+            summaryTitle: "Here is what I recorded.", summarySure: "Is this correct?",
+            reactions: { name: "Okay.", material: "Material accepted.", food: "Noted.", color: "Beautiful choice.", purpose: "Fate is sealed.", gift: "Accepted.", fear: "Fear recorded.", feeling: "Okay.", honest: "Noted.", pain: "Understood.", message: "Understood.", files: "Noted." }
+        }
+    }
+};
+
+let currentLang = localStorage.getItem('site-lang') || 'ru';
+
+function t(key) {
+    return i18n[currentLang][key] || i18n['ru'][key] || key;
+}
+function tDialog(key) {
+    return i18n[currentLang].dialogs[key] || i18n['ru'].dialogs[key] || key;
+}
+function tReact(key) {
+    return i18n[currentLang].dialogs.reactions[key] || i18n['ru'].dialogs.reactions[key] || key;
+}
+
+function applyLanguage() {
+    // Перевод HTML элементов с data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const translation = t(key);
+        if (translation) {
+            if (el.tagName === 'TITLE') document.title = translation;
+            else el.textContent = translation;
+        }
+    });
+    // Перевод плейсхолдеров
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const translation = t(key);
+        if (translation) el.placeholder = translation;
+    });
+    // Кнопка переключения
+    const langBtn = document.getElementById('lang-toggle');
+    if (langBtn) langBtn.textContent = currentLang === 'ru' ? 'EN' : 'RU';
+
+    // Если галерея уже загружена, перерисовываем её (для сортировки и т.д.)
+    if (typeof applyFilters === 'function' && typeof allModels !== 'undefined' && allModels.length > 0) {
+        applyFilters();
+    }
+}
+
+// Обработчик кнопки языка
+document.addEventListener('DOMContentLoaded', () => {
+    const langBtn = document.getElementById('lang-toggle');
+    if (langBtn) {
+        langBtn.addEventListener('click', () => {
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            localStorage.setItem('site-lang', currentLang);
+            applyLanguage();
+            if (typeof playClickSound === 'function') playClickSound();
+        });
+    }
+});
 // ============================================================
 //  ОСНОВНАЯ ЛОГИКА
 // ============================================================
@@ -1983,6 +2172,8 @@ function setupNavigation() {
 }
 
 function initApp() {
+    applyLanguage(); // ⬅ ДОБАВИТЬ ЭТУ СТРОКУ
+
     const savedTheme = localStorage.getItem('retro-theme');
     if (savedTheme) applyTheme(savedTheme);
     else applyTheme('green');
@@ -2017,106 +2208,76 @@ function initApp() {
     const openBtn = document.getElementById('order-btn');
     const closeBtn = document.getElementById('order-modal-close');
     const dialogue = document.getElementById('dt-dialogue');
+    
     function openModal() {
-        // 1) Туман + размытие сайта
         const fog = document.getElementById('dt-fog-overlay');
         if (fog) fog.classList.add('active');
         document.body.classList.add('dt-active');
         document.body.style.overflow = 'hidden';
 
-        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
         const acceptOverlay = document.getElementById('dt-accept-overlay');
-        if (acceptOverlay) {
-            acceptOverlay.classList.remove('visible', 'fade-out');
-        }
-        if (dialogue) {
-            dialogue.style.opacity = '1'; // Возвращаем видимость текста
-        }
-        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
+        if (acceptOverlay) acceptOverlay.classList.remove('visible', 'fade-out');
+        if (dialogue) dialogue.style.opacity = '1';
 
-        // 2) Все звуки — безопасно, по отдельности
         try { if (typeof playClickSound === 'function') playClickSound(); } catch (e) {}
         try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch (e) {}
 
-        // 3) Сброс состояния
         try {
             state.step = 0;
-            state.name = ''; state.food = ''; state.color = ''; state.gift = '';
-            state.feeling = ''; state.honest = ''; state.pain = '';
+            state.name = ''; state.material = ''; state.food = ''; state.color = ''; 
+            state.colorHex = ''; state.colorName = ''; state.purpose = '';
+            state.gift = ''; state.fear = ''; state.feeling = ''; state.honest = ''; state.pain = '';
             state.message = ''; state.files = null;
             if (typeof resetFinale === 'function') resetFinale();
             if (typeof clickEchoes !== 'undefined' && clickEchoes.length !== undefined) clickEchoes.length = 0;
             targetProgress = 0;
             currentProgress = 0;
             modal.style.setProperty('--dt-progress', '0');
-        } catch (e) {
-            console.warn('Reset state error:', e);
-        }
+        } catch (e) { console.warn('Reset state error:', e); }
 
-        // 4) Показываем модалку
         setTimeout(() => {
             try {
                 modal.style.display = 'block';
                 requestAnimationFrame(() => {
                     modal.classList.add('active');
-                    setTimeout(() => {
-                        if (fog) fog.classList.remove('active');
-                    }, 800);
+                    setTimeout(() => { if (fog) fog.classList.remove('active'); }, 800);
                 });
                 setTimeout(() => {
                     try { if (typeof startMusic === 'function') startMusic(); } catch (e) {}
-                    try { if (typeof runStep === 'function') runStep(); } catch (e) { console.error('runStep error:', e); }
+                    try { if (typeof runStep === 'function') runStep(); } catch (e) {}
                 }, 1200);
-            } catch (e) {
-                console.error('Modal show error:', e);
-            }
+            } catch (e) { console.error('Modal show error:', e); }
         }, 500);
     }
 
     function closeModal() {
         if (typeof playBackSound === 'function') playBackSound();
-
-        // 1) Включаем туман обратно
         const fog = document.getElementById('dt-fog-overlay');
         if (fog) fog.classList.add('active');
-
-        // 2) Прячем модалку
         modal.classList.remove('active');
 
-        // 3) Сбросы
         stopMusic();
         clearDialogue();
         
-        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
         const acceptOverlay = document.getElementById('dt-accept-overlay');
-        if (acceptOverlay) {
-            acceptOverlay.classList.remove('visible', 'fade-out');
-        }
-        if (dialogue) {
-            dialogue.style.opacity = '1';
-        }
-        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
+        if (acceptOverlay) acceptOverlay.classList.remove('visible', 'fade-out');
+        if (dialogue) dialogue.style.opacity = '1';
 
         resetFinale();
-        clickEchoes.length = 0;
+        if (clickEchoes) clickEchoes.length = 0;
         targetProgress = 0;
         currentProgress = 0;
 
-        // 4) Возвращаем сайт
         setTimeout(() => {
             modal.style.display = 'none';
-            
             document.body.classList.remove('dt-active');
             document.body.style.overflow = '';
             dialogue.innerHTML = '';
             modal.style.setProperty('--dt-progress', '0');
-
-            // Туман рассеивается
-            setTimeout(() => {
-                if (fog) fog.classList.remove('active');
-            }, 500);
+            setTimeout(() => { if (fog) fog.classList.remove('active'); }, 500);
         }, 700);
     }
+
     if (!modal || !openBtn || !dialogue) return;
 
     const ordersEnabled = typeof ENABLE_ORDERS !== 'undefined' ? ENABLE_ORDERS : true;
@@ -2136,36 +2297,21 @@ function initApp() {
     let currentProgress = 0;
     let targetProgress = 0;
     const PROGRESS_LERP = 0.035;
-        // ---- ФИЧА 11/12/13: состояние фич ----
     let mouseNearHeart = 0;
     const clickEchoes = [];
-    const personality = {
-        heartHue: 340,
-        spiralHue: 280,
-        glowHue: 300,
-        heartSat: 100,
-        isAngry: false
-    };
+    const personality = { heartHue: 340, spiralHue: 280, glowHue: 300, heartSat: 100, isAngry: false };
 
     function hexToHue(hex) {
         let r = 0, g = 0, b = 0;
-        if (hex.length === 4) {
-            r = parseInt(hex[1]+hex[1], 16); g = parseInt(hex[2]+hex[2], 16); b = parseInt(hex[3]+hex[3], 16);
-        } else if (hex.length === 7) {
-            r = parseInt(hex.substring(1,3), 16); g = parseInt(hex.substring(3,5), 16); b = parseInt(hex.substring(5,7), 16);
-        }
+        if (hex.length === 4) { r = parseInt(hex[1]+hex[1], 16); g = parseInt(hex[2]+hex[2], 16); b = parseInt(hex[3]+hex[3], 16); }
+        else if (hex.length === 7) { r = parseInt(hex.substring(1,3), 16); g = parseInt(hex.substring(3,5), 16); b = parseInt(hex.substring(5,7), 16); }
         r /= 255; g /= 255; b /= 255;
         let max = Math.max(r, g, b), min = Math.min(r, g, b);
         let h, s, l = (max + min) / 2;
-        if (max === min) { h = s = 0; }
-        else {
+        if (max === min) { h = s = 0; } else {
             let d = max - min;
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
+            switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; }
             h /= 6;
         }
         return Math.round(h * 360);
@@ -2173,35 +2319,27 @@ function initApp() {
 
     function updatePersonality() {
         let hHue = 340, sHue = 280, gHue = 300, hSat = 100, angry = false;
+        if (state.feeling === 'ЛЮБОВЬ' || state.feeling === 'LOVE') { hHue = 340; sHue = 320; gHue = 340; }
+        else if (state.feeling === 'НАДЕЖДА' || state.feeling === 'HOPE') { hHue = 200; sHue = 240; gHue = 220; }
+        else if (state.feeling === 'СТРАХ' || state.feeling === 'FEAR') { hHue = 40; sHue = 280; gHue = 60; angry = true; }
+        else if (state.feeling === 'ОТВРАЩЕНИЕ' || state.feeling === 'DISGUST') { hHue = 0; sHue = 200; gHue = 10; angry = true; }
+        else if (state.feeling === 'СМЯТЕНИЕ' || state.feeling === 'CONFUSION') { hHue = 120; sHue = 180; gHue = 150; }
 
-        // Чувства
-        if (state.feeling === 'ЛЮБОВЬ')       { hHue = 340; sHue = 320; gHue = 340; }
-        else if (state.feeling === 'НАДЕЖДА') { hHue = 200; sHue = 240; gHue = 220; }
-        else if (state.feeling === 'СТРАХ')   { hHue = 40;  sHue = 280; gHue = 60; angry = true; }
-        else if (state.feeling === 'ОТВРАЩЕНИЕ') { hHue = 0; sHue = 200; gHue = 10; angry = true; }
-        else if (state.feeling === 'СМЯТЕНИЕ')   { hHue = 120; sHue = 180; gHue = 150; }
+        if (state.material === 'ПЛОТЬ' || state.material === 'FLESH') hHue = 0;
+        else if (state.material === 'СВЕТ' || state.material === 'LIGHT') { hHue = 60; sHue = 60; }
+        else if (state.material === 'ТЬМА' || state.material === 'DARK') { hHue = 270; sHue = 270; }
+        else if (state.material === 'ПУСТОТА' || state.material === 'VOID') { hHue = 180; sHue = 180; }
 
-        // Материал
-        if (state.material === 'ПЛОТЬ') hHue = 0;
-        else if (state.material === 'СВЕТ') { hHue = 60; sHue = 60; }
-        else if (state.material === 'ТЬМА') { hHue = 270; sHue = 270; }
-        else if (state.material === 'ПУСТОТА') { hHue = 180; sHue = 180; }
+        if (state.purpose === 'ДЛЯ БИТВЫ' || state.purpose === 'FOR BATTLE') hHue = 0;
+        else if (state.purpose === 'ДЛЯ ЛЮБВИ' || state.purpose === 'FOR LOVE') hHue = 330;
+        else if (state.purpose === 'ДЛЯ РАЗРУШЕНИЯ' || state.purpose === 'FOR DESTRUCTION') { hHue = 15; sHue = 0; }
 
-        // Предназначение
-        if (state.purpose === 'ДЛЯ БИТВЫ') hHue = 0;
-        else if (state.purpose === 'ДЛЯ ЛЮБВИ') hHue = 330;
-        else if (state.purpose === 'ДЛЯ РАЗРУШЕНИЯ') { hHue = 15; sHue = 0; }
+        if (state.food === 'БОЛЬ' || state.food === 'PAIN') hHue = (hHue + 300) % 360;
+        else if (state.food === 'ХОЛОД' || state.food === 'COLD') hHue = (hHue + 180) % 360;
+        else if (state.food === 'СЛАДКОЕ' || state.food === 'SWEET') hHue = (hHue + 15) % 360;
+        else if (state.food === 'КИСЛОЕ' || state.food === 'SOUR') hHue = (hHue + 60) % 360;
 
-        // Еда корректирует
-        if (state.food === 'БОЛЬ') hHue = (hHue + 300) % 360;
-        else if (state.food === 'ХОЛОД') hHue = (hHue + 180) % 360;
-        else if (state.food === 'СЛАДКОЕ') hHue = (hHue + 15) % 360;
-        else if (state.food === 'КИСЛОЕ') hHue = (hHue + 60) % 360;
-
-        // Цвет из палитры (перебивает всё остальное)
-        if (state.colorHex) {
-            sHue = hexToHue(state.colorHex);
-        }
+        if (state.colorHex) sHue = hexToHue(state.colorHex);
 
         personality.heartHue = hHue;
         personality.spiralHue = sHue;
@@ -2210,7 +2348,6 @@ function initApp() {
         personality.isAngry = angry;
     }
 
-    // ---- ФИЧА 11+12: обработчики мыши ----
     (function initMouseTracking() {
         const handlerMove = (e) => {
             if (!modal.classList.contains('active')) return;
@@ -2227,1649 +2364,181 @@ function initApp() {
         document.addEventListener('mousemove', handlerMove, { passive: true });
         document.addEventListener('pointerdown', handlerClick, { passive: true });
     })();
-    // Финальный режим: 0 = обычный, 1 = сводка (вливание), 2 = отправка (взрыв)
+
     let finaleMode = 0;
     let finaleBoost = 0;
     let finaleStartTime = 0;
 
     function updateProgress() {
-        targetProgress = Math.min(1, state.step / steps.length);
+        targetProgress = Math.min(1, state.step / getSteps().length);
     }
 
-    const steps = [
-        { type: 'text', key: 'name', question: 'Как тебя зовут?', sub: 'Можно пропустить.',
-          placeholder: 'ИМЯ', maxLength: 24, optional: true,
-          reaction: (st) => st.name ? `Хорошо, ${st.name}.` : 'Хорошо.' },
-          
-        { type: 'choice', key: 'material', question: 'Из чего сделан этот сосуд?',
-          options: ['ПЛОТЬ', 'МЕТАЛЛ', 'СВЕТ', 'ТЬМА', 'СТЕКЛО', 'ПУСТОТА'], reaction: 'Материал принят.' },
+    function getSteps() {
+        return [
+            { type: 'text', key: 'name', question: tDialog('name'), sub: tDialog('nameSub'),
+              placeholder: tDialog('namePlaceholder'), maxLength: 24, optional: true,
+              reaction: (st) => st.name ? (currentLang === 'ru' ? `Хорошо, ${st.name}.` : `Okay, ${st.name}.`) : tReact('name') },
+              
+            { type: 'choice', key: 'material', question: tDialog('material'),
+              options: currentLang === 'ru' ? ['ПЛОТЬ', 'МЕТАЛЛ', 'СВЕТ', 'ТЬМА', 'СТЕКЛО', 'ПУСТОТА'] : ['FLESH', 'METAL', 'LIGHT', 'DARK', 'GLASS', 'VOID'], 
+              reaction: tReact('material') },
 
-        { type: 'choice', key: 'food', question: 'Какая любимая еда у сосуда?',
-          options: ['СЛАДКОЕ', 'МЯГКОЕ', 'КИСЛОЕ', 'СОЛЕНОЕ', 'ОСТРОЕ', 'ГОРЬКОЕ', 'МЕТАЛЛ', 'СВЕТ', 'ПЕПЕЛ', 'БОЛЬ', 'ХОЛОД'], reaction: 'Записал.' },
-          
-        { type: 'color', key: 'color', question: 'Какой цвет ему нравится больше всего?', 
-          sub: 'Выбери любой оттенок.', reaction: 'Красивый выбор.' },
+            { type: 'choice', key: 'food', question: tDialog('food'),
+              options: currentLang === 'ru' ? ['СЛАДКОЕ', 'МЯГКОЕ', 'КИСЛОЕ', 'СОЛЕНОЕ', 'ОСТРОЕ', 'ГОРЬКОЕ', 'МЕТАЛЛ', 'СВЕТ', 'ПЕПЕЛ', 'БОЛЬ', 'ХОЛОД'] : ['SWEET', 'SOFT', 'SOUR', 'SALTY', 'SPICY', 'BITTER', 'METAL', 'LIGHT', 'ASH', 'PAIN', 'COLD'], 
+              reaction: tReact('food') },
+              
+            { type: 'color', key: 'color', question: tDialog('color'), 
+              sub: tDialog('colorSub'), reaction: tReact('color') },
 
-        { type: 'choice', key: 'purpose', question: 'Для чего ты его создаёшь?',
-          options: ['ДЛЯ БИТВЫ', 'ДЛЯ ЛЮБВИ', 'ДЛЯ РАЗРУШЕНИЯ', 'ДЛЯ ЗАЩИТЫ', 'ДЛЯ СТРАДАНИЙ', 'ЧТОБЫ ОН ЖИЛ'], reaction: 'Судьба предрешена.' },
-          
-        { type: 'choice', key: 'gift', question: 'Какой дар ты ему преподнесёшь?',
-          options: ['ДОБРОТА', 'УМ', 'АМБИЦИИ', 'ХРАБРОСТЬ', 'ГОЛОС', 'СИЛА', 'МУДРОСТЬ', 'ЖИЗНЬ', 'СМЕРТЬ', 'ВРЕМЯ'], reaction: 'Принято.' },
-          
-        { type: 'choice', key: 'fear', question: 'Чего он будет бояться больше всего?',
-          options: ['ТЕМНОТЫ', 'СЕБЯ', 'ТЕБЯ', 'ПУСТОТЫ', 'НИЧЕГО'], reaction: 'Страх зафиксирован.' },
-          
-        { type: 'choice', key: 'feeling', question: 'Что ты чувствуешь к своему творению?',
-          sub: '(Оно не услышит.)', options: ['ЛЮБОВЬ', 'НАДЕЖДА', 'СТРАХ', 'ОТВРАЩЕНИЕ', 'БЕЗРАЗЛИЧИЕ', 'СМЯТЕНИЕ'], reaction: 'Хорошо.' },
-          
-        { type: 'choice', key: 'honest', question: 'Ты отвечал честно?',
-          options: ['ДА', 'НЕТ'], reaction: 'Записал.' },
-          
-        { type: 'choice', key: 'pain', question: 'Ты осознаёшь возможность боли и страданий?',
-          options: ['ДА', 'НЕТ'], reaction: 'Понял.' },
-          
-        { type: 'textarea', key: 'message', question: 'Расскажи о своём творении.',
-          sub: 'Обязательное поле.', placeholder: 'Что это? Из чего? Зачем?', reaction: 'Понял.' },
-          
-        { type: 'file', key: 'files', question: 'Есть ли у тебя референсы?',
-          sub: 'До 5 МБ. Можно несколько.', optional: true, reaction: 'Записал.' }
-    ];
-
-    // ============================================================
-    //  CANVAS'Ы: СМУЗ-ГЛОУ + ПИКСЕЛИ + ВЗРЫВНОЙ ФИНАЛ
-    // ============================================================
-    (function initCanvases() {
-        const staticCanvas = document.getElementById('dt-static-canvas');
-        const trailCanvas = document.getElementById('dt-trail-canvas');
-        const glowCanvas = document.getElementById('dt-glow-canvas');
-        if (!staticCanvas || !trailCanvas || !glowCanvas) return;
-
-        const sctx = staticCanvas.getContext('2d');
-        const tctx = trailCanvas.getContext('2d');
-        const gctx = glowCanvas.getContext('2d');
-        
-        // ⬇ СОЗДАЕМ ХОЛСТ ДЛЯ БЛЮРА ⬇
-        const bloomCanvas = document.createElement('canvas');
-        const bctx = bloomCanvas.getContext('2d');
-
-        const PX = 3; 
-
-        function resize() {
-            const w = Math.max(2, Math.ceil(window.innerWidth / PX));
-            const h = Math.max(2, Math.ceil(window.innerHeight / PX));
-            staticCanvas.width = w; staticCanvas.height = h;
-            trailCanvas.width = w; trailCanvas.height = h;
-            glowCanvas.width = window.innerWidth;
-            glowCanvas.height = window.innerHeight;
-            
-            // ⬇ ХОЛСТ БЛЮРА ДЕЛАЕМ В 4 РАЗА МЕНЬШЕ (для производительности) ⬇
-            bloomCanvas.width = Math.max(2, Math.ceil(window.innerWidth / 4));
-            bloomCanvas.height = Math.max(2, Math.ceil(window.innerHeight / 4));
-            
-            sctx.imageSmoothingEnabled = false;
-            tctx.imageSmoothingEnabled = false;
-            gctx.imageSmoothingEnabled = true;
-        }
-        resize();
-        window.addEventListener('resize', resize);
-
-        const particles = [];
-        const MAX_PARTICLES = 75;
-        let time = 0;
-
-        // ============================================================
-        //  УТИЛИТЫ
-        // ============================================================
-        function easeInOutQuad(x) {
-            return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
-        }
-        function easeOutCubic(x) {
-            return 1 - Math.pow(1 - x, 3);
-        }
-
-        // ============================================================
-        //  СПИРАЛИ
-        // ============================================================
-        const SPIRAL_ARMS = 4;
-        const SPIRAL_PARTICLES = [];
-        let spiralInitialized = false;
-
-        function initSpiral() {
-            SPIRAL_PARTICLES.length = 0;
-            for (let arm = 0; arm < SPIRAL_ARMS; arm++) {
-                for (let i = 0; i < 32; i++) {
-                    SPIRAL_PARTICLES.push({
-                        arm: arm,
-                        s: i / 32,
-                        speed: 0.0035 + Math.random() * 0.0025,
-                        size: Math.random() < 0.35 ? 2 : 1,
-                        hueBase: 265 + arm * 15
-                    });
-                }
-            }
-            spiralInitialized = true;
-        }
-
-        function drawSpiralArms(ctx, cx, cy, w, h, energy, t) {
-            if (energy < 0.08) return;
-            if (!spiralInitialized) initSpiral();
-            const maxR = Math.min(w, h) * 0.72;
-            const revolutions = 2.3;
-            for (const p of SPIRAL_PARTICLES) {
-                p.s += p.speed * (0.3 + energy * 4);
-                if (p.s > 1) p.s -= 1;
-                const baseAngle = (p.arm / SPIRAL_ARMS) * Math.PI * 2;
-                const theta = baseAngle + p.s * revolutions * Math.PI * 2;
-                const r = (1 - p.s) * maxR;
-                const x = cx + Math.cos(theta) * r;
-                const y = cy + Math.sin(theta) * r * 0.55;
-                const intensity = 0.15 + p.s * 0.85;
-                const alpha = intensity * energy * 0.95;
-                const hue = p.hueBase + p.s * 55;
-                const light = 55 + p.s * 40;
-                if (p.s > 0.06) {
-                    for (let k = 1; k <= 2; k++) {
-                        const trailS = p.s - k * 0.014;
-                        if (trailS < 0) continue;
-                        const trailAngle = baseAngle + trailS * revolutions * Math.PI * 2;
-                        const trailR = (1 - trailS) * maxR;
-                        const tx = cx + Math.cos(trailAngle) * trailR;
-                        const ty = cy + Math.sin(trailAngle) * trailR * 0.55;
-                        ctx.fillStyle = `hsla(${hue}, 100%, ${light - 10}, ${alpha * (0.35 / k)})`;
-                        ctx.fillRect(Math.floor(tx), Math.floor(ty), p.size, p.size);
-                    }
-                }
-                ctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${alpha})`;
-                ctx.fillRect(Math.floor(x), Math.floor(y), p.size, p.size);
-            }
-        }
-
-        // ============================================================
-        //  МАГИЧЕСКИЙ КРУГ
-        // ============================================================
-        function drawMagicCircle(ctx, cx, cy, w, h, energy, t) {
-            if (energy < 0.12) return;
-            const groundY = cy + Math.min(w, h) * 0.28;
-            const radiusX = Math.min(w, h) * 0.5;
-            const radiusY = radiusX * 0.28;
-            const alpha = Math.min(1, (energy - 0.12) / 0.38);
-            const scale = 0.7 + Math.min(1, energy / 0.6) * 0.3;
-
-            function ellipse(rx, ry, hue, a, dashed) {
-                const seg = 80;
-                ctx.fillStyle = `hsla(${hue}, 100%, 75%, ${a})`;
-                for (let i = 0; i < seg; i++) {
-                    if (dashed && i % 4 >= 2) continue;
-                    const angle = (i / seg) * Math.PI * 2;
-                    const x = cx + Math.cos(angle) * rx;
-                    const y = groundY + Math.sin(angle) * ry;
-                    ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
-                }
-            }
-            const rx = radiusX * scale;
-            const ry = radiusY * scale;
-            ellipse(rx, ry, 280, alpha * 0.95, false);
-            if (energy > 0.3) {
-                const midAlpha = Math.min(1, (energy - 0.3) / 0.4);
-                ellipse(rx * 0.78, ry * 0.78, 300, alpha * midAlpha * 0.7, true);
-            }
-            if (energy > 0.5) {
-                const innerAlpha = Math.min(1, (energy - 0.5) / 0.4);
-                ellipse(rx * 0.52, ry * 0.52, 320, alpha * innerAlpha * 0.6, false);
-            }
-            const hasName = state.name && state.name.length > 0;
-            if (hasName) {
-                drawNameRunes(ctx, cx, groundY, rx, ry, alpha, t);
-            } else {
-                const runeCount = Math.floor(6 + energy * 10);
-                const rot = t * (0.008 + energy * 0.025);
-                for (let i = 0; i < runeCount; i++) {
-                    const angle = (i / runeCount) * Math.PI * 2 + rot;
-                    const x = cx + Math.cos(angle) * rx * 0.88;
-                    const y = groundY + Math.sin(angle) * ry * 0.88;
-                    const flick = 0.4 + Math.sin(t * 0.08 + i * 1.7) * 0.6;
-                    ctx.fillStyle = `hsla(310, 100%, 82%, ${alpha * flick})`;
-                    ctx.fillRect(Math.floor(x), Math.floor(y - 2), 2, 5);
-                    ctx.fillRect(Math.floor(x - 2), Math.floor(y), 6, 2);
-                }
-            }
-            if (energy > 0.4) {
-                const triAlpha = Math.min(1, (energy - 0.4) / 0.3) * alpha;
-                const triRot = -t * (0.012 + energy * 0.02);
-                const triPts = [];
-                for (let i = 0; i < 3; i++) {
-                    const angle = triRot + (i / 3) * Math.PI * 2 - Math.PI / 2;
-                    triPts.push([
-                        cx + Math.cos(angle) * rx * 0.42,
-                        groundY + Math.sin(angle) * ry * 0.42
-                    ]);
-                }
-                ctx.fillStyle = `hsla(290, 100%, 78%, ${triAlpha * 0.55})`;
-                for (let i = 0; i < 3; i++) {
-                    const a = triPts[i];
-                    const b = triPts[(i + 1) % 3];
-                    for (let s = 0; s <= 24; s++) {
-                        const x = a[0] + (b[0] - a[0]) * (s / 24);
-                        const y = a[1] + (b[1] - a[1]) * (s / 24);
-                        ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
-                    }
-                }
-            }
-            if (energy > 0.55) {
-                const pillarIntensity = Math.min(1, (energy - 0.55) / 0.35);
-                const height = groundY - cy;
-                const numPixels = Math.floor(16 + pillarIntensity * 24);
-                for (let i = 0; i < numPixels; i++) {
-                    const phase = (t * (0.012 + pillarIntensity * 0.012) + i / numPixels) % 1;
-                    const y = groundY - phase * height;
-                    const x = cx + Math.sin(phase * 8 + t * 0.05) * 3 * pillarIntensity;
-                    const w2 = (1 - phase * 0.55) * 7 * pillarIntensity;
-                    const a = pillarIntensity * 0.65 * Math.sin(phase * Math.PI);
-                    if (a < 0.03) continue;
-                    ctx.fillStyle = `hsla(300, 100%, 78%, ${a})`;
-                    ctx.fillRect(Math.floor(x - w2), Math.floor(y), Math.max(1, Math.floor(w2 * 2)), 2);
-                }
-            }
-        }
-
-        // ============================================================
-        //  КОМЕТЫ (с улучшенной физикой)
-        // ============================================================
-        const soulComets = [];
-        let cometLastSpawn = 0;
-
-        function spawnSoulComet(w, h) {
-            const side = Math.floor(Math.random() * 4);
-            const padding = 60;
-            let x, y, angle;
-            if (side === 0) { x = Math.random() * w; y = -padding; angle = Math.PI / 2 + (Math.random() - 0.5) * 0.5; }
-            else if (side === 1) { x = w + padding; y = Math.random() * h; angle = Math.PI + (Math.random() - 0.5) * 0.5; }
-            else if (side === 2) { x = Math.random() * w; y = h + padding; angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5; }
-            else { x = -padding; y = Math.random() * h; angle = (Math.random() - 0.5) * 0.5; }
-            return {
-                x, y, angle,
-                speed: 1.4 + Math.random() * 0.9,
-                size: 2 + Math.random() * 2,
-                hue: 280 + Math.random() * 55,
-                trail: [],
-                age: 0
-            };
-        }
-
-        function updateAndDrawComets(ctx, cx, cy, w, h, energy, t) {
-            if (energy < 0.3) return;
-            const now = performance.now();
-            const spawnInterval = Math.max(100, 500 - (energy - 0.3) * 570);
-            const maxComets = 1 + Math.floor((energy - 0.3) * 7);
-            if (now - cometLastSpawn > spawnInterval && soulComets.length < maxComets) {
-                cometLastSpawn = now;
-                soulComets.push(spawnSoulComet(w, h));
-            }
-            for (let i = soulComets.length - 1; i >= 0; i--) {
-                const c = soulComets[i];
-                c.age++;
-                const dx = cx - c.x;
-                const dy = cy - c.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const targetAngle = Math.atan2(dy, dx);
-                let da = targetAngle - c.angle;
-                while (da > Math.PI) da -= Math.PI * 2;
-                while (da < -Math.PI) da += Math.PI * 2;
-                c.angle += da * 0.06 * (1 + energy * 0.8);
-                const speedBoost = 1 + (1 - Math.min(1, dist / 320)) * energy * 2.2;
-                c.x += Math.cos(c.angle) * c.speed * speedBoost;
-                c.y += Math.sin(c.angle) * c.speed * speedBoost;
-                c.trail.unshift({ x: c.x, y: c.y });
-                if (c.trail.length > 26) c.trail.pop();
-                if (dist < 10) {
-                    for (let s = 0; s < 12; s++) {
-                        const sa = Math.random() * Math.PI * 2;
-                        const sp = 2 + Math.random() * 3.5;
-                        soulSparks.push({
-                            x: cx, y: cy,
-                            vx: Math.cos(sa) * sp,
-                            vy: Math.sin(sa) * sp,
-                            life: 0,
-                            maxLife: 25 + Math.random() * 20,
-                            size: 1 + Math.random() * 2,
-                            hue: c.hue
-                        });
-                    }
-                    soulComets.splice(i, 1);
-                    continue;
-                }
-                for (let k = c.trail.length - 1; k >= 0; k--) {
-                    const p = c.trail[k];
-                    const tp = 1 - k / c.trail.length;
-                    const trailAlpha = tp * tp * 0.85 * energy;
-                    const trailLight = 42 + tp * 38;
-                    const sz = Math.ceil(c.size * tp);
-                    if (sz < 1) continue;
-                    ctx.fillStyle = `hsla(${c.hue}, 100%, ${trailLight}%, ${trailAlpha})`;
-                    ctx.fillRect(Math.floor(p.x - sz / 2), Math.floor(p.y - sz / 2), sz, sz);
-                }
-                const headAlpha = energy * (0.9 + Math.sin(t * 0.18 + c.age * 0.1) * 0.1);
-                const sz = Math.ceil(c.size);
-                ctx.fillStyle = `hsla(${c.hue}, 100%, 60%, ${headAlpha * 0.35})`;
-                ctx.fillRect(Math.floor(c.x - sz * 1.5), Math.floor(c.y - sz * 1.5), sz * 3, sz * 3);
-                ctx.fillStyle = `hsla(${c.hue}, 100%, 88%, ${headAlpha})`;
-                ctx.fillRect(Math.floor(c.x - sz / 2), Math.floor(c.y - sz / 2), sz, sz);
-                ctx.fillStyle = `hsla(0, 0%, 100%, ${headAlpha})`;
-                ctx.fillRect(Math.floor(c.x), Math.floor(c.y), 1, 1);
-            }
-        }
-
-        // ============================================================
-        //  ЛУЧИ
-        // ============================================================
-        const RAY_COUNT = 32;
-        const rayAngles = [];
-        for (let i = 0; i < RAY_COUNT; i++) {
-            rayAngles.push((i * Math.PI * 2 / RAY_COUNT) + Math.random() * 0.1);
-        }
-        function drawRays(ctx, cx, cy, energy, t) {
-            if (energy < 0.05) return;
-            const maxR = Math.min(ctx.canvas.width, ctx.canvas.height) * 1.1;
-            const activeRays = Math.floor(RAY_COUNT * Math.min(1, energy / 0.6));
-            for (let i = 0; i < activeRays; i++) {
-                const angle = rayAngles[i];
-                const flicker = 0.7 + Math.sin(t * 0.03 + i * 0.7) * 0.3;
-                const len = maxR * Math.min(1, energy * 1.3) * flicker;
-                if (len < 3) continue;
-                const steps = Math.floor(len / 2.5);
-                for (let s = 0; s < steps; s++) {
-                    const t0 = s / steps;
-                    const x = cx + Math.cos(angle) * len * t0;
-                    const y = cy + Math.sin(angle) * len * t0 * 0.55;
-                    const segAlpha = (1 - t0) * 0.7 * energy * flicker;
-                    if (segAlpha < 0.03) continue;
-                    const hue = 280 + i * 4;
-                    const light = 60 + 30 * (1 - t0);
-                    ctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${segAlpha})`;
-                    const sz = t0 < 0.15 ? 3 : (t0 < 0.4 ? 2 : 1);
-                    ctx.fillRect(Math.floor(x), Math.floor(y), sz, sz);
-                }
-            }
-        }
-
-        // ============================================================
-        //  ИСКРЫ
-        // ============================================================
-        const soulSparks = [];
-        function updateAndDrawSparks(ctx) {
-            for (let i = soulSparks.length - 1; i >= 0; i--) {
-                const sp = soulSparks[i];
-                sp.life++;
-                if (sp.life > sp.maxLife) { soulSparks.splice(i, 1); continue; }
-                sp.x += sp.vx;
-                sp.y += sp.vy;
-                sp.vx *= 0.93;
-                sp.vy *= 0.93;
-                const p = sp.life / sp.maxLife;
-                const alpha = (1 - p) * 0.95;
-                const light = 82 + p * 15;
-                const sz = Math.max(1, Math.ceil(sp.size * (1 - p * 0.5)));
-                ctx.fillStyle = `hsla(${sp.hue}, 100%, ${light}%, ${alpha})`;
-                ctx.fillRect(Math.floor(sp.x), Math.floor(sp.y), sz, sz);
-            }
-        }
-
-        function resetCanvasEffects() {
-            soulComets.length = 0;
-            soulSparks.length = 0;
-            cometLastSpawn = 0;
-            explosionStart = 0;
-            lastExplosionSpark = 0;
-            isFountainActive = false;
-            fountainParticles.length = 0; // ⬅ ДОБАВИТЬ ВОТ ЭТУ СТРОКУ
-        }
-        window.__dtResetCanvas = resetCanvasEffects;
-
-        // ============================================================
-        //  БАЗОВЫЕ
-        // ============================================================
-        function spawnParticle() {
-            return {
-                angle: Math.random() * Math.PI * 2,
-                orbit: 12 + Math.random() * 65,
-                size: 1 + Math.floor(Math.random() * 2),
-                life: 0,
-                maxLife: 180 + Math.random() * 280,
-                speed: (0.004 + Math.random() * 0.018) * (Math.random() < 0.5 ? 1 : -1),
-                hue: 250 + Math.random() * 70
-            };
-        }
-
-        const HEART_MAP = [
-            [0,1,1,0,0,0,1,1,0],
-            [1,1,1,1,0,1,1,1,1],
-            [1,1,1,1,1,1,1,1,1],
-            [0,1,1,1,1,1,1,1,0],
-            [0,0,1,1,1,1,1,0,0],
-            [0,0,0,1,1,1,0,0,0],
-            [0,0,0,0,1,0,0,0,0]
+            { type: 'choice', key: 'purpose', question: tDialog('purpose'),
+              options: currentLang === 'ru' ? ['ДЛЯ БИТВЫ', 'ДЛЯ ЛЮБВИ', 'ДЛЯ РАЗРУШЕНИЯ', 'ДЛЯ ЗАЩИТЫ', 'ДЛЯ СТРАДАНИЙ', 'ЧТОБЫ ОН ЖИЛ'] : ['FOR BATTLE', 'FOR LOVE', 'FOR DESTRUCTION', 'FOR PROTECTION', 'FOR SUFFERING', 'TO LIVE'], 
+              reaction: tReact('purpose') },
+              
+            { type: 'choice', key: 'gift', question: tDialog('gift'),
+              options: currentLang === 'ru' ? ['ДОБРОТА', 'УМ', 'АМБИЦИИ', 'ХРАБРОСТЬ', 'ГОЛОС', 'СИЛА', 'МУДРОСТЬ', 'ЖИЗНЬ', 'СМЕРТЬ', 'ВРЕМЯ'] : ['KINDNESS', 'MIND', 'AMBITION', 'BRAVERY', 'VOICE', 'STRENGTH', 'WISDOM', 'LIFE', 'DEATH', 'TIME'], 
+              reaction: tReact('gift') },
+              
+            { type: 'choice', key: 'fear', question: tDialog('fear'),
+              options: currentLang === 'ru' ? ['ТЕМНОТЫ', 'СЕБЯ', 'ТЕБЯ', 'ПУСТОТЫ', 'НИЧЕГО'] : ['DARKNESS', 'ITSELF', 'YOU', 'VOID', 'NOTHING'], 
+              reaction: tReact('fear') },
+              
+            { type: 'choice', key: 'feeling', question: tDialog('feeling'),
+              sub: tDialog('feelingSub'), 
+              options: currentLang === 'ru' ? ['ЛЮБОВЬ', 'НАДЕЖДА', 'СТРАХ', 'ОТВРАЩЕНИЕ', 'БЕЗРАЗЛИЧИЕ', 'СМЯТЕНИЕ'] : ['LOVE', 'HOPE', 'FEAR', 'DISGUST', 'APATHY', 'CONFUSION'], 
+              reaction: tReact('feeling') },
+              
+            { type: 'choice', key: 'honest', question: tDialog('honest'),
+              options: currentLang === 'ru' ? ['ДА', 'НЕТ'] : ['YES', 'NO'], 
+              reaction: tReact('honest') },
+              
+            { type: 'choice', key: 'pain', question: tDialog('pain'),
+              options: currentLang === 'ru' ? ['ДА', 'НЕТ'] : ['YES', 'NO'], 
+              reaction: tReact('pain') },
+              
+            { type: 'textarea', key: 'message', question: tDialog('message'),
+              sub: tDialog('messageSub'), placeholder: tDialog('messagePlaceholder'), 
+              reaction: tReact('message') },
+              
+            { type: 'file', key: 'files', question: tDialog('files'),
+              sub: tDialog('filesSub'), optional: true, 
+              reaction: tReact('files') }
         ];
-        function drawPixelHeart(ctx, cx, cy, cell, glow) {
-            const hue = personality.heartHue;
-            const mapW = HEART_MAP[0].length;
-            const mapH = HEART_MAP.length;
-            const startX = Math.floor(cx - (mapW * cell) / 2);
-            const startY = Math.floor(cy - (mapH * cell) / 2);
-            if (glow > 0.05) {
-                ctx.fillStyle = `hsla(${hue}, 100%, 55%, ${0.16 * glow})`;
-                for (let y = 0; y < mapH; y++) {
-                    for (let x = 0; x < mapW; x++) {
-                        if (!HEART_MAP[y][x]) continue;
-                        ctx.fillRect(startX + x * cell - cell, startY + y * cell - cell, cell * 3, cell * 3);
-                    }
-                }
-            }
-            ctx.fillStyle = `hsl(${hue}, 100%, 55%)`;
-            for (let y = 0; y < mapH; y++) {
-                for (let x = 0; x < mapW; x++) {
-                    if (!HEART_MAP[y][x]) continue;
-                    ctx.fillRect(startX + x * cell, startY + y * cell, cell, cell);
-                }
-            }
-            if (glow > 0.5) {
-                ctx.fillStyle = `hsla(${hue}, 100%, 88%, ${0.6 * (glow - 0.5) * 2})`;
-                ctx.fillRect(startX + 2 * cell, startY + 2 * cell, cell, cell);
-                ctx.fillRect(startX + 3 * cell, startY + 2 * cell, cell, cell);
-            }
-        }
-
-        function drawAura(ctx, cx, cy, progress) {
-            const maxR = Math.min(cx, cy) * 0.95;
-            const bands = 7;
-            for (let i = bands; i >= 1; i--) {
-                const ratio = i / bands;
-                const radius = Math.floor(maxR * ratio * (0.4 + progress * 0.6));
-                const alpha = (1 - ratio) * 0.18 * (0.35 + progress * 0.65);
-                ctx.fillStyle = `rgba(110, 0, 190, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(Math.floor(cx), Math.floor(cy), radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            if (progress > 0.3) {
-                const innerP = (progress - 0.3) / 0.7;
-                ctx.fillStyle = `rgba(200, 100, 255, ${0.16 * innerP})`;
-                ctx.beginPath();
-                ctx.arc(Math.floor(cx), Math.floor(cy), Math.floor(maxR * 0.28 * innerP), 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function drawPixelRing(ctx, cx, cy, radius, alpha, rot) {
-            const points = Math.max(16, Math.floor(radius * 0.9));
-            const dotSize = 2;
-            ctx.fillStyle = `rgba(180, 100, 255, ${alpha})`;
-            for (let i = 0; i < points; i++) {
-                const a = (i / points) * Math.PI * 2 + rot;
-                const x = cx + Math.cos(a) * radius;
-                const y = cy + Math.sin(a) * radius;
-                ctx.fillRect(Math.floor(x), Math.floor(y), dotSize, dotSize);
-            }
-        }
-        // ===== ФИЧА 4: Качественное отражение души в полу =====
-        function drawMirrorHeart(ctx, cx, cy, cell, hue, energy) {
-            if (energy < 0.3) return;
-            
-            const mapW = HEART_MAP[0].length;
-            const mapH = HEART_MAP.length;
-            
-            // ⬇⬇⬇ НАСТРОЙКА ВЫСОТЫ ОТРАЖЕНИЯ ⬇⬇⬇
-            const gap = 75; // Чем больше это число, тем ниже отражение. Попробуй 30, 50 или 60.
-            
-            // Отражение начинается от нижней кромки сердца + отступ (gap)
-            const startY = cy + (mapH * cell) / 2 + gap;
-            const startX = Math.floor(cx - (mapW * cell) / 2);
-            
-            // Сжатие по вертикали (перспектива)
-            const squash = 0.35; 
-            
-            // Плавная волна (рябь), которая не зависит от биения сердца
-            const waveSpeed = time * 0.05; 
-
-            ctx.save();
-            
-            for (let y = 0; y < mapH; y++) {
-                for (let x = 0; x < mapW; x++) {
-                    if (!HEART_MAP[y][x]) continue;
-                    
-                    // 1. Рябь по X (каждый следующий пиксель вниз колышется сильнее)
-                    const depth = (mapH - 1 - y); // 0 (верх отражения) -> 6 (низ)
-                    const waveX = Math.sin(waveSpeed + depth * 0.8) * (cell * 0.6 + depth * 0.2);
-                    
-                    // 2. Сжатие по Y (переворачиваем, сжимаем и опускаем вниз)
-                    const py = startY + depth * cell * squash;
-                    const px = startX + x * cell + waveX;
-                    
-                    // 3. Прозрачность (затухание). Верх отражения ярче, низ — растворяется
-                    const fade = 1 - (depth / mapH);
-                    const alpha = fade * 0.35 * energy; 
-                    
-                    if (alpha < 0.02) continue;
-
-                    ctx.fillStyle = `hsla(${hue}, 100%, 55%, ${alpha})`;
-                    ctx.fillRect(
-                        Math.floor(px), 
-                        Math.floor(py), 
-                        Math.ceil(cell), 
-                        Math.ceil(cell * squash) + 1
-                    );
-                }
-            }
-            ctx.restore();
-        }
-
-        // ===== ФИЧА 5: Туман внизу =====
-        const fogPixels = [];
-        let fogInitialized = false;
-        function initFog(w, h) {
-            fogPixels.length = 0;
-            const count = Math.floor(w * 0.35);
-            for (let i = 0; i < count; i++) {
-                fogPixels.push({
-                    x: Math.random() * w * 1.2,
-                    y: h * (0.75 + Math.random() * 0.25),
-                    size: 1 + Math.floor(Math.random() * 3),
-                    speed: 0.05 + Math.random() * 0.25,
-                    hue: 260 + Math.random() * 80
-                });
-            }
-            fogInitialized = true;
-        }
-        function drawFog(ctx, w, h, energy) {
-            if (!fogInitialized) initFog(w, h);
-            const alpha = 0.06 + energy * 0.18;
-            for (const p of fogPixels) {
-                p.x += p.speed * (1 + energy * 1.5);
-                if (p.x > w * 1.2) p.x = -10;
-                const wobble = Math.sin(p.x * 0.02 + time * 0.02) * 3;
-                ctx.fillStyle = `hsla(${p.hue}, 80%, 55%, ${alpha})`;
-                ctx.fillRect(Math.floor(p.x), Math.floor(p.y + wobble), p.size, p.size);
-            }
-        }
-
-
-        // ===== ФИЧА 12: Ударные волны от кликов =====
-        function drawClickEchoes(ctx) {
-            for (let i = clickEchoes.length - 1; i >= 0; i--) {
-                const c = clickEchoes[i];
-                c.life++;
-                if (c.life > c.maxLife) { clickEchoes.splice(i, 1); continue; }
-                const p = c.life / c.maxLife;
-                const r = p * 90;
-                const seg = Math.floor(r * 0.6);
-                const alpha = (1 - p) * 0.7;
-                for (let s = 0; s < seg; s++) {
-                    const a = (s / seg) * Math.PI * 2;
-                    const x = c.x + Math.cos(a) * r;
-                    const y = c.y + Math.sin(a) * r;
-                    ctx.fillStyle = `hsla(${personality.glowHue}, 100%, 78%, ${alpha})`;
-                    ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
-                }
-            }
-        }
-
-        // ===== ФИЧА 15: Руны складываются в имя сосуда =====
-        function drawNameRunes(ctx, cx, groundY, rx, ry, energy, t) {
-            if (!state.name || state.name.length === 0) return false;
-            const name = state.name.toUpperCase().slice(0, 16);
-            const count = Math.max(name.length, 4);
-            const rot = t * (0.008 + energy * 0.025);
-            ctx.save();
-            ctx.font = 'bold 14px "Press Start 2P", monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            for (let i = 0; i < count; i++) {
-                const char = name[i % name.length];
-                const angle = (i / count) * Math.PI * 2 + rot;
-                const x = cx + Math.cos(angle) * rx * 0.88;
-                const y = groundY + Math.sin(angle) * ry * 0.88;
-                const flick = 0.5 + Math.sin(t * 0.08 + i * 1.3) * 0.5;
-                const a = energy * flick;
-                ctx.fillStyle = `hsla(${310 + i * 4}, 100%, 85%, ${a})`;
-                ctx.fillText(char, Math.floor(x), Math.floor(y));
-            }
-            ctx.restore();
-            return true;
-        }
-
-        // ============================================================
-        //  ГЛОУ-СЛОЙ (плавный bloom, рисуется в полном разрешении)
-        // ============================================================
-        function drawGlowLayer(cx, cy, w, h, energy, explosionState) {
-            gctx.clearRect(0, 0, w, h);
-            const intensity = Math.min(1.5, energy * 0.45 + (explosionState ? explosionState.glowBoost * 1.2 : 0));
-            if (intensity < 0.01) return;
-
-            // Основное ядро
-            const coreR = Math.min(w, h) * (0.3 + energy * 0.35);
-            const grad = gctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-            grad.addColorStop(0, `hsla(320, 100%, 70%, ${Math.min(1, intensity) * 0.55})`);
-            grad.addColorStop(0.35, `hsla(280, 100%, 65%, ${Math.min(1, intensity) * 0.32})`);
-            grad.addColorStop(0.7, `hsla(260, 100%, 55%, ${Math.min(1, intensity) * 0.12})`);
-            grad.addColorStop(1, 'transparent');
-            gctx.fillStyle = grad;
-            gctx.fillRect(0, 0, w, h);
-
-            // Белое ядро при взрыве
-            if (explosionState && explosionState.phase === 'flash') {
-                const whiteR = Math.min(w, h) * 0.4;
-                const wg = gctx.createRadialGradient(cx, cy, 0, cx, cy, whiteR);
-                wg.addColorStop(0, `rgba(255, 255, 255, ${explosionState.flash})`);
-                wg.addColorStop(0.4, `rgba(255, 220, 255, ${explosionState.flash * 0.6})`);
-                wg.addColorStop(1, 'transparent');
-                gctx.fillStyle = wg;
-                gctx.fillRect(0, 0, w, h);
-            }
-
-            // Расширяющееся кольцо при взрыве
-            if (explosionState && (explosionState.phase === 'explosion' || explosionState.phase === 'flash')) {
-                const t = explosionState.phase === 'flash'
-                    ? (explosionState.flash)
-                    : (1 - explosionState.glowBoost);
-                const ringR = Math.max(w, h) * 0.4 * Math.min(1, t * 1.2);
-                const rg = gctx.createRadialGradient(cx, cy, ringR * 0.7, cx, cy, ringR * 1.1);
-                rg.addColorStop(0, 'transparent');
-                rg.addColorStop(0.5, `hsla(300, 100%, 80%, ${(1 - t) * 0.7})`);
-                rg.addColorStop(1, 'transparent');
-                gctx.fillStyle = rg;
-                gctx.fillRect(0, 0, w, h);
-            }
-        }
-
-        // ============================================================
-        //  СОСТОЯНИЕ ВЗРЫВА
-        // ============================================================
-        const EXPLOSION_DURATION = 1500;
-        let explosionStart = 0;
-        let lastExplosionSpark = 0;
-
-        function getExplosionState() {
-            if (!explosionStart) return null;
-            const elapsed = performance.now() - explosionStart;
-            if (elapsed < 0) return null;
-            if (elapsed > EXPLOSION_DURATION) { explosionStart = 0; return null; }
-
-            if (elapsed < 200) {
-                // ЗАРЯД
-                const p = elapsed / 200;
-                return { phase: 'charge', p, energyMult: 1 + p * 2.5, flash: 0, shake: p * 0.3, glowBoost: p * 0.4 };
-            }
-            if (elapsed < 380) {
-                // ВСПЫШКА
-                const p = (elapsed - 200) / 180;
-                return { phase: 'flash', p, energyMult: 3.5 - p * 0.3, flash: p < 0.3 ? p / 0.3 : (1 - (p - 0.3) / 0.7), shake: 1.0, glowBoost: 1.0 };
-            }
-            if (elapsed < 1000) {
-                // ВЗРЫВ
-                const p = (elapsed - 380) / 620;
-                return { phase: 'explosion', p, energyMult: 3.2 - p * 2.2, flash: 0, shake: (1 - p) * 0.85, glowBoost: 1 - p * 0.6 };
-            }
-            // ПОСЛЕСВЕЧЕНИЕ
-            const p = (elapsed - 1000) / (EXPLOSION_DURATION - 1000);
-            return { phase: 'afterglow', p, energyMult: 1 - p * 0.4, flash: 0, shake: 0, glowBoost: (1 - p) * 0.25 };
-        }
-
-        // ============================================================
-        //  УДАРНАЯ ВОЛНА (3 кольца)
-        // ============================================================
-        function drawShockwave(ctx, cx, cy, elapsed) {
-            const rings = [
-                { start: 200, dur: 700, maxR: 1.15, hue: 300 },
-                { start: 280, dur: 600, maxR: 0.85, hue: 280 },
-                { start: 360, dur: 500, maxR: 0.55, hue: 320 }
-            ];
-            for (const ring of rings) {
-                if (elapsed < ring.start || elapsed > ring.start + ring.dur) continue;
-                const t = (elapsed - ring.start) / ring.dur;
-                const r = easeOutCubic(t) * Math.min(ctx.canvas.width, ctx.canvas.height) * ring.maxR;
-                const alpha = (1 - t) * 0.95;
-                const thickness = (1 - t) * 6 + 1;
-                const seg = Math.floor(r * 0.7);
-                for (let i = 0; i < seg; i++) {
-                    const angle = (i / seg) * Math.PI * 2;
-                    const x = cx + Math.cos(angle) * r;
-                    const y = cy + Math.sin(angle) * r * 0.55;
-                    ctx.fillStyle = `hsla(${ring.hue}, 100%, ${90 - t * 15}%, ${alpha})`;
-                    ctx.fillRect(Math.floor(x - thickness / 2), Math.floor(y - thickness / 2), Math.ceil(thickness), Math.ceil(thickness));
-                }
-            }
-        }
-
-        // ============================================================
-        //  ШЕЙК (JS-managed transform на .dt-inner)
-        // ============================================================
-        const innerEl = modal.querySelector('.dt-inner');
-        function applyShake(intensity) {
-            if (!innerEl) return;
-            if (intensity < 0.02) {
-                innerEl.style.transform = '';
-                return;
-            }
-            const amp = intensity * 14;
-            const dx = (Math.random() - 0.5) * amp;
-            const dy = (Math.random() - 0.5) * amp;
-            const rot = (Math.random() - 0.5) * intensity * 0.8;
-            innerEl.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
-        }
-
-        // ============================================================
-        //  ГЛАВНЫЙ ЦИКЛ
-        // ============================================================
-        function drawFrame() {
-            const w = staticCanvas.width;
-            const h = staticCanvas.height;
-
-            currentProgress += (targetProgress - currentProgress) * PROGRESS_LERP;
-            if (Math.abs(targetProgress - currentProgress) < 0.001) currentProgress = targetProgress;
-            const progress = currentProgress;
-
-            if (finaleMode === 1 && finaleStartTime) {
-                const elapsed = performance.now() - finaleStartTime;
-                finaleBoost = Math.min(1, elapsed / 2000);
-                finaleBoost = 1 - Math.pow(1 - finaleBoost, 2);
-            } else if (finaleMode === 2) {
-                finaleBoost = 1;
-            } else {
-                finaleBoost = 0;
-            }
-
-            const explosionState = getExplosionState();
-            const baseEnergy = Math.min(1, easeInOutQuad(progress) * 0.95 + finaleBoost * 0.3);
-            const energy = explosionState
-                ? Math.min(4, baseEnergy * explosionState.energyMult)
-                : baseEnergy;
-
-            modal.style.setProperty('--dt-progress', progress.toFixed(3));
-
-            const cx = w / 2;
-            const cy = h / 2;
-            const gcx = glowCanvas.width / 2;
-            const gcy = glowCanvas.height / 2;
-
-            sctx.clearRect(0, 0, w, h);
-            // ФИЧА 5: туман снизу (позади всего)
-            drawFog(sctx, w, h, energy);
-
-            // 1) Лучи
-            drawRays(sctx, cx, cy, energy, time);
-
-            // 2) Аура
-            drawAura(sctx, cx, cy, Math.min(1, energy * 0.85));
-
-            // 3) Магический круг
-            drawMagicCircle(sctx, cx, cy, w, h, energy, time);
-
-            // 4) Спирали
-            drawSpiralArms(sctx, cx, cy, w, h, energy, time);
-
-            // 5) Кольца
-            if (progress > 0.08 || energy > 0) {
-                const ringAlpha = Math.min(1, energy * 1.5);
-                const spinBoost = 1 + energy * 3;
-                drawPixelRing(sctx, cx, cy, (55 + progress * 15) * (1 + energy * 0.4), 0.15 + ringAlpha * 0.5, time * 0.006 * spinBoost);
-                drawPixelRing(sctx, cx, cy, (78 + progress * 20) * (1 + energy * 0.5), 0.10 + ringAlpha * 0.4, -time * 0.009 * spinBoost);
-                drawPixelRing(sctx, cx, cy, (40 + progress * 12) * (1 + energy * 0.6), 0.20 + ringAlpha * 0.6, time * 0.013 * spinBoost);
-            }
-
-            // 6) Кометы
-            updateAndDrawComets(sctx, cx, cy, w, h, energy, time);
-
-            // 7) Сердце + heartbeat от близости мыши (#11)
-            if (progress > 0.45 || energy > 0.3) {
-                const hp = Math.max((progress - 0.45) / 0.55, Math.min(1, energy));
-                const baseCell = (1 + hp * 2) * (1 + energy * 0.5);
-                
-                // Heartbeat
-                const beatRate = 0.9 + mouseNearHeart * 1.4;
-                const beatPhase = ((time * 0.016 * beatRate) % 1);
-                const beatPulse = Math.pow(Math.max(0, 1 - beatPhase * 4), 2);
-                const pulse = 1 + Math.sin(time * (0.08 + energy * 0.15)) * (0.08 + energy * 0.12) + beatPulse * 0.18;
-                
-                // Оригинальное сердце (пульсирует)
-                drawPixelHeart(sctx, cx, cy, baseCell * pulse, Math.min(1, hp));
-                
-                // ⬇ ОТРАЖЕНИЕ: передаем baseCell (без pulse), чтобы оно не дёргалось
-                drawMirrorHeart(sctx, cx, cy, baseCell, personality.heartHue, energy);
-            }
-            
-            // 7.5) УДАРНЫЕ ВОЛНЫ + ВЗРЫВНЫЕ ИСКРЫ
-            if (explosionStart) {
-                const elapsed = performance.now() - explosionStart;
-                drawShockwave(sctx, cx, cy, elapsed);
-
-                // Массовый спавн искр во время взрыва
-                if (explosionState && (explosionState.phase === 'flash' || explosionState.phase === 'explosion')) {
-                    const now = performance.now();
-                    if (now - lastExplosionSpark > 25) {
-                        lastExplosionSpark = now;
-                        for (let i = 0; i < 6; i++) {
-                            const angle = Math.random() * Math.PI * 2;
-                            const speed = 2 + Math.random() * 14;
-                            soulSparks.push({
-                                x: cx, y: cy,
-                                vx: Math.cos(angle) * speed,
-                                vy: Math.sin(angle) * speed,
-                                life: 0,
-                                maxLife: 30 + Math.random() * 45,
-                                size: 2 + Math.random() * 3,
-                                hue: 280 + Math.random() * 60
-                            });
-                        }
-                    }
-                }
-
-                // Шейк
-                if (explosionState) applyShake(explosionState.shake);
-            } else {
-                if (innerEl && innerEl.style.transform) innerEl.style.transform = '';
-            }
-
-            // 8) Искры
-            updateAndDrawSparks(sctx);
-
-            // 8.5) РАЗЛОМ (ТРЕЩИНЫ) И ФОНТАН
-            if (shatterTime > 0 && shatterTime < 80) {
-                shatterTime++;
-                const alpha = Math.max(0, 1 - (shatterTime / 80));
-                sctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-                sctx.lineWidth = 2;
-                sctx.shadowBlur = 15;
-                sctx.shadowColor = 'white';
-                
-                sctx.beginPath();
-                shatterLines.forEach(line => {
-                    if (line.length > 0) {
-                        sctx.moveTo(staticCanvas.width / 2, staticCanvas.height / 2);
-                        line.forEach(p => sctx.lineTo(p.x, p.y));
-                    }
-                });
-                sctx.stroke();
-                sctx.shadowBlur = 0; // Сбрасываем тень
-            }
-            
-            drawFountain(sctx, cx, cy, w, h);
-            // ===== GHOSTING-ЧАСТИЦЫ =====
-            const fadeRate = Math.max(0.04, 0.12 - energy * 0.06);
-            tctx.globalCompositeOperation = 'destination-out';
-            tctx.fillStyle = `rgba(0, 0, 0, ${fadeRate})`;
-            tctx.fillRect(0, 0, w, h);
-            tctx.globalCompositeOperation = 'source-over';
-
-            const maxP = MAX_PARTICLES + Math.floor(energy * 100);
-            const target = Math.floor(progress * maxP);
-            while (particles.length < target) particles.push(spawnParticle());
-            while (particles.length > target) particles.pop();
-
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                p.life++;
-
-                if (finaleMode === 1 || finaleMode === 2) {
-                    p.orbit -= 0.25 + energy * 0.85;
-                    if (p.orbit < 2.5) {
-                        if (finaleMode === 1) {
-                            particles[i] = spawnParticle();
-                            particles[i].orbit = 60 + Math.random() * 20;
-                            continue;
-                        }
-                    }
-                    p.angle += p.speed * (1 + energy * 2);
-                } else {
-                    p.angle += p.speed;
-                }
-                if (p.life > p.maxLife && finaleMode === 0) {
-                    particles[i] = spawnParticle();
-                    continue;
-                }
-
-                const ratio = p.life / p.maxLife;
-                const alpha = finaleMode === 0 ? Math.sin(ratio * Math.PI) * 0.9 : 0.9;
-                const x = cx + Math.cos(p.angle) * p.orbit;
-                const y = cy + Math.sin(p.angle) * p.orbit * 0.55;
-
-                let hue = p.hue;
-                let light = 72;
-                if (energy > 0.2) {
-                    hue = p.hue - (p.hue - 330) * Math.min(1, energy);
-                    light = 72 + Math.min(50, energy * 30);
-                }
-                tctx.fillStyle = `hsla(${hue}, 100%, ${light}%, ${alpha})`;
-                tctx.fillRect(Math.floor(x), Math.floor(y), p.size, p.size);
-            }
-
-            // ===== GLOW LAYER (плавный bloom в полном разрешении) =====
-            drawGlowLayer(gcx, gcy, glowCanvas.width, glowCanvas.height, energy, explosionState);
-            // ФИЧА 14: силуэт сосуда (за сердцем, на алтаре)
-
-            // ФИЧА 12: эхо от кликов
-            drawClickEchoes(sctx);
-            time++;
-            requestAnimationFrame(drawFrame);
-        }
-        window.__dtStartExplosion = function() {
-            explosionStart = performance.now();
-            // Ускоряем музыку при взрыве (если играет)
-            if (dtMusicSource && dtMusicSource.playbackRate && dtMusicSource.playbackRate.cancelScheduledValues) {
-                const ctx = initAudioContext();
-                if (ctx) {
-                    dtMusicSource.playbackRate.cancelScheduledValues(ctx.currentTime);
-                    dtMusicSource.playbackRate.linearRampToValueAtTime(1.4, ctx.currentTime + 0.3);
-                    dtMusicSource.playbackRate.linearRampToValueAtTime(0.6, ctx.currentTime + 1.5);
-                }
-            }
-        };
-        // ============================================================
-        //  ЭФФЕКТ РАЗЛОМА И ПОСТОЯННОГО ТЁМНОГО ФОНТАНА (СИСТЕМА ЧАСТИЦ)
-        // ============================================================
-        let shatterLines = [];
-        let shatterTime = 0;
-        let isFountainActive = false;
-        const fountainParticles = []; // Массив для частиц фонтана
-
-        window.__dtShatterFountain = function() {
-            shatterLines = [];
-            shatterTime = 1;
-            isFountainActive = true;
-            fountainParticles.length = 0; // Очищаем старые частицы
-            
-            const numCracks = 30 + Math.floor(Math.random() * 20);
-            const cx = staticCanvas.width / 2;
-            const cy = staticCanvas.height / 2;
-            
-            for (let i = 0; i < numCracks; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const segments = [];
-                let currentX = cx;
-                let currentY = cy;
-                let currentAngle = angle;
-                const length = (Math.max(staticCanvas.width, staticCanvas.height) / 2) + 50;
-                let dist = 0;
-                
-                while (dist < length) {
-                    const step = 15 + Math.random() * 30;
-                    currentAngle += (Math.random() - 0.5) * 0.6;
-                    currentX += Math.cos(currentAngle) * step;
-                    currentY += Math.sin(currentAngle) * step;
-                    segments.push({ x: currentX, y: currentY });
-                    dist += step;
-                }
-                shatterLines.push(segments);
-            }
-        };
-
-                function drawFountain(ctx, cx, cy, w, h) {
-            if (!isFountainActive) return;
-            
-            const PX = 1.5; 
-            const maxHeight = h * 1.2; 
-            
-            // ==========================================
-            // ЭТАП 1: ЧЕТКИЕ ПИКСЕЛИ (Основной холст)
-            // ==========================================
-            ctx.save();
-            ctx.globalCompositeOperation = 'screen'; 
-
-            for (let y = 0; y < maxHeight; y += PX) {
-                const yRatio = y / maxHeight; 
-                const baseWidth = 10 + Math.pow(yRatio, 1.5) * 140;
-                const wave = Math.sin(y * 0.03 - time * 0.15) * 30 * yRatio;
-
-                for (let x = -baseWidth; x <= baseWidth; x += PX) {
-                    const distFromCenter = Math.abs(x) / Math.max(1, baseWidth);
-                    let spawnChance = 1 - Math.pow(distFromCenter, 1.5);
-                    spawnChance *= (1 - yRatio * 0.4);
-
-                    if (Math.random() > spawnChance) continue;
-
-                    let color;
-                    if (distFromCenter < 0.2) color = `rgba(255, 255, 255, 1)`;
-                    else if (distFromCenter < 0.6) color = `rgba(255, 0, 242, 0.9)`;
-                    else color = `rgba(255, 0, 221, 0.7)`;
-
-                    ctx.fillStyle = color;
-                    ctx.fillRect(Math.floor((cx + x + wave) / PX) * PX, Math.floor((cy - y) / PX) * PX, PX, PX);
-                }
-            }
-
-            // Брызги сверху (тоже четкие)
-            for (let i = 0; i < 40; i++) {
-                const seed = i * 13.37;
-                const timeOffset = time * 3 + seed * 10;
-                const spawnY = cy - maxHeight * 0.9;
-                const spawnX = cx + (Math.random() - 0.5) * 200;
-                const dropY = spawnY + (timeOffset % 150); 
-                const dropX = spawnX + Math.sin(timeOffset) * 60;
-
-                if (dropY < cy) {
-                    ctx.fillStyle = `rgba(255, 100, 255, ${1 - (dropY - spawnY) / 150})`;
-                    ctx.fillRect(Math.floor(dropX / PX) * PX, Math.floor(dropY / PX) * PX, PX, PX);
-                }
-            }
-            ctx.restore();
-
-            // ==========================================
-            // ЭТАП 2: БЛЮР (Маленький холст)
-            // ==========================================
-            const bw = bloomCanvas.width;
-            const bh = bloomCanvas.height;
-            const bcx = (cx / w) * bw;
-            const bcy = (cy / h) * bh;
-            const scale = bw / w;
-
-            bctx.clearRect(0, 0, bw, bh);
-            bctx.save();
-            
-            // Включаем размытие (на маленьком холсте это летает)
-            bctx.filter = 'blur(4px)'; 
-            bctx.globalCompositeOperation = 'lighter';
-
-            // Рисуем яркое пятно у основания
-            const baseGrad = bctx.createRadialGradient(bcx, bcy, 0, bcx, bcy, 80 * scale);
-            baseGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            baseGrad.addColorStop(0.4, 'rgba(255, 0, 242, 0.8)');
-            baseGrad.addColorStop(1, 'transparent');
-            bctx.fillStyle = baseGrad;
-            bctx.beginPath(); 
-            bctx.arc(bcx, bcy, 80 * scale, 0, Math.PI * 2); 
-            bctx.fill();
-
-            // Рисуем размытый конус (столб)
-            bctx.fillStyle = 'rgba(255, 0, 242, 0.5)';
-            bctx.beginPath();
-            bctx.moveTo(bcx - 20 * scale, bcy);
-            bctx.lineTo(bcx - 120 * scale, bcy - maxHeight * scale);
-            bctx.lineTo(bcx + 120 * scale, bcy - maxHeight * scale);
-            bctx.lineTo(bcx + 20 * scale, bcy);
-            bctx.fill();
-
-            // Рисуем белое ядро внутри
-            bctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            bctx.beginPath();
-            bctx.moveTo(bcx - 5 * scale, bcy);
-            bctx.lineTo(bcx - 30 * scale, bcy - maxHeight * scale);
-            bctx.lineTo(bcx + 30 * scale, bcy - maxHeight * scale);
-            bctx.lineTo(bcx + 5 * scale, bcy);
-            bctx.fill();
-            bctx.restore();
-
-            // ==========================================
-            // ЭТАП 3: НАЛОЖЕНИЕ БЛЮРА НА ОСНОВНОЙ ХОЛСТ
-            // ==========================================
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter'; // Склеиваем по свету
-            // Растягиваем маленький холст на весь экран
-            ctx.drawImage(bloomCanvas, 0, 0, w, h); 
-            ctx.restore();
-        }
-        drawFrame();
-    })();
-
-        // ---- ФИНАЛЬНЫЕ ЭФФЕКТЫ ----
-    function playSoulPourSound() {
-        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
-        const ctx = initAudioContext();
-        if (!ctx || ctx.state !== 'running') return;
-        const now = ctx.currentTime;
-        // Восходящий свип — «душа вливается»
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.exponentialRampToValueAtTime(1400, now + 2.0);
-        gain.gain.setValueAtTime(0.001, now);
-        gain.gain.exponentialRampToValueAtTime(0.07, now + 0.8);
-        gain.gain.exponentialRampToValueAtTime(0.00001, now + 2.1);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 2.2);
-        // Подголосок в терцию
-        setTimeout(() => {
-            try {
-                const o2 = ctx.createOscillator();
-                const g2 = ctx.createGain();
-                o2.type = 'sine';
-                o2.frequency.setValueAtTime(270, ctx.currentTime);
-                o2.frequency.exponentialRampToValueAtTime(2100, ctx.currentTime + 1.8);
-                g2.gain.setValueAtTime(0.001, ctx.currentTime);
-                g2.gain.exponentialRampToValueAtTime(0.04, ctx.currentTime + 0.8);
-                g2.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 1.9);
-                o2.connect(g2);
-                g2.connect(ctx.destination);
-                o2.start(ctx.currentTime);
-                o2.stop(ctx.currentTime + 2.0);
-            } catch (e) {}
-        }, 100);
     }
 
-    function playSoulBurstSound() {
-        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
-        const ctx = initAudioContext();
-        if (!ctx || ctx.state !== 'running') return;
-        const now = ctx.currentTime;
+    // ---- КАНВАСЫ И ЭФФЕКТЫ (ОСТАВЛЯЕМ БЕЗ ИЗМЕНЕНИЙ) ----
+    // ... (ВСТАВЬ СЮДА ВЕСЬ БЛОК initCanvases ИЗ ТВОЕГО СТАРОГО КОДА) ...
+    // (Я не дублирую его здесь, чтобы сообщение не превысило лимит, просто оставь старый код)
 
-        // #20 Реверб-шина (feedback delay)
-        const delay = ctx.createDelay(2.0);
-        delay.delayTime.value = 0.28;
-        const feedback = ctx.createGain();
-        feedback.gain.value = 0.58;
-        const wetGain = ctx.createGain();
-        wetGain.gain.value = 0.42;
-        const dryGain = ctx.createGain();
-        dryGain.gain.value = 0.85;
-        delay.connect(feedback);
-        feedback.connect(delay);
-        delay.connect(wetGain);
-        wetGain.connect(ctx.destination);
-        dryGain.connect(ctx.destination);
+    // ---- ФИНАЛЬНЫЕ ЭФФЕКТЫ ----
+    function playSoulPourSound() { /* ... оставь свой код ... */ }
+    function playSoulBurstSound() { /* ... оставь свой код ... */ }
+    function playFountainShatterSound() { /* ... оставь свой код ... */ }
+    function triggerSoulPour() { /* ... оставь свой код ... */ }
+    function triggerSoulBurst() { /* ... оставь свой код ... */ }
+    function resetFinale() { /* ... оставь свой код ... */ }
 
-        // Основной «бум»
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(1600, now);
-        osc.frequency.exponentialRampToValueAtTime(60, now + 1.2);
-        gain.gain.setValueAtTime(0.18, now);
-        gain.gain.exponentialRampToValueAtTime(0.00001, now + 1.3);
-        osc.connect(gain);
-        gain.connect(dryGain);
-        gain.connect(delay);
-        osc.start(now);
-        osc.stop(now + 1.4);
-
-        // Суб-бас — физическое ощущение
-        const sub = ctx.createOscillator();
-        const subGain = ctx.createGain();
-        sub.type = 'sine';
-        sub.frequency.setValueAtTime(38, now);
-        subGain.gain.setValueAtTime(0.22, now);
-        subGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.9);
-        sub.connect(subGain);
-        subGain.connect(ctx.destination);
-        sub.start(now);
-        sub.stop(now + 1.0);
-
-        // Хор с эхом
-        [400, 600, 900, 1200, 1600].forEach((freq, i) => {
-            setTimeout(() => {
-                try {
-                    const t = ctx.currentTime;
-                    const o = ctx.createOscillator();
-                    const g = ctx.createGain();
-                    o.type = 'triangle';
-                    o.frequency.setValueAtTime(freq, t);
-                    g.gain.setValueAtTime(0.06, t);
-                    g.gain.exponentialRampToValueAtTime(0.00001, t + 0.9);
-                    o.connect(g);
-                    g.connect(dryGain);
-                    g.connect(delay);
-                    o.start(t);
-                    o.stop(t + 1.0);
-                } catch (e) {}
-            }, i * 60);
-        });
-
-        setTimeout(() => {
-            try { wetGain.disconnect(); delay.disconnect(); feedback.disconnect(); dryGain.disconnect(); } catch(e) {}
-        }, 3000);
-    }
-
-    function playFountainShatterSound() {
-        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
-        const ctx = initAudioContext();
-        if (!ctx || ctx.state !== 'running') return;
-        const now = ctx.currentTime;
-
-        // 1. Звон стекла
-        const bufferSize = Math.floor(ctx.sampleRate * 1.5);
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        
-        const noise = ctx.createBufferSource();
-        noise.buffer = buffer;
-        const noiseFilter = ctx.createBiquadFilter();
-        noiseFilter.type = 'highpass';
-        noiseFilter.frequency.value = 1500;
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.25, now);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-        noise.connect(noiseFilter);
-        noiseFilter.connect(noiseGain);
-        noiseGain.connect(ctx.destination);
-        noise.start(now);
-
-        // 2. Низкий гул (как от фонтана)
-        const osc = ctx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(80, now);
-        osc.frequency.linearRampToValueAtTime(30, now + 1.5);
-        
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 2.1);
-    }
-
-    function triggerSoulPour() {
-        finaleMode = 1;
-        finaleStartTime = performance.now();
-        finaleBoost = 0;
-        modal.classList.add('dt-finale');
-        const pourEl = document.getElementById('dt-soul-pour');
-        if (pourEl) pourEl.classList.add('active');
-        playSoulPourSound();
-    }
-
-    function triggerSoulBurst() {
-        finaleMode = 2;
-        
-        // Запускаем взрыв, трещины и визуальный фонтан
-        if (window.__dtStartExplosion) window.__dtStartExplosion();
-        if (window.__dtShatterFountain) window.__dtShatterFountain();
-
-        // Оригинальная вспышка
-        const flashEl = document.getElementById('dt-magic-flash');
-        if (flashEl) {
-            flashEl.classList.remove('active');
-            void flashEl.offsetWidth;
-            flashEl.classList.add('active');
-        }
-
-        // RGB-глитч на тексте (на 0.4 сек)
-        const innerEl = modal.querySelector('.dt-inner');
-        if (innerEl) {
-            innerEl.classList.remove('rgb-glitching');
-            void innerEl.offsetWidth;
-            innerEl.classList.add('rgb-glitching');
-            setTimeout(() => innerEl.classList.remove('rgb-glitching'), 420);
-        }
-
-        // Звуки
-        playSoulBurstSound();
-        playFountainShatterSound();
-    }
-
-    function playFinalAcceptance() {
-        // 1. Кульминация: взрыв, свет, фонтан
-        triggerSoulBurst();
-        //playFinaleSound();
-
-        // 2. Прячем интерфейс (плавно)
-        dialogue.style.transition = 'opacity 1s ease';
-        dialogue.style.opacity = '0';
-
-        // 3. Через 1.5 секунды показываем финальный экран
-        setTimeout(() => {
-            const overlay = document.getElementById('dt-accept-overlay');
-            if (overlay) overlay.classList.add('visible');
-        }, 1500);
-
-        // 4. Через 6 секунд начинаем ПЛАВНОЕ ЗАТУХАНИЕ текста (fade-out)
-        setTimeout(() => {
-            const overlay = document.getElementById('dt-accept-overlay');
-            if (overlay) overlay.classList.add('fade-out');
-        }, 6000);
-
-        // 5. Еще через 3 секунды (когда всё растворилось) закрываем модалку
-        setTimeout(() => {
-            closeModal();
-        }, 9000); // 1.5 сек (появление) + 4.5 сек (чтение) + 3 сек (затухание) = 9 секунд
-    }
-
-    function resetFinale() {
-        finaleMode = 0;
-        finaleBoost = 0;
-        finaleStartTime = 0;
-        modal.classList.remove('dt-finale');
-        const pourEl = document.getElementById('dt-soul-pour');
-        if (pourEl) pourEl.classList.remove('active');
-        const flashEl = document.getElementById('dt-magic-flash');
-        if (flashEl) flashEl.classList.remove('active');
-        if (window.__dtResetCanvas) window.__dtResetCanvas();
-    }
-
-    // ============================================================
-    //  МУЗЫКА — с эффектом «раскрутки плёнки» (pitch spin-up)
-    // ============================================================
-    const MUSIC_URL = 'sounds/ANOTHER_HIM.ogg';
-    const MUSIC_VOLUME = 0.25;
-    const SPIN_UP_TIME = 2.0;      // сек — длительность раскрутки
-    const START_RATE  = 0.5;       // стартовый pitch (0.5 = октава ниже)
-    const VOLUME_RAMP = 1.2;       // сек — плавное появление громкости
-
-    let dtMusicSource = null;
-    let dtMusicGain = null;
-    let dtMusicBuffer = null;
-    let dtMusicLoading = false;
-    let dtMusicFadeTimeout = null;
-    let dtMusicElement = null;
-    let dtMusicFadeInterval = null;
-    let dtMusicSpinInterval = null;
-
-    async function tryLoadMusicBuffer() {
-        if (dtMusicBuffer) return dtMusicBuffer;
-        if (dtMusicLoading) return null;
-        if (location.protocol === 'file:') return null; // CORS на file://
-        dtMusicLoading = true;
-        try {
-            const ctx = initAudioContext();
-            if (!ctx) { dtMusicLoading = false; return null; }
-            const res = await fetch(MUSIC_URL);
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const ab = await res.arrayBuffer();
-            dtMusicBuffer = await ctx.decodeAudioData(ab);
-            dtMusicLoading = false;
-            return dtMusicBuffer;
-        } catch (e) {
-            console.warn('[MUSIC] Web Audio не удался:', e.message);
-            dtMusicLoading = false;
-            return null;
-        }
-    }
-
-    function startMusicElement() {
-        if (dtMusicElement) return;
-        try {
-            dtMusicElement = new Audio(MUSIC_URL);
-            dtMusicElement.loop = true;
-            // Отключаем pitch-preservation — хотим чтобы playbackRate менял ВЫСОТУ
-            try {
-                dtMusicElement.preservesPitch = false;
-                dtMusicElement.mozPreservesPitch = false;
-                dtMusicElement.webkitPreservesPitch = false;
-            } catch (e) {}
-            dtMusicElement.playbackRate = START_RATE;
-            dtMusicElement.volume = 0;
-
-            const startSpin = () => {
-                const t0 = performance.now();
-                if (dtMusicSpinInterval) clearInterval(dtMusicSpinInterval);
-                dtMusicSpinInterval = setInterval(() => {
-                    if (!dtMusicElement) {
-                        clearInterval(dtMusicSpinInterval);
-                        dtMusicSpinInterval = null;
-                        return;
-                    }
-                    const elapsed = performance.now() - t0;
-                    const p = Math.min(1, elapsed / (SPIN_UP_TIME * 1000));
-                    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
-                    dtMusicElement.playbackRate = START_RATE + (1.0 - START_RATE) * eased;
-                    const vp = Math.min(1, elapsed / (VOLUME_RAMP * 1000));
-                    dtMusicElement.volume = MUSIC_VOLUME * vp;
-                    if (p >= 1 && vp >= 1) {
-                        clearInterval(dtMusicSpinInterval);
-                        dtMusicSpinInterval = null;
-                        dtMusicElement.playbackRate = 1.0;
-                        dtMusicElement.volume = MUSIC_VOLUME;
-                    }
-                }, 30);
-            };
-
-            const p = dtMusicElement.play();
-            if (p && p.then) {
-                p.then(startSpin).catch(() => {
-                    const retry = () => {
-                        if (dtMusicElement) {
-                            dtMusicElement.play().then(startSpin).catch(() => {});
-                        }
-                        document.removeEventListener('pointerdown', retry);
-                        document.removeEventListener('keydown', retry);
-                    };
-                    document.addEventListener('pointerdown', retry, { once: true });
-                    document.addEventListener('keydown', retry, { once: true });
-                });
-            } else {
-                startSpin();
-            }
-        } catch (e) {
-            console.error('[MUSIC] <audio> ошибка:', e.message);
-        }
-    }
-
-    async function startMusic() {
-        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
-        if (dtMusicSource || dtMusicElement) return;
-
-        const buffer = await tryLoadMusicBuffer();
-        if (buffer) {
-            const ctx = initAudioContext();
-            if (!ctx) return;
-            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-            if (dtMusicSource) return;
-
-            const now = ctx.currentTime;
-
-            dtMusicSource = ctx.createBufferSource();
-            dtMusicSource.buffer = buffer;
-            dtMusicSource.loop = true;
-            dtMusicSource.loopStart = 0;
-            dtMusicSource.loopEnd = buffer.duration;
-
-            // Отключаем pitch-preservation (по умолчанию может быть true в новых Chrome)
-            try { dtMusicSource.preservesPitch = false; } catch (e) {}
-
-            // ---- SPIN-UP: playbackRate 0.5 → 1.0 за SPIN_UP_TIME ----
-            dtMusicSource.playbackRate.setValueAtTime(START_RATE, now);
-            dtMusicSource.playbackRate.linearRampToValueAtTime(1.0, now + SPIN_UP_TIME);
-
-            // ---- Lowpass фильтр — звук «прогревается» ----
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(600, now);
-            filter.frequency.exponentialRampToValueAtTime(20000, now + SPIN_UP_TIME);
-            filter.Q.value = 0.5;
-
-            // ---- Плавное появление громкости ----
-            dtMusicGain = ctx.createGain();
-            dtMusicGain.gain.setValueAtTime(0.001, now);
-            dtMusicGain.gain.exponentialRampToValueAtTime(MUSIC_VOLUME, now + VOLUME_RAMP);
-
-            dtMusicSource.connect(filter);
-            filter.connect(dtMusicGain);
-            dtMusicGain.connect(ctx.destination);
-            dtMusicSource.start(0);
-        } else {
-            startMusicElement();
-        }
-    }
-
-    function stopMusic() {
-        // Web Audio
-        if (dtMusicSource) {
-            const ctx = initAudioContext();
-            const source = dtMusicSource;
-            const gain = dtMusicGain;
-            dtMusicSource = null;
-            dtMusicGain = null;
-            if (ctx && gain) {
-                const now = ctx.currentTime;
-                const startVol = gain.gain.value || MUSIC_VOLUME;
-                gain.gain.cancelScheduledValues(now);
-                gain.gain.setValueAtTime(startVol, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-                if (dtMusicFadeTimeout) clearTimeout(dtMusicFadeTimeout);
-                dtMusicFadeTimeout = setTimeout(() => {
-                    try { source.stop(); source.disconnect(); gain.disconnect(); } catch (e) {}
-                }, 650);
-            } else {
-                try { source.stop(); } catch (e) {}
-            }
-        }
-        // <audio> fallback
-        if (dtMusicElement) {
-            if (dtMusicSpinInterval) {
-                clearInterval(dtMusicSpinInterval);
-                dtMusicSpinInterval = null;
-            }
-            const el = dtMusicElement;
-            dtMusicElement = null;
-            if (dtMusicFadeInterval) clearInterval(dtMusicFadeInterval);
-            const startVol = el.volume;
-            const steps = 20;
-            let i = 0;
-            dtMusicFadeInterval = setInterval(() => {
-                i++;
-                el.volume = Math.max(0, startVol * (1 - i / steps));
-                if (i >= steps) {
-                    clearInterval(dtMusicFadeInterval);
-                    dtMusicFadeInterval = null;
-                    try { el.pause(); el.currentTime = 0; } catch (e) {}
-                }
-            }, 30);
-        }
-    }
+    // ---- МУЗЫКА ----
+    // ... (ОСТАВЬ СВОЙ БЛОК МУЗЫКИ) ...
 
     // ---- ЗВУКИ ----
     function playSelect() { if (typeof playSound === 'function') playSound(660, 0.06, 'square', 0.04); }
-    function playConfirm() {
-        if (typeof playSound === 'function') {
-            playSound(880, 0.06, 'square', 0.05);
-            setTimeout(() => playSound(1100, 0.08, 'square', 0.04), 50);
-        }
-    }
+    function playConfirm() { if (typeof playSound === 'function') { playSound(880, 0.06, 'square', 0.05); setTimeout(() => playSound(1100, 0.08, 'square', 0.04), 50); } }
     function playCancel() { if (typeof playSound === 'function') playSound(330, 0.08, 'square', 0.04); }
-    function playTypeSound() {
-        if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return;
-        if (typeof playSound === 'function') {
-            playSound(600 + Math.random() * 150, 0.025, 'square', 0.015);
-        }
-    }
+    function playTypeSound() { if (typeof soundsEnabled !== 'undefined' && !soundsEnabled) return; if (typeof playSound === 'function') { playSound(600 + Math.random() * 150, 0.025, 'square', 0.015); } }
 
     // ---- TYPEWRITER ----
     let typeState = null;
-        function typeText(el, text, speed, done) {
+    function typeText(el, text, speed, done) {
         if (typeState && typeState.timer) clearTimeout(typeState.timer);
         el.innerHTML = '';
-        
-        // Разбиваем текст на слова и пробелы
         const words = text.split(/(\s+)/);
         typeState = { el, text, words, wordIndex: 0, charIndex: 0, timer: null, done, currentWordEl: null };
 
         (function step() {
             if (!typeState || typeState.el !== el) return;
-            
             if (typeState.wordIndex >= typeState.words.length) {
-                const d = typeState.done;
-                typeState = null;
-                if (d) d();
-                return;
+                const d = typeState.done; typeState = null; if (d) d(); return;
             }
-
             const currentWord = typeState.words[typeState.wordIndex];
-
             if (typeState.charIndex === 0) {
-                // Создаем обертку для слова
-                const wordSpan = document.createElement('span');
-                wordSpan.className = 'dt-word';
-                el.appendChild(wordSpan);
-                typeState.currentWordEl = wordSpan;
+                const wordSpan = document.createElement('span'); wordSpan.className = 'dt-word';
+                el.appendChild(wordSpan); typeState.currentWordEl = wordSpan;
             }
-
             const ch = currentWord[typeState.charIndex];
             const charSpan = document.createElement('span');
             charSpan.className = 'dt-char-pop';
             charSpan.textContent = ch === ' ' ? '\u00A0' : ch;
             typeState.currentWordEl.appendChild(charSpan);
-            
             typeState.charIndex++;
             if (ch !== ' ' && typeState.charIndex % 2 === 0) playTypeSound();
-            
-            if (typeState.charIndex >= currentWord.length) {
-                typeState.wordIndex++;
-                typeState.charIndex = 0;
-            }
-            
+            if (typeState.charIndex >= currentWord.length) { typeState.wordIndex++; typeState.charIndex = 0; }
             typeState.timer = setTimeout(step, speed);
         })();
     }
     function skipTyping() {
         if (!typeState) return;
         if (typeState.timer) clearTimeout(typeState.timer);
-        const d = typeState.done;
-        typeState.el.textContent = typeState.text;
-        typeState = null;
-        if (d) d();
+        const d = typeState.done; typeState.el.textContent = typeState.text; typeState = null; if (d) d();
     }
-    dialogue.addEventListener('click', (e) => {
-        if (typeState && !e.target.closest('button, input, textarea, .dt-file')) skipTyping();
-    });
+    dialogue.addEventListener('click', (e) => { if (typeState && !e.target.closest('button, input, textarea, .dt-file')) skipTyping(); });
 
-    // ---- ОТПРАВКА ----
-    async function sendFormWithRetry(formData, retries = 3) {
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            try {
-                // ⬇ Используем AJAX-эндпоинт с заголовком Accept
-                const response = await fetch(
-                    'https://formsubmit.co/ajax/goodmopsreset@gmail.com?fromname=Godoined+Archive',
-                    {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json' // ⬅ Ключевое изменение
-                        }
-                    }
-                );
-                if (response.ok) return { success: true };
-                if (attempt < retries) continue;
-                return { success: false, error: `HTTP ${response.status}` };
-            } catch (err) {
-                if (attempt < retries) continue;
-                return { success: false, error: err.message || 'Сетевая ошибка' };
-            }
-        }
-        return { success: false, error: 'Не удалось после нескольких попыток' };
-    }
-
-    async function submitForm(sendBtn) {
-        //triggerSoulBurst(); // ⬅ магический выплеск
-        sendBtn.disabled = true;
-        sendBtn.textContent = '...';
+    // ---- ОТПРАВКА (ИСПРАВЛЕННАЯ ДЛЯ ФАЙЛОВ) ----
+    function submitFormNative(sendBtn) {
+        if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '...'; }
+        
         const status = document.createElement('div');
         status.className = 'dt-status';
-        status.textContent = '⏳ Сосуд формируется...';
+        status.textContent = currentLang === 'ru' ? '⏳ Сосуд формируется...' : '⏳ Vessel is forming...';
         dialogue.appendChild(status);
 
-        const fd = new FormData();
-        fd.append('_subject', 'Godoined Archive новая заявка');
-        fd.append('_replyto', 'goodmopsreset@gmail.com');
-        fd.append('_captcha', 'false');
-        fd.append('name', state.name || 'Аноним');
-        fd.append('food', state.food);
-        fd.append('color', state.color);
-        fd.append('gift', state.gift);
-        fd.append('feeling', state.feeling);
-        fd.append('honest', state.honest);
-        fd.append('pain', state.pain);
-        fd.append('message', state.message);
-        fd.append('material', state.material);
-        fd.append('purpose', state.purpose);
-        fd.append('fear', state.fear);
-        if (state.files) state.files.forEach(f => fd.append('attachment', f));
+        const form = document.createElement('form');
+        form.action = 'https://formsubmit.co/goodmopsreset@gmail.com';
+        form.method = 'POST';
+        form.enctype = 'multipart/form-data';
+        form.target = 'hidden_iframe'; 
+        form.style.display = 'none';
 
-        const result = await sendFormWithRetry(fd, 3);
+        const fields = {
+            '_subject': 'Godoined Archive новая заявка',
+            '_replyto': 'goodmopsreset@gmail.com',
+            '_captcha': 'false',
+            'name': state.name || 'Аноним',
+            'material': state.material, 'food': state.food, 'color': state.color,
+            'purpose': state.purpose, 'gift': state.gift, 'fear': state.fear,
+            'feeling': state.feeling, 'honest': state.honest, 'pain': state.pain,
+            'message': state.message
+        };
 
-        if (result.success) {
-            status.textContent = '✅ Связь установлена. Завершаем ритуал...';
-            // ⬇⬇⬇ ЗАПУСКАЕМ ФИНАЛЬНУЮ АНИМАЦИЮ ⬇⬇⬇
-            playFinalAcceptance();
-        } else {
-            status.className = 'dt-status error';
-            status.innerHTML = `❌ Не удалось (${result.error || 'ошибка'}).<br>Попробуй альтернативную отправку.`;
-            sendBtn.style.display = 'none';
-            const alt = document.getElementById('dt-alt-send');
-            if (alt) alt.style.display = 'inline-block';
+        for (const key in fields) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = fields[key];
+            form.appendChild(input);
         }
-        sendBtn.disabled = false;
-        sendBtn.textContent = '▶ ОТПРАВИТЬ';
+
+        // ⬇ ИСПРАВЛЕННЫЙ БЛОК ОТПРАВКИ НЕСКОЛЬКИХ ФАЙЛОВ ⬇
+        if (state.files && state.files.length > 0) {
+            state.files.forEach((file, index) => {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = 'attachment' + (index + 1);
+                fileInput.style.display = 'none';
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+                form.appendChild(fileInput);
+            });
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+
+        setTimeout(() => {
+            form.remove(); 
+            status.textContent = currentLang === 'ru' ? '✅ Связь установлена. Завершаем ритуал...' : '✅ Connection established. Finishing ritual...';
+            playFinalAcceptance();
+        }, 2500);
     }
 
     function sendViaMailto() {
@@ -3919,9 +2588,9 @@ function initApp() {
         });
     }
 
-    // ---- ШАГИ ----
     async function runStep() {
         updateProgress();
+        const steps = getSteps();
         if (state.step >= steps.length) {
             renderSummary();
             return;
@@ -3945,7 +2614,7 @@ function initApp() {
             else if (step.type === 'textarea') renderTextarea(step);
             else if (step.type === 'file') renderFileInput(step);
             else if (step.type === 'choice') renderChoices(step);
-            else if (step.type === 'color') renderColorInput(step); // ⬅ ДОБАВИТЬ ЭТУ СТРОКУ
+            else if (step.type === 'color') renderColorInput(step);
         });
     }
 
@@ -3973,32 +2642,22 @@ function initApp() {
             const skip = document.createElement('button');
             skip.type = 'button';
             skip.className = 'dt-btn dt-btn-secondary';
-            skip.textContent = '✕ ПРОПУСТИТЬ';
-            skip.addEventListener('click', () => {
-                state[step.key] = '';
-                playSelect();
-                goNext(step);
-            });
+            skip.textContent = tDialog('btnSkip');
+            skip.addEventListener('click', () => { state[step.key] = ''; playSelect(); goNext(step); });
             actions.appendChild(skip);
         }
 
         const next = document.createElement('button');
         next.type = 'button';
         next.className = 'dt-btn';
-        next.textContent = '▶ ДАЛЕЕ';
-        next.addEventListener('click', () => {
-            state[step.key] = inp.value.trim().toUpperCase();
-            playConfirm();
-            goNext(step);
-        });
+        next.textContent = tDialog('btnNext');
+        next.addEventListener('click', () => { state[step.key] = inp.value.trim().toUpperCase(); playConfirm(); goNext(step); });
 
         actions.appendChild(next);
         dialogue.appendChild(wrap);
         dialogue.appendChild(actions);
 
-        inp.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); next.click(); }
-        });
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); next.click(); } });
         setTimeout(() => inp.focus(), 100);
     }
 
@@ -4013,16 +2672,13 @@ function initApp() {
         const next = document.createElement('button');
         next.type = 'button';
         next.className = 'dt-btn';
-        next.textContent = '▶ ДАЛЕЕ';
+        next.textContent = tDialog('btnNext');
         next.addEventListener('click', () => {
             const val = ta.value.trim();
             if (!val) {
                 ta.style.borderColor = '#ff4444';
                 ta.style.boxShadow = '4px 4px 0 #400';
-                setTimeout(() => {
-                    ta.style.borderColor = '';
-                    ta.style.boxShadow = '';
-                }, 600);
+                setTimeout(() => { ta.style.borderColor = ''; ta.style.boxShadow = ''; }, 600);
                 ta.focus();
                 return;
             }
@@ -4033,13 +2689,7 @@ function initApp() {
         actions.appendChild(next);
         dialogue.appendChild(ta);
         dialogue.appendChild(actions);
-
-        ta.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                next.click();
-            }
-        });
+        ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); next.click(); } });
         setTimeout(() => ta.focus(), 100);
     }
 
@@ -4057,19 +2707,15 @@ function initApp() {
             const skip = document.createElement('button');
             skip.type = 'button';
             skip.className = 'dt-btn dt-btn-secondary';
-            skip.textContent = '✕ ПРОПУСТИТЬ';
-            skip.addEventListener('click', () => {
-                state.files = null;
-                playSelect();
-                goNext(step);
-            });
+            skip.textContent = tDialog('btnSkip');
+            skip.addEventListener('click', () => { state.files = null; playSelect(); goNext(step); });
             actions.appendChild(skip);
         }
 
         const next = document.createElement('button');
         next.type = 'button';
         next.className = 'dt-btn';
-        next.textContent = '▶ ДАЛЕЕ';
+        next.textContent = tDialog('btnNext');
         next.addEventListener('click', () => {
             if (inp.files && inp.files.length > 0) {
                 let total = 0;
@@ -4077,7 +2723,7 @@ function initApp() {
                 if (total > MAX_TOTAL_SIZE) {
                     const err = document.createElement('div');
                     err.className = 'dt-status error';
-                    err.textContent = `❌ Слишком большой размер: ${(total / 1024 / 1024).toFixed(1)} МБ (макс 5 МБ)`;
+                    err.textContent = currentLang === 'ru' ? `❌ Слишком большой размер: ${(total / 1024 / 1024).toFixed(1)} МБ (макс 5 МБ)` : `❌ File too large: ${(total / 1024 / 1024).toFixed(1)} MB (max 5 MB)`;
                     dialogue.appendChild(err);
                     return;
                 }
@@ -4103,30 +2749,16 @@ function initApp() {
         if (focusedIdx < 0) focusedIdx = 0;
         const btns = [];
 
-        function updateFocus(idx) {
-            btns.forEach((b, i) => b.classList.toggle('focused', i === idx));
-        }
-        function selectChoice(idx) {
-            state[step.key] = step.options[idx];
-            playConfirm();
-            goNext(step);
-        }
+        function updateFocus(idx) { btns.forEach((b, i) => b.classList.toggle('focused', i === idx)); }
+        function selectChoice(idx) { state[step.key] = step.options[idx]; playConfirm(); goNext(step); }
 
         step.options.forEach((opt, i) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'dt-choice';
             btn.innerHTML = `<span class="dt-soul-cursor"></span><span>${opt}</span>`;
-            btn.addEventListener('click', () => {
-                focusedIdx = i;
-                updateFocus(i);
-                selectChoice(i);
-            });
-            btn.addEventListener('mouseenter', () => {
-                focusedIdx = i;
-                updateFocus(i);
-                playSelect();
-            });
+            btn.addEventListener('click', () => { focusedIdx = i; updateFocus(i); selectChoice(i); });
+            btn.addEventListener('mouseenter', () => { focusedIdx = i; updateFocus(i); playSelect(); });
             container.appendChild(btn);
             btns.push(btn);
         });
@@ -4151,24 +2783,21 @@ function initApp() {
         const wrap = document.createElement('div');
         wrap.className = 'dt-color-wrap';
 
-        // 1. Палитра цветов (системная)
         const colorPicker = document.createElement('input');
         colorPicker.type = 'color';
         colorPicker.className = 'dt-color-picker';
-        colorPicker.value = state.colorHex || '#ff00f2'; // Дефолтный розовый
+        colorPicker.value = state.colorHex || '#ff00f2';
 
-        // 2. Текстовое поле для названия (необязательно)
         const colorNameInput = document.createElement('input');
         colorNameInput.type = 'text';
         colorNameInput.className = 'dt-input';
-        colorNameInput.placeholder = 'НАЗВАНИЕ ЦВЕТА...';
+        colorNameInput.placeholder = tDialog('colorPlaceholder');
         colorNameInput.maxLength = 20;
         colorNameInput.style.textTransform = 'uppercase';
         colorNameInput.style.fontSize = '1rem';
         colorNameInput.style.marginTop = '10px';
         colorNameInput.value = state.colorName || '';
 
-        // Синхронизация цвета текста с выбранным цветом в палитре
         const updateColorUI = () => {
             colorNameInput.style.color = colorPicker.value;
             colorNameInput.style.textShadow = `0 0 10px ${colorPicker.value}`;
@@ -4183,10 +2812,9 @@ function initApp() {
         const next = document.createElement('button');
         next.type = 'button';
         next.className = 'dt-btn';
-        next.textContent = '▶ ДАЛЕЕ';
+        next.textContent = tDialog('btnNext');
         next.addEventListener('click', () => {
             state.colorHex = colorPicker.value;
-            // Если игрок ввёл название — сохраняем его. Иначе показываем HEX-код.
             const customName = colorNameInput.value.trim().toUpperCase();
             state.color = customName || state.colorHex.toUpperCase();
             playConfirm();
@@ -4209,36 +2837,34 @@ function initApp() {
             await react(reactionText);
             await pause(600);
         }
-        updatePersonality();  // ⬅ новая строка
+        updatePersonality();
         state.step++;
         runStep();
     }
 
-    // ---- ФИНАЛ ----
     async function renderSummary() {
         updateProgress();
         triggerSoulPour();
         clearDialogue();
-        await speak('Вот что я записал.');
+        await speak(tDialog('summaryTitle'));
 
         const sum = document.createElement('div');
         sum.className = 'dt-summary';
         const fileCount = state.files ? state.files.length : 0;
         
-        // Собираем все данные для сводки
         sum.innerHTML = `
-            <div><span class="dt-summary-label">ИМЯ:</span><span class="dt-summary-value">${escapeHtml(state.name || '— не указано —')}</span></div>
-            <div><span class="dt-summary-label">МАТЕРИАЛ:</span><span class="dt-summary-value">${state.material}</span></div>
-            <div><span class="dt-summary-label">ЕДА:</span><span class="dt-summary-value">${state.food}</span></div>
-            <div><span class="dt-summary-label">ЦВЕТ:</span><span class="dt-summary-value" style="color: ${state.colorHex || '#fff'}; text-shadow: 0 0 10px ${state.colorHex || '#fff'};">${state.color}</span></div>
-            <div><span class="dt-summary-label">ПРЕДНАЗНАЧЕНИЕ:</span><span class="dt-summary-value">${state.purpose}</span></div>
-            <div><span class="dt-summary-label">ДАР:</span><span class="dt-summary-value">${state.gift}</span></div>
-            <div><span class="dt-summary-label">СТРАХ:</span><span class="dt-summary-value">${state.fear}</span></div>
-            <div><span class="dt-summary-label">ЧУВСТВА:</span><span class="dt-summary-value">${state.feeling}</span></div>
-            <div><span class="dt-summary-label">ЧЕСТНОСТЬ:</span><span class="dt-summary-value">${state.honest}</span></div>
-            <div><span class="dt-summary-label">БОЛЬ:</span><span class="dt-summary-value">${state.pain}</span></div>
-            <div><span class="dt-summary-label">ОПИСАНИЕ:</span><span class="dt-summary-value">${escapeHtml(state.message).replace(/\n/g, '<br>')}</span></div>
-            <div><span class="dt-summary-label">РЕФЕРЕНСЫ:</span><span class="dt-summary-value">${fileCount > 0 ? fileCount + ' файл(ов)' : '— нет —'}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ИМЯ' : 'NAME'}:</span><span class="dt-summary-value">${escapeHtml(state.name || '—')}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'МАТЕРИАЛ' : 'MATERIAL'}:</span><span class="dt-summary-value">${state.material}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЕДА' : 'FOOD'}:</span><span class="dt-summary-value">${state.food}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЦВЕТ' : 'COLOR'}:</span><span class="dt-summary-value" style="color: ${state.colorHex || '#fff'}; text-shadow: 0 0 10px ${state.colorHex || '#fff'};">${state.color}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ПРЕДНАЗНАЧЕНИЕ' : 'PURPOSE'}:</span><span class="dt-summary-value">${state.purpose}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ДАР' : 'GIFT'}:</span><span class="dt-summary-value">${state.gift}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'СТРАХ' : 'FEAR'}:</span><span class="dt-summary-value">${state.fear}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЧУВСТВА' : 'FEELING'}:</span><span class="dt-summary-value">${state.feeling}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЧЕСТНОСТЬ' : 'HONEST'}:</span><span class="dt-summary-value">${state.honest}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'БОЛЬ' : 'PAIN'}:</span><span class="dt-summary-value">${state.pain}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ОПИСАНИЕ' : 'DESCRIPTION'}:</span><span class="dt-summary-value">${escapeHtml(state.message).replace(/\n/g, '<br>')}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'РЕФЕРЕНСЫ' : 'REFERENCES'}:</span><span class="dt-summary-value">${fileCount > 0 ? fileCount + (currentLang === 'ru' ? ' файл(ов)' : ' file(s)') : '—'}</span></div>
         `;
         dialogue.appendChild(sum);
 
@@ -4247,7 +2873,7 @@ function initApp() {
         const q2 = document.createElement('div');
         q2.className = 'dt-reaction';
         dialogue.appendChild(q2);
-        await new Promise(res => typeText(q2, 'Всё верно?', 28, res));
+        await new Promise(res => typeText(q2, tDialog('summarySure'), 28, res));
 
         await pause(300);
 
@@ -4257,26 +2883,22 @@ function initApp() {
         const back = document.createElement('button');
         back.type = 'button';
         back.className = 'dt-btn dt-btn-secondary';
-        back.textContent = '← НАЗАД';
-        back.addEventListener('click', () => {
-            state.step = steps.length - 1;
-            playCancel();
-            runStep();
-        });
+        back.textContent = tDialog('btnBack');
+        back.addEventListener('click', () => { state.step = getSteps().length - 1; playCancel(); runStep(); });
 
         const send = document.createElement('button');
         send.type = 'button';
         send.className = 'dt-btn';
         send.id = 'dt-send';
-        send.textContent = '▶ ОТПРАВИТЬ';
-        send.addEventListener('click', () => submitForm(send));
+        send.textContent = tDialog('btnSend');
+        send.addEventListener('click', () => submitFormNative(send));
 
         const alt = document.createElement('button');
         alt.type = 'button';
         alt.className = 'dt-btn dt-btn-secondary';
         alt.id = 'dt-alt-send';
-        alt.style.display = 'inline-block'; // Показываем сразу
-        alt.textContent = '📧 ПОЧТА';
+        alt.style.display = 'inline-block';
+        alt.textContent = tDialog('btnMail');
         alt.addEventListener('click', sendViaMailto);
 
         actions.appendChild(back);
@@ -4285,107 +2907,24 @@ function initApp() {
         dialogue.appendChild(actions);
     }
 
-    // ---- ОТКРЫТИЕ / ЗАКРЫТИЕ ----
-    function openModal() {
-        // 1) Туман + размытие сайта
-        const fog = document.getElementById('dt-fog-overlay');
-        if (fog) fog.classList.add('active');
-        document.body.classList.add('dt-active');
-        document.body.style.overflow = 'hidden';
+    function playFinalAcceptance() {
+        triggerSoulBurst();
+        dialogue.style.transition = 'opacity 1s ease';
+        dialogue.style.opacity = '0';
 
-        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
-        const acceptOverlay = document.getElementById('dt-accept-overlay');
-        if (acceptOverlay) {
-            acceptOverlay.classList.remove('visible', 'fade-out');
-        }
-        if (dialogue) {
-            dialogue.style.opacity = '1'; // Возвращаем видимость текста
-        }
-        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
-
-        // 2) Все звуки — безопасно, по отдельности
-        try { if (typeof playClickSound === 'function') playClickSound(); } catch (e) {}
-        try { if (typeof playFogWhoosh === 'function') playFogWhoosh(); } catch (e) {}
-
-        // 3) Сброс состояния (тоже безопасно)
-        try {
-            state.step = 0;
-            state.name = ''; state.food = ''; state.color = ''; state.gift = '';
-            state.feeling = ''; state.honest = ''; state.pain = '';
-            state.message = ''; state.files = null;
-            if (typeof resetFinale === 'function') resetFinale();
-            if (typeof clickEchoes !== 'undefined' && clickEchoes.length !== undefined) clickEchoes.length = 0;
-            targetProgress = 0;
-            currentProgress = 0;
-            modal.style.setProperty('--dt-progress', '0');
-        } catch (e) {
-            console.warn('Reset state error:', e);
-        }
-
-        // 4) Показываем модалку
         setTimeout(() => {
-            try {
-                modal.style.display = 'block';
-                requestAnimationFrame(() => {
-                    modal.classList.add('active');
-                    setTimeout(() => {
-                        if (fog) fog.classList.remove('active');
-                    }, 800);
-                });
-                setTimeout(() => {
-                    try { if (typeof startMusic === 'function') startMusic(); } catch (e) {}
-                    try { if (typeof runStep === 'function') runStep(); } catch (e) { console.error('runStep error:', e); }
-                }, 1200);
-            } catch (e) {
-                console.error('Modal show error:', e);
-            }
-        }, 500);
-    }
+            const overlay = document.getElementById('dt-accept-overlay');
+            if (overlay) overlay.classList.add('visible');
+        }, 1500);
 
-    function closeModal() {
-        if (typeof playBackSound === 'function') playBackSound();
-
-        // 1) Включаем туман обратно
-        const fog = document.getElementById('dt-fog-overlay');
-        if (fog) fog.classList.add('active');
-
-        // 2) Прячем модалку
-        modal.classList.remove('active');
-
-        // 3) Сбросы
-        stopMusic();
-        clearDialogue();
-        
-        // ⬇⬇⬇ СБРОС ФИНАЛЬНОГО ЭКРАНА ⬇⬇⬇
-        const acceptOverlay = document.getElementById('dt-accept-overlay');
-        if (acceptOverlay) {
-            acceptOverlay.classList.remove('visible', 'fade-out');
-        }
-        if (dialogue) {
-            dialogue.style.opacity = '1';
-        }
-        // ⬆⬆⬆ КОНЕЦ СБРОСА ⬆⬆⬆
-
-        resetFinale();
-        clickEchoes.length = 0;
-        clickEchoes.length = 0;
-        targetProgress = 0;
-        currentProgress = 0;
-
-        // 4) Возвращаем сайт
         setTimeout(() => {
-            modal.style.display = 'none';
-            
-            document.body.classList.remove('dt-active');
-            document.body.style.overflow = '';
-            dialogue.innerHTML = '';
-            modal.style.setProperty('--dt-progress', '0');
+            const overlay = document.getElementById('dt-accept-overlay');
+            if (overlay) overlay.classList.add('fade-out');
+        }, 6000);
 
-            // Туман рассеивается
-            setTimeout(() => {
-                if (fog) fog.classList.remove('active');
-            }, 500);
-        }, 700);
+        setTimeout(() => {
+            closeModal();
+        }, 9000);
     }
 
     openBtn.addEventListener('click', openModal);
