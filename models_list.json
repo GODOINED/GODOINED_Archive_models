@@ -5,7 +5,7 @@
     "description": "Dandy's world Clown \n\n[url=https://t.me/kislix_art]Telegram[/url]\n\n[url=https://x.com/kislixarter]Twitter/X[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]",
     "comingSoon": false,
     "nsfw": false,
-    "transparentPreview": false, 
+    "transparentPreview": false,
     "tags": [
       {
         "name": "gift",
@@ -33,7 +33,7 @@
     "description": "Beez The Bee, full name Beez Wallace Sr., is one of the 42 playable Toons in Dandy's World. He was introduced on June 6, 2025, alongside Bumby, Sandy, and Ant. He is one of the 9 playable Main Characters and can be purchased in Dandy's Store. \n\n[url=https://x.com/hikorikimo]Twitter/X[/url]\n\n[url=https://t.me/BeezFamily]Telegram[/url]\n\n[url=https://dandys-world-fanon.fandom.com/wiki/Beez]Wiki[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
     "comingSoon": false,
     "nsfw": false,
-    "transparentPreview": false, 
+    "transparentPreview": false,
     "tags": [
       {
         "name": "gift",
@@ -66,7 +66,7 @@
     "description": "Старый джазовый микрофон всегда знает толк в джазе и всегда готов вам [shake=0.2,0.3]спеть![/shake] Только будьте осторожны!! Он может вас схватить в свой романтичный джазовый \n[shake=0.2,0.6]танец!![/shake] \n\n[url=https://t.me/DOTPTHEDEVIL]Telegram[/url]\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
     "comingSoon": false,
     "nsfw": false,
-    "transparentPreview": false, 
+    "transparentPreview": false,
     "tags": [
       {
         "name": "gift",
@@ -92,7 +92,7 @@
     "description": "Просто циклоп, ничего необычного\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
     "comingSoon": false,
     "nsfw": false,
-    "transparentPreview": false, 
+    "transparentPreview": false,
     "tags": [
       {
         "name": "gift",
@@ -117,8 +117,8 @@
     "displayName": "Fizzy",
     "description": "Coming soon",
     "comingSoon": true,
-    "nsfw": true, 
-    "transparentPreview": true, 
+    "nsfw": true,
+    "transparentPreview": true,
     "tags": [
       {
         "name": "gift",
@@ -139,5 +139,29 @@
     "renders": [],
     "videos": [],
     "preview": "models/Fizzy/Main.png"
+  },
+  {
+    "name": "Spidee",
+    "displayName": "Spidee",
+    "description": "",
+    "tags": [
+      {
+        "name": "Gift",
+        "color": "#ffcb3d"
+      },
+      {
+        "name": "Dandy's world",
+        "color": "#ffcb3d"
+      }
+    ],
+    "startFrames": 0,
+    "idleFrames": 0,
+    "fps": 24,
+    "renders": [
+      "Coming soon"
+    ],
+    "videos": [],
+    "comingSoon": true,
+    "preview": "models/Spidee/icon.jpg"
   }
 ]
