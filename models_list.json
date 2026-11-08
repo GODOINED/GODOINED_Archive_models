@@ -90,9 +90,6 @@
     "name": "Jess",
     "displayName": "Jess",
     "description": "Просто циклоп, ничего необычного\n\n[color=LIME][ ЗАВЕРШЕНА! ][/color]\n[color=RED][ МОДЕЛЬ БОЛЬШЕ НЕ ОБНОВЛЯЕТСЯ! ][/color]",
-    "comingSoon": false,
-    "nsfw": false,
-    "transparentPreview": false,
     "tags": [
       {
         "name": "gift",
@@ -103,22 +100,19 @@
         "color": "#ffaa44"
       }
     ],
-    "downloadable": true,
-    "downloadFile": "model.blend",
-    "fps": 24,
     "startFrames": 0,
     "idleFrames": 0,
-    "preview": "models/Jess/icon.webp",
+    "fps": 24,
     "renders": [],
-    "videos": []
+    "videos": [],
+    "preview": "models/Jess/icon.webp",
+    "downloadable": true,
+    "downloadFile": "model.blend"
   },
   {
     "name": "Fizzy",
     "displayName": "Fizzy",
     "description": "Coming soon",
-    "comingSoon": true,
-    "nsfw": true,
-    "transparentPreview": true,
     "tags": [
       {
         "name": "gift",
@@ -138,7 +132,10 @@
     "fps": 24,
     "renders": [],
     "videos": [],
-    "preview": "models/Fizzy/Main.png"
+    "comingSoon": true,
+    "nsfw": true,
+    "transparentPreview": true,
+    "preview": "models/Fizzy/main.webp"
   },
   {
     "name": "Spidee",
@@ -146,7 +143,7 @@
     "description": "Coming soon",
     "tags": [
       {
-        "name": "gift",
+        "name": "Gift",
         "color": "#ffcb3d"
       },
       {
@@ -157,8 +154,7 @@
     "startFrames": 0,
     "idleFrames": 0,
     "fps": 24,
-    "renders": [
-    ],
+    "renders": [],
     "videos": [],
     "comingSoon": true,
     "preview": "models/Spidee/icon.jpg"
