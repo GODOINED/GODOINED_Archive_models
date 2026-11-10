@@ -35,15 +35,18 @@ try {
 <head>
     <meta charset="UTF-8">
     <title>${escapeHtml(displayName)} — 3D модель</title>
+    <meta property="og:site_name" content="GODOINED ARCHIVE">
     <meta property="og:title" content="${escapeHtml(displayName)}">
     <meta property="og:description" content="${escapeHtml(plainDescription)}">
     <meta property="og:image" content="${imageUrl}">
     <meta property="og:url" content="${pageUrl}">
     <meta property="og:type" content="website">
+    
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${escapeHtml(displayName)}">
     <meta name="twitter:description" content="${escapeHtml(plainDescription)}">
     <meta name="twitter:image" content="${imageUrl}">
+    <meta name="theme-color" content="#a32d99">
     <script>
         location.replace('${BASE_URL}?model=${encodeURIComponent(name)}');
     </script>
