@@ -29,7 +29,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Generate OG pages
-        run: node scripts/generate-og.js
+        run: node generate-og.js
         env:
           BASE_URL: ${{ steps.pages.outputs.base_url }}
           OUTPUT_DIR: . # генерируем прямо в корне
