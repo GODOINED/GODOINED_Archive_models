@@ -1493,11 +1493,30 @@ function showModelDetail(modelName) {
 
     const shareBtn = document.getElementById('share-btn');
     const shareMsg = document.getElementById('share-message');
-    shareBtn.onclick = () => {
+    
+    shareBtn.onclick = async () => {
         playShareSound();
-        navigator.clipboard.writeText(window.location.href);
-        shareMsg.style.display = 'inline-block';
-        setTimeout(() => shareMsg.style.display = 'none', 2000);
+        
+        // Формируем чистую ссылку на модель
+        const url = window.location.origin + window.location.pathname + '?model=' + encodeURIComponent(model.name);
+
+        try {
+            // Копируем в буфер обмена
+            await navigator.clipboard.writeText(url);
+            
+            // Показываем сообщение об успехе
+            shareMsg.style.display = 'inline-block';
+            shareMsg.textContent = currentLang === 'ru' ? 'Ссылка скопирована!' : 'Link copied!';
+            
+            // Скрываем через 2 секунды
+            setTimeout(() => { 
+                shareMsg.style.display = 'none'; 
+            }, 2000);
+            
+        } catch (e) {
+            // Если браузер не разрешает доступ к буферу (например, нет HTTPS), показываем окно с текстом
+            prompt('Скопируйте ссылку вручную:', url);
+        }
     };
 
     gallery.classList.add('hidden');
@@ -2237,6 +2256,12 @@ function initApp() {
         applyFilters();
         setupNavigation();
 
+        // ⬇⬇⬇ 1. Сначала проверяем share-ссылку (высший приоритет)
+        if (typeof window.handleSharedLink === 'function' && window.handleSharedLink()) {
+            return;
+        }
+
+        // ⬇⬇⬇ 2. Потом обычная логика ?model=
         const params = new URLSearchParams(window.location.search);
         const modelParam = params.get('model');
         if (modelParam) {
@@ -4069,6 +4094,265 @@ window.RETRO = (function () {
     if (verEl && typeof APP_VERSION !== 'undefined') verEl.textContent = (currentLang === 'ru' ? 'ВЕРСИЯ: ' : 'VERSION: ') + APP_VERSION;
 
     return { toast, refreshStats, recordOpen, updateTicker };
+})();
+
+// ============================================================
+//  SHARE — ССЫЛКА НА МОДЕЛЬ (ИМЯ + ОПИСАНИЕ + ПРЕВЬЮ)
+// ============================================================
+(function initShareSystem() {
+    // Кэш открытой ссылки — для кнопки "Копировать" внутри карточки
+    let currentSharedUrl = '';
+
+    // ---- Сжатие превью до 400×400 ----
+    function makeShareThumbnail(src, maxSize = 400, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            // crossOrigin не ставим — картинки локальные (та же origin)
+            img.onload = () => {
+                try {
+                    const w0 = img.naturalWidth || img.width;
+                    const h0 = img.naturalHeight || img.height;
+                    if (!w0 || !h0) return reject(new Error('0×0 image'));
+
+                    const ratio = Math.min(maxSize / w0, maxSize / h0, 1);
+                    const w = Math.max(1, Math.round(w0 * ratio));
+                    const h = Math.max(1, Math.round(h0 * ratio));
+
+                    const c = document.createElement('canvas');
+                    c.width = w;
+                    c.height = h;
+                    c.getContext('2d').drawImage(img, 0, 0, w, h);
+
+                    let url = c.toDataURL('image/webp', quality);
+                    if (!url.startsWith('data:image/webp')) {
+                        url = c.toDataURL('image/jpeg', quality);
+                    }
+                    resolve(url);
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.onerror = () => reject(new Error('load failed'));
+            img.src = src;
+        });
+    }
+
+    // ---- Сбор данных модели ----
+    async function buildShareData(model) {
+        const data = {
+            n: model.displayName || model.name || 'Без имени',
+            d: model.description || '',
+            t: (model.tags || []).map(t => typeof t === 'string' ? { name: t } : t)
+        };
+        if (model.nsfw) data.f = 1;
+        if (model.comingSoon) data.cs = 1;
+
+        // Пытаемся получить миниатюру превью
+        const imgSrc = model.preview || (model.name ? `models/${model.name}/icon.webp` : '');
+        if (imgSrc) {
+            try {
+                data.i = await makeShareThumbnail(imgSrc, 400, 0.7);
+            } catch (e) {
+                console.warn('[SHARE] Thumbnail failed:', e);
+                // Fallback — путь строкой (не встроен в base64)
+                data.ip = imgSrc;
+            }
+        }
+        return data;
+    }
+
+    // ---- Base64url кодирование (UTF-8 safe) ----
+    function encodeShare(data) {
+        const bytes = new TextEncoder().encode(JSON.stringify(data));
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function decodeShare(str) {
+        let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    // ---- Toast через существующий элемент ----
+    function shareToast(text) {
+        const msg = document.getElementById('share-message');
+        if (!msg) return;
+        const orig = msg.textContent;
+        msg.textContent = text;
+        msg.style.display = 'inline-block';
+        clearTimeout(shareToast._t);
+        shareToast._t = setTimeout(() => {
+            msg.style.display = 'none';
+            msg.textContent = orig;
+        }, 2500);
+    }
+
+    // ---- Главная функция: поделиться моделью ----
+    async function shareModel(model) {
+        if (!model) return;
+        try { playShareSound(); } catch (e) {}
+
+        try {
+            const data = await buildShareData(model);
+            const url = location.origin + location.pathname + '#share=' + encodeShare(data);
+            const kb = Math.round(url.length / 1024);
+
+            console.log('[SHARE] URL length:', url.length, 'chars (~' + kb + 'KB)');
+
+            if (url.length > 60000) {
+                const ok = confirm(
+                    `Ссылка получается длинной (${kb} КБ).\n` +
+                    `Firefox и старый Safari могут её не открыть.\n\nПродолжить?`
+                );
+                if (!ok) return;
+            }
+
+            // Мобилки — нативный share
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: data.n,
+                        text: (data.d || '').replace(/\[[^\]]+\]/g, '').substring(0, 200),
+                        url
+                    });
+                    shareToast('Ссылка отправлена!');
+                    return;
+                } catch (e) {
+                    if (e.name === 'AbortError') return;
+                    console.warn('[SHARE] navigator.share failed:', e);
+                }
+            }
+
+            // Десктоп — в буфер
+            try {
+                await navigator.clipboard.writeText(url);
+                shareToast(`Ссылка скопирована (${kb} КБ)`);
+            } catch (e) {
+                prompt('Скопируйте ссылку:', url);
+            }
+        } catch (e) {
+            console.error('[SHARE] error:', e);
+            shareToast('Ошибка: ' + e.message);
+        }
+    }
+
+    // ---- Показ карточки по ссылке ----
+    function showSharedCard(data) {
+        const modal = document.getElementById('shared-model-modal');
+        if (!modal) {
+            console.error('[SHARE] #shared-model-modal не найден');
+            return;
+        }
+
+        document.getElementById('shared-name').textContent = data.n || 'Без имени';
+
+        // Теги
+        document.getElementById('shared-tags').innerHTML = (data.t || []).map(tag => {
+            const name = typeof tag === 'string' ? tag : (tag.name || '');
+            const color = typeof tag === 'string' ? null : tag.color;
+            let style = '';
+            let cls = '';
+            if (color === 'rainbow') cls = 'rainbow-text';
+            else if (color) style = ` style="color:${color}; border-color:${color}; background:rgba(0,0,0,0.5);"`;
+            return `<span class="tag ${cls}"${style}>${escapeHtml(name)}</span>`;
+        }).join('');
+
+        // Бейджи
+        const badges = document.getElementById('shared-badges');
+        badges.innerHTML = '';
+        if (data.f) badges.innerHTML += '<span class="tag" style="color:var(--danger);border-color:var(--danger);background:rgba(255,0,0,0.15);font-weight:bold;">18+</span>';
+        if (data.cs) badges.innerHTML += '<span class="tag" style="color:#888;border-color:#888;background:rgba(0,0,0,0.3);">SOON</span>';
+
+        // Описание
+        document.getElementById('shared-desc').innerHTML =
+            parseBBCode(data.d || '').replace(/\n/g, '<br>');
+
+        // Превью
+        const imgEl = document.getElementById('shared-preview-img');
+        const imgSrc = data.i || data.ip || '';
+        if (imgSrc) {
+            imgEl.src = imgSrc;
+            imgEl.onerror = () => { imgEl.src = 'https://placehold.co/400x400?text=NO+PREVIEW'; };
+        } else {
+            imgEl.src = 'https://placehold.co/400x400?text=NO+PREVIEW';
+        }
+
+        // Кнопка "Копировать ссылку" внутри карточки
+        const copyBtn = document.getElementById('shared-copy-btn');
+        if (copyBtn) {
+            copyBtn.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(currentSharedUrl || location.href);
+                    try { playShareSound(); } catch (e) {}
+                    shareToast('Ссылка скопирована!');
+                } catch (e) {
+                    prompt('Скопируйте ссылку:', currentSharedUrl || location.href);
+                }
+            };
+        }
+
+        try { playModalOpenSound(); } catch (e) {}
+        modal.style.display = 'flex';
+        requestAnimationFrame(() => modal.classList.add('active'));
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSharedModal() {
+        const modal = document.getElementById('shared-model-modal');
+        if (!modal) return;
+        try { playModalCloseSound(); } catch (e) {}
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 300);
+        // Чистим hash, чтобы F5 не открыл карточку снова
+        if (location.hash.startsWith('#share=')) {
+            history.replaceState(null, '', location.pathname + location.search);
+        }
+        currentSharedUrl = '';
+    }
+
+    // ---- Проверка входящей ссылки ----
+    function handleSharedLink() {
+        if (!location.hash.startsWith('#share=')) return false;
+        try {
+            const raw = location.hash.substring(7);
+            const data = decodeShare(raw);
+            currentSharedUrl = location.href;
+            showSharedCard(data);
+            return true;
+        } catch (e) {
+            console.error('[SHARE] decode failed:', e);
+            alert('Ссылка повреждена или несовместима с текущей версией сайта.');
+            history.replaceState(null, '', location.pathname + location.search);
+            return false;
+        }
+    }
+
+    // ---- Публичный API ----
+    window.shareModel = shareModel;
+    window.handleSharedLink = handleSharedLink;
+
+    // ---- Закрытие модалки ----
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('shared-model-modal');
+        if (!modal) return;
+
+        document.getElementById('shared-model-close')?.addEventListener('click', closeSharedModal);
+        document.getElementById('shared-model-overlay')?.addEventListener('click', closeSharedModal);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeSharedModal();
+            }
+        });
+    });
 })();
 
 // ============================================================
