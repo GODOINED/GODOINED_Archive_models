@@ -1,6 +1,12 @@
 // ============================================================
 //  ЗАГРУЗОЧНЫЙ ЭКРАН (ТЕРМИНАЛ С ПРОПУСКОМ)
 // ============================================================
+function isLocalServer() {
+    return window.location.protocol === 'file:' || 
+           window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1';
+}
+
 (function initTerminal() {
     const screen = document.getElementById('loading-screen');
     const output = document.getElementById('terminal-output');
@@ -1192,10 +1198,23 @@ function showGallery() {
         document.body.style.overflow = '';
         window.scrollTo(0, 0);
     }
-    if (window.location.search.includes('model=')) {
-        const url = new URL(window.location);
-        url.searchParams.delete('model');
-        window.history.pushState({}, '', url);
+    if (window.location.search.includes('model=') || window.location.pathname.includes('/model/')) {
+        let basePath = window.location.pathname.replace(/index\.html$/, '');
+        
+        if (isLocalServer()) {
+            // Локально просто убираем ?model=...
+            if (basePath.includes('/model/')) {
+                basePath = basePath.split('/model/')[0] + '/';
+            }
+        } else {
+            // На сайте убираем папку /model/Name/
+            if (basePath.includes('/model/')) {
+                basePath = basePath.split('/model/')[0] + '/';
+            }
+            if (!basePath.endsWith('/')) basePath += '/';
+        }
+        
+        window.history.pushState({}, '', basePath);
     }
     currentModelName = null;
     const canvas = document.getElementById('animation-canvas');
@@ -1445,9 +1464,27 @@ function showModelDetail(modelName) {
     const gallery = document.getElementById('gallery-container');
     const detail = document.getElementById('detail-container');
     const header = document.getElementById('main-header');
-    const url = new URL(window.location);
-    url.searchParams.set('model', modelName);
-    window.history.pushState({ model: modelName }, '', url);
+    
+    let staticUrl;
+    
+    // Если мы ЛОКАЛЬНО, просто используем ?model=...
+    if (isLocalServer()) {
+        let basePath = window.location.pathname.replace(/index\.html$/, '');
+        if (basePath.includes('/model/')) {
+            basePath = basePath.split('/model/')[0] + '/';
+        }
+        staticUrl = basePath + '?model=' + encodeURIComponent(modelName);
+    } else {
+        // Если НА САЙТЕ (GitHub Pages), делаем красивые ссылки /model/Name/
+        let basePath = window.location.pathname.replace(/index\.html$/, '');
+        if (basePath.includes('/model/')) {
+            basePath = basePath.split('/model/')[0] + '/';
+        }
+        if (!basePath.endsWith('/')) basePath += '/';
+        staticUrl = basePath + 'model/' + encodeURIComponent(modelName) + '/';
+    }
+    
+    window.history.pushState({ model: modelName }, '', staticUrl);
     document.title = `${modelName} — 3D модель`;
 
     const model = allModels.find(m => m.name === modelName);
@@ -1497,25 +1534,23 @@ function showModelDetail(modelName) {
     shareBtn.onclick = async () => {
         playShareSound();
         
-        // Формируем чистую ссылку на модель
-        const url = window.location.origin + window.location.pathname + '?model=' + encodeURIComponent(model.name);
+        let shareUrl = window.location.href;
+        
+        // Локально ссылка не будет иметь превью, но чтобы не копировать file:/// пути, 
+        // на локальном сервере можно копировать просто локальный ?model=
+        if (window.location.protocol === 'file:') {
+            shareUrl = window.location.pathname + '?model=' + encodeURIComponent(model.name);
+        }
 
         try {
-            // Копируем в буфер обмена
-            await navigator.clipboard.writeText(url);
-            
-            // Показываем сообщение об успехе
+            await navigator.clipboard.writeText(shareUrl);
             shareMsg.style.display = 'inline-block';
             shareMsg.textContent = currentLang === 'ru' ? 'Ссылка скопирована!' : 'Link copied!';
-            
-            // Скрываем через 2 секунды
             setTimeout(() => { 
                 shareMsg.style.display = 'none'; 
             }, 2000);
-            
         } catch (e) {
-            // Если браузер не разрешает доступ к буферу (например, нет HTTPS), показываем окно с текстом
-            prompt('Скопируйте ссылку вручную:', url);
+            prompt('Скопируйте ссылку вручную:', shareUrl);
         }
     };
 
@@ -2221,14 +2256,19 @@ function setupNavigation() {
         backBtn.addEventListener('click', (e) => {
             e.preventDefault();
             showGallery();
-            const url = new URL(window.location);
-            url.searchParams.delete('model');
-            window.history.pushState({}, '', url);
         });
     }
+    
     window.addEventListener('popstate', (event) => {
         const params = new URLSearchParams(window.location.search);
-        const model = params.get('model');
+        let model = params.get('model');
+        
+        // Проверяем красивый путь ТОЛЬКО если мы не локально
+        if (!model && !isLocalServer()) {
+            const pathMatch = window.location.pathname.match(/\/model\/([^/]+)\/?$/);
+            if (pathMatch) model = decodeURIComponent(pathMatch[1]);
+        }
+        
         if (model) {
             showModelDetail(model);
         } else {
