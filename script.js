@@ -511,6 +511,26 @@ let modalIsOpen = false;
 let currentVideoElement = null;
 let playerInterval = null;
 
+// Возвращает корневой путь сайта (например, / или /GODOINED_Archive_models/)
+function getBaseUrl() {
+    let path = window.location.pathname;
+    if (path.includes('/model/')) {
+        path = path.split('/model/')[0];
+    }
+    path = path.replace(/index\.html$/, '');
+    if (!path.endsWith('/')) path += '/';
+    return path;
+}
+
+// Превращает относительный путь в абсолютный
+function resolveUrl(url) {
+    if (!url) return '';
+    // Если путь уже полный (начинается с http или data) — не трогаем
+    if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+    return getBaseUrl() + cleanUrl;
+}
+
 (function ensureAudio() {
     function resumeAudio() {
         if (audioCtx && audioCtx.state === 'suspended') {
@@ -737,7 +757,7 @@ function downloadWithEffect(downloadUrl) {
 async function fetchModels() {
     if (allModels.length) return allModels;
     try {
-        const response = await fetch('models_list.json');
+        const response = await fetch(resolveUrl('models_list.json'));
         if (!response.ok) throw new Error('Не удалось загрузить models_list.json');
         const data = await response.json();
         if (Array.isArray(data) && data.length) {
@@ -902,9 +922,9 @@ function renderModelsGrid(models) {
             card.style.setProperty('--rx', '0deg');
         });
         
-        let previewUrl = model.preview || `models/${model.name}/frames/start/0001.webp`;
-        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = `models/${model.name}/frames/idle/0001.webp`;
-        if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = model.preview || `models/${model.name}/icon.webp`;
+        let previewUrl = resolveUrl(model.preview || `models/${model.name}/frames/start/0001.webp`);
+        if (model.startFrames === 0 && model.idleFrames > 0) previewUrl = resolveUrl(`models/${model.name}/frames/idle/0001.webp`);
+        if (model.startFrames === 0 && model.idleFrames === 0) previewUrl = resolveUrl(model.preview || `models/${model.name}/icon.webp`);
         
         const img = document.createElement('img');
         img.className = 'preview';
@@ -1573,10 +1593,10 @@ function showModelDetail(modelName) {
     const allMedia = [];
 
     renders.forEach(src => {
-        allMedia.push({ type: 'image', src: src });
+        allMedia.push({ type: 'image', src: resolveUrl(src) }); 
     });
     videos.forEach(src => {
-        allMedia.push({ type: 'video', src: src });
+        allMedia.push({ type: 'video', src: resolveUrl(src) }); 
     });
 
     function openModalWithMedia(index) {
@@ -1592,7 +1612,7 @@ function showModelDetail(modelName) {
             renders.forEach((url, index) => {
                 const thumb = document.createElement('img');
                 thumb.className = 'render-thumbnail';
-                thumb.src = url;
+                thumb.src = resolveUrl(url);
                 thumb.alt = `Рендер ${index + 1}`;
                 thumb.loading = 'lazy';
                 thumb.addEventListener('click', () => {
@@ -1661,10 +1681,10 @@ function showModelDetail(modelName) {
     }
 
     const startUrls = Array.from({ length: model.startFrames }, (_, i) => 
-        `models/${model.name}/frames/start/${String(i+1).padStart(4, '0')}.webp`
+        resolveUrl(`models/${model.name}/frames/start/${String(i+1).padStart(4, '0')}.webp`)
     );
     const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => 
-        `models/${model.name}/frames/idle/${String(i+1).padStart(4, '0')}.webp`
+        resolveUrl(`models/${model.name}/frames/idle/${String(i+1).padStart(4, '0')}.webp`)
     );
 
     const fps = (model.fps && typeof model.fps === 'number' && model.fps > 0) ? model.fps : 24;
@@ -1673,7 +1693,7 @@ function showModelDetail(modelName) {
     if (model.startFrames === 0 && model.idleFrames === 0) {
         const canvas = document.getElementById('animation-canvas');
         const ctx = canvas.getContext('2d');
-        const iconUrl = model.preview || `models/${model.name}/icon.webp`;
+        const iconUrl = resolveUrl(model.preview || `models/${model.name}/icon.webp`);
         const img = new Image();
         img.onload = () => {
             canvas.width = img.width;
