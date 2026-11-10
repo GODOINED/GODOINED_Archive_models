@@ -158,5 +158,33 @@
     "videos": [],
     "comingSoon": true,
     "preview": "models/Spidee/icon.jpg"
+  },
+  {
+    "name": "Alex",
+    "displayName": "Alex",
+    "description": "Coming soon",
+    "tags": [
+      {
+        "name": "gift",
+        "color": "#ffd53d"
+      },
+      {
+        "name": "OC",
+        "color": "#ffd53d"
+      },
+      {
+        "name": "NSFW",
+        "color": "#ff0000"
+      }
+    ],
+    "startFrames": 0,
+    "idleFrames": 0,
+    "fps": 24,
+    "renders": [],
+    "videos": [],
+    "comingSoon": true,
+    "nsfw": true,
+    "transparentPreview": true,
+    "preview": "models/Alex/fb3reflection.webp"
   }
 ]
