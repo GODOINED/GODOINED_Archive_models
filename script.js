@@ -353,6 +353,7 @@ const i18n = {
         nsfwText: "Этот контент может содержать материалы для взрослых. Вы подтверждаете, что вам исполнилось 18 лет?",
         nsfwAccept: "МНЕ 18, ОТКРЫТЬ",
         nsfwCancel: "ОТМЕНА",
+        
         dialogs: {
             name: "Как тебя зовут?", nameSub: "Можно пропустить.", namePlaceholder: "ИМЯ",
             material: "Из чего сделан этот сосуд?",
@@ -368,7 +369,17 @@ const i18n = {
             files: "Есть ли у тебя референсы?", filesSub: "До 5 МБ. Можно несколько.",
             btnNext: "▶ ДАЛЕЕ", btnSkip: "✕ ПРОПУСТИТЬ", btnBack: "← НАЗАД", btnSend: "▶ ОТПРАВИТЬ", btnMail: "📧 ПОЧТА",
             summaryTitle: "Вот что я записал.", summarySure: "Всё верно?",
-            reactions: { name: "Хорошо.", material: "Материал принят.", food: "Записал.", color: "Красивый выбор.", purpose: "Судьба предрешена.", gift: "Принято.", fear: "Страх зафиксирован.", feeling: "Хорошо.", honest: "Записал.", pain: "Понял.", message: "Понял.", files: "Записал." }
+            reactions: { name: "Хорошо.", material: "Материал принят.", food: "Записал.", color: "Красивый выбор.", purpose: "Судьба предрешена.", gift: "Принято.", fear: "Страх зафиксирован.", feeling: "Хорошо.", honest: "Записал.", pain: "Понял.", message: "Понял.", files: "Записал." },
+            finalTitle: "Финальный штрих.",
+            finalSub: "Добавь текст и ссылки. Справа — как это будет на сайте.",
+            // НОВЫЕ КЛЮЧИ:
+            cardPreview: ">> ПРЕДПРОСМОТР КАРТОЧКИ",
+            cardEditHint: "▼ КЛИКНИ, ЧТОБЫ ИЗМЕНИТЬ ▼",
+            noImage: "НЕТ КАРТИНКИ",
+            charNameDefault: "ИМЯ ПЕРСОНАЖА",
+            charDescPlaceholder: "Напиши здесь текст о персонаже...",
+            socialsPlaceholderInline: "Вставь ссылки на соц-сети (каждая с новой строки)...",
+            unnamed: "Безымянный"
         }
     },
     en: {
@@ -438,7 +449,17 @@ const i18n = {
             files: "Do you have any references?", filesSub: "Up to 5 MB. Multiple allowed.",
             btnNext: "▶ NEXT", btnSkip: "✕ SKIP", btnBack: "← BACK", btnSend: "▶ SEND", btnMail: "📧 MAIL",
             summaryTitle: "Here is what I recorded.", summarySure: "Is this correct?",
-            reactions: { name: "Okay.", material: "Material accepted.", food: "Noted.", color: "Beautiful choice.", purpose: "Fate is sealed.", gift: "Accepted.", fear: "Fear recorded.", feeling: "Okay.", honest: "Noted.", pain: "Understood.", message: "Understood.", files: "Noted." }
+            reactions: { name: "Okay.", material: "Material accepted.", food: "Noted.", color: "Beautiful choice.", purpose: "Fate is sealed.", gift: "Accepted.", fear: "Fear recorded.", feeling: "Okay.", honest: "Noted.", pain: "Understood.", message: "Understood.", files: "Noted." },
+            finalTitle: "Final touch.",
+            finalSub: "Add text and links. Right side — how it will look on site.",
+            // НОВЫЕ КЛЮЧИ:
+            cardPreview: ">> CARD PREVIEW",
+            cardEditHint: "▼ CLICK TO EDIT ▼",
+            noImage: "NO IMAGE",
+            charNameDefault: "CHARACTER NAME",
+            charDescPlaceholder: "Write character text here...",
+            socialsPlaceholderInline: "Paste social links (one per line)...",
+            unnamed: "Unnamed"
         }
     }
 };
@@ -2470,8 +2491,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const MAX_TOTAL_SIZE = 5 * 1024 * 1024;
     const state = {
-        step: 0, name: '', material: '', food: '', color: '', colorHex: '', colorName: '', purpose: '',
-        gift: '', fear: '', feeling: '', honest: '', pain: '', message: '', files: null
+        step: 0, name: '', charName: '', material: '', food: '', color: '', colorHex: '', colorName: '', purpose: '',
+        gift: '', fear: '', feeling: '', honest: '', pain: '', message: '', cardDesc: '', socials: '', files: null
     };
 
     let currentProgress = 0;
@@ -2601,7 +2622,11 @@ document.addEventListener('DOMContentLoaded', () => {
               
             { type: 'file', key: 'files', question: tDialog('files'),
               sub: tDialog('filesSub'), optional: true, 
-              reaction: tReact('files') }
+              reaction: tReact('files') },
+
+            // НОВЫЙ ФИНАЛЬНЫЙ ШАГ
+            { type: 'final_form', key: 'final_form', question: tDialog('finalTitle'),
+              sub: tDialog('finalSub') }
         ];
     }
 
@@ -3697,44 +3722,99 @@ document.addEventListener('DOMContentLoaded', () => {
         status.textContent = currentLang === 'ru' ? '⏳ Сосуд формируется...' : '⏳ Vessel is forming...';
         dialogue.appendChild(status);
 
-        const form = document.createElement('form');
-        form.action = 'https://formsubmit.co/goodmopsreset@gmail.com';
-        form.method = 'POST'; form.enctype = 'multipart/form-data'; form.target = 'hidden_iframe'; form.style.display = 'none';
-
+        // Данные для отправки
         const fields = {
-            '_subject': 'Godoined Archive новая заявка', '_replyto': 'goodmopsreset@gmail.com', '_captcha': 'false',
-            'name': state.name || 'Аноним', 'material': state.material, 'food': state.food, 'color': state.color,
+            '_subject': 'Godoined Archive новая заявка', 
+            '_replyto': 'goodmopsreset@gmail.com', 
+            '_captcha': 'false',
+            'name': state.name || 'Аноним', 
+            'charName': state.charName || 'Не указано',
+            'material': state.material, 'food': state.food, 'color': state.color,
             'purpose': state.purpose, 'gift': state.gift, 'fear': state.fear, 'feeling': state.feeling,
-            'honest': state.honest, 'pain': state.pain, 'message': state.message
+            'honest': state.honest, 'pain': state.pain, 
+            'message': state.message || 'Не указано',
+            'cardDesc': state.cardDesc || 'Не указано',
+            'socials': state.socials || 'Не указано'
         };
-        for (const key in fields) { const input = document.createElement('input'); input.type = 'hidden'; input.name = key; input.value = fields[key]; form.appendChild(input); }
 
-        if (state.files && state.files.length > 0) {
+        const hasFiles = state.files && state.files.length > 0;
+
+        if (hasFiles) {
+            // --- ВАРИАНТ С ФАЙЛАМИ (ОТКРЫВАЕМ В НОВОЙ ВКЛАДКЕ) ---
+            // FormSubmit не поддерживает файлы через AJAX, поэтому мы используем 
+            // стандартную форму, но открываем её в новой вкладке, чтобы избежать ошибки iframe.
+            const form = document.createElement('form');
+            form.action = 'https://formsubmit.co/goodmopsreset@gmail.com';
+            form.method = 'POST'; 
+            form.enctype = 'multipart/form-data'; 
+            form.target = '_blank'; // Открываем в новой вкладке
+            form.style.display = 'none';
+
+            for (const key in fields) { 
+                const input = document.createElement('input'); 
+                input.type = 'hidden'; 
+                input.name = key; 
+                input.value = fields[key]; 
+                form.appendChild(input); 
+            }
+
             state.files.forEach((file, index) => {
-                const fileInput = document.createElement('input'); fileInput.type = 'file';
-                fileInput.name = 'attachment' + (index + 1); fileInput.style.display = 'none';
-                const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files;
+                const fileInput = document.createElement('input'); 
+                fileInput.type = 'file';
+                fileInput.name = 'attachment' + (index + 1); 
+                fileInput.style.display = 'none';
+                const dt = new DataTransfer(); 
+                dt.items.add(file); 
+                fileInput.files = dt.files;
                 form.appendChild(fileInput);
             });
+
+            document.body.appendChild(form);
+            form.submit();
+
+            setTimeout(() => {
+                form.remove(); 
+                status.textContent = currentLang === 'ru' ? '✅ Связь установлена. Завершаем ритуал...' : '✅ Connection established. Finishing ritual...';
+                playFinalAcceptance();
+            }, 2000);
+
+        } else {
+            // --- ВАРИАНТ БЕЗ ФАЙЛОВ (AJAX, ОСТАЕМСЯ НА САЙТЕ) ---
+            const endpoint = 'https://formsubmit.co/ajax/goodmopsreset@gmail.com';
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(fields)
+            })
+            .then(response => response.json())
+            .then(res => {
+                status.textContent = currentLang === 'ru' ? '✅ Связь установлена. Завершаем ритуал...' : '✅ Connection established. Finishing ritual...';
+                playFinalAcceptance();
+            })
+            .catch(error => {
+                console.error('Ошибка отправки:', error);
+                status.className = 'dt-status error';
+                status.textContent = currentLang === 'ru' ? '❌ Ошибка связи. Используйте кнопку "ПОЧТА".' : '❌ Connection error. Use "MAIL" button.';
+                if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = tDialog('btnSend'); }
+            });
         }
-
-        document.body.appendChild(form);
-        form.submit();
-
-        setTimeout(() => {
-            form.remove(); 
-            status.textContent = currentLang === 'ru' ? '✅ Связь установлена. Завершаем ритуал...' : '✅ Connection established. Finishing ritual...';
-            playFinalAcceptance();
-        }, 2500);
     }
 
     function sendViaMailto() {
         const subject = encodeURIComponent('Godoined Archive новая заявка');
         const body = encodeURIComponent(
-            `Имя: ${state.name || 'Аноним'}\nМатериал: ${state.material}\nЕда: ${state.food}\nЦвет: ${state.color}\n` +
+            `Имя отправителя: ${state.name || 'Аноним'}\n` +
+            `Имя персонажа: ${state.charName || 'Не указано'}\n` +
+            `Материал: ${state.material}\nЕда: ${state.food}\nЦвет: ${state.color}\n` +
             `Предназначение: ${state.purpose}\nДар: ${state.gift}\nСтрах: ${state.fear}\n` +
             `Чувства: ${state.feeling}\nЧестность: ${state.honest}\nБоль: ${state.pain}\n\n` +
-            `Описание:\n${state.message}\n\n---\nПрикрепите референсы к этому письму.`
+            `Текст из формы:\n${state.message || 'Нет'}\n\n` +
+            `Описание из карточки:\n${state.cardDesc || 'Нет'}\n\n` +
+            `Соц-сети:\n${state.socials || 'Не указаны'}\n\n---\nПрикрепите референсы к этому письму.`
         );
         window.open(`mailto:goodmopsreset@gmail.com?subject=${subject}&body=${body}`, '_blank');
     }
@@ -3742,8 +3822,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- ДИАЛОГ ----
     function clearDialogue() {
         if (typeState && typeState.timer) clearTimeout(typeState.timer);
-        typeState = null; dialogue.innerHTML = '';
-        if (window.dtKeyHandler) { document.removeEventListener('keydown', window.dtKeyHandler); window.dtKeyHandler = null; }
+        typeState = null; 
+        dialogue.innerHTML = '';
+        if (window.dtKeyHandler) { 
+            document.removeEventListener('keydown', window.dtKeyHandler); 
+            window.dtKeyHandler = null; 
+        }
+        
+        // НОВАЯ СТРОКА: удаляем обработчик закрытия панелей
+        if (window.__dt_closePanels) {
+            document.removeEventListener('mousedown', window.__dt_closePanels);
+            window.__dt_closePanels = null;
+        }
     }
     const pause = (ms) => new Promise(res => setTimeout(res, ms));
 
@@ -3777,6 +3867,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await pause(400);
             if (step.type === 'text') renderTextInput(step);
             else if (step.type === 'textarea') renderTextarea(step);
+            else if (step.type === 'final_form') renderFinalForm(step);
             else if (step.type === 'file') renderFileInput(step);
             else if (step.type === 'choice') renderChoices(step);
             else if (step.type === 'color') renderColorInput(step);
@@ -3828,7 +3919,330 @@ document.addEventListener('DOMContentLoaded', () => {
         ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); next.click(); } });
         setTimeout(() => ta.focus(), 100);
     }
+    function renderFinalForm(step) {
+        const layout = document.createElement('div');
+        layout.className = 'dt-card-edit-wrapper';
+        layout.style.display = 'flex';
+        layout.style.justifyContent = 'center';
+        layout.style.width = '100%';
 
+        const card = document.createElement('div');
+        card.className = 'site-replica-preview';
+        card.style.width = '100%';
+        card.style.maxWidth = '600px';
+        card.style.textAlign = 'left';
+
+        // Заголовок
+        const pHeader = document.createElement('div');
+        pHeader.className = 'preview-header';
+        pHeader.innerHTML = `<span>${tDialog('cardPreview')}</span><span class="edit-hint">${tDialog('cardEditHint')}</span>`;
+        card.appendChild(pHeader);
+
+        // Картинка
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'preview-img-wrap';
+        if (state.files && state.files.length > 0 && state.files[0].type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(state.files[0]);
+            imgWrap.appendChild(img);
+        } else {
+            imgWrap.innerHTML = `<span style="color:#555;font-size:0.7rem;">${tDialog('noImage')}</span>`;
+        }
+        card.appendChild(imgWrap);
+
+        // Имя
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'editable-title';
+        nameInput.value = state.charName || tDialog('charNameDefault');
+        nameInput.maxLength = 30;
+        
+        nameInput.addEventListener('focus', () => {
+            if (nameInput.value === tDialog('charNameDefault')) nameInput.value = '';
+        });
+        nameInput.addEventListener('blur', () => {
+            if (!nameInput.value.trim()) nameInput.value = tDialog('charNameDefault');
+            state.charName = nameInput.value.trim() === tDialog('charNameDefault') ? '' : nameInput.value.trim();
+        });
+        nameInput.addEventListener('input', () => {
+            state.charName = nameInput.value.trim();
+        });
+        card.appendChild(nameInput);
+
+        // Теги
+        const tagsWrap = document.createElement('div');
+        tagsWrap.className = 'preview-tags';
+        const tagsToShow = [state.material, state.feeling, state.purpose].filter(Boolean);
+        tagsToShow.forEach(tagName => {
+            const span = document.createElement('span');
+            span.className = 'tag';
+            span.textContent = tagName;
+            tagsWrap.appendChild(span);
+        });
+        card.appendChild(tagsWrap);
+
+        // --- РЕДАКТОР ---
+        const editorWrap = document.createElement('div');
+        editorWrap.className = 'bb-editor-wrap';
+        editorWrap.style.position = 'relative';
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'bb-toolbar';
+        toolbar.innerHTML = `
+            <button type="button" data-cmd="bold" title="Жирный"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="Курсив"><i>I</i></button>
+            <button type="button" data-cmd="underline" title="Подчеркнутый"><u>U</u></button>
+            <button type="button" data-cmd="rainbow" title="Радуга">🌈</button>
+            <button type="button" data-cmd="shake" title="Тряска">〰</button>
+            <button type="button" data-cmd="link" title="Ссылка">🔗</button>
+            <button type="button" data-cmd="clear" title="Очистить форматирование">🧹</button>
+            <input type="color" class="bb-color-input" title="Выбрать цвет" value="#ffffff">
+        `;
+
+        // Панель настроек тряски
+        const shakePanel = document.createElement('div');
+        shakePanel.className = 'settings-panel';
+        shakePanel.innerHTML = `
+            <label>Скорость <span id="shake-dur-val">0.1s</span></label>
+            <input type="range" id="shake-dur" min="0.01" max="0.5" step="0.01" value="0.1">
+            <label>Сила <span id="shake-dist-val">2px</span></label>
+            <input type="range" id="shake-dist" min="0.5" max="10" step="0.5" value="2">
+            <button class="btn-apply" id="shake-apply">ПРИМЕНИТЬ</button>
+        `;
+        editorWrap.appendChild(shakePanel);
+
+        // Панель настроек ссылки
+        const linkPanel = document.createElement('div');
+        linkPanel.className = 'settings-panel';
+        linkPanel.innerHTML = `
+            <label>URL ссылки</label>
+            <input type="text" id="link-url" placeholder="https://..." value="https://">
+            <button class="btn-apply" id="link-apply">ВСТАВИТЬ</button>
+        `;
+        editorWrap.appendChild(linkPanel);
+
+        const descEditor = document.createElement('div');
+        descEditor.className = 'editable-text';
+        descEditor.contentEditable = 'true';
+        descEditor.style.minHeight = '80px';
+        descEditor.style.whiteSpace = 'pre-wrap';
+        descEditor.style.cursor = 'text';
+        descEditor.style.textAlign = 'left';
+        
+        if (state.cardDescHTML) {
+            descEditor.innerHTML = state.cardDescHTML;
+        } else if (state.cardDesc) {
+            descEditor.innerHTML = parseBBCode(state.cardDesc).replace(/\n/g, '<br>');
+        } else if (state.message) {
+            descEditor.innerHTML = parseBBCode(state.message).replace(/\n/g, '<br>');
+        }
+
+        // Очистка при вставке
+        descEditor.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+        descEditor.addEventListener('dragover', (e) => e.preventDefault());
+        descEditor.addEventListener('drop', (e) => e.preventDefault());
+
+        descEditor.addEventListener('focus', () => toolbar.style.display = 'flex');
+        descEditor.addEventListener('input', () => {
+            state.cardDescHTML = descEditor.innerHTML;
+        });
+
+        // СКРЫТИЕ ПАНЕЛЕЙ ПРИ КЛИКЕ В САМ ТЕКСТ
+        descEditor.addEventListener('mousedown', () => {
+            shakePanel.style.display = 'none';
+            linkPanel.style.display = 'none';
+        });
+
+        let savedRange = null; 
+
+        // Блокировка кликов сквозь панели
+        const blockEvents = (e) => e.stopPropagation();
+        [shakePanel, linkPanel].forEach(panel => {
+            panel.addEventListener('mousedown', blockEvents);
+            panel.addEventListener('pointerdown', blockEvents);
+            panel.addEventListener('click', blockEvents);
+        });
+
+        // Обработчики для тряски
+        const durInput = shakePanel.querySelector('#shake-dur');
+        const distInput = shakePanel.querySelector('#shake-dist');
+        const durVal = shakePanel.querySelector('#shake-dur-val');
+        const distVal = shakePanel.querySelector('#shake-dist-val');
+
+        durInput.addEventListener('input', (e) => { e.stopPropagation(); durVal.textContent = durInput.value + 's'; });
+        distInput.addEventListener('input', (e) => { e.stopPropagation(); distVal.textContent = distInput.value + 'px'; });
+
+        shakePanel.querySelector('#shake-apply').addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (!savedRange) return;
+
+            const dur = durInput.value;
+            const dist = distInput.value;
+            const text = savedRange.toString();
+            const chars = text.split('');
+
+            let html = `<span class="shake-preview" data-dur="${dur}" data-dist="${dist}">`;
+            chars.forEach((ch) => {
+                if (ch === ' ') html += ' ';
+                else {
+                    const delay = (Math.random() * 0.5).toFixed(2);
+                    html += `<span class="shake-char-preview" style="animation-duration: ${dur}s; --shake-distance: ${dist}px; animation-delay: ${delay}s;">${ch}</span>`;
+                }
+            });
+            html += `</span>`;
+
+            savedRange.deleteContents();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            savedRange.insertNode(tempDiv.firstChild);
+
+            shakePanel.style.display = 'none';
+            state.cardDescHTML = descEditor.innerHTML;
+            descEditor.focus();
+        });
+
+        // Обработчик для ссылки
+        linkPanel.querySelector('#link-apply').addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const url = linkPanel.querySelector('#link-url').value.trim();
+            if (!url || url === 'https://') return;
+
+            descEditor.focus();
+            if (savedRange && savedRange.toString().length > 0) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.textContent = savedRange.toString();
+                a.target = '_blank';
+                savedRange.deleteContents();
+                savedRange.insertNode(a);
+            } else {
+                document.execCommand('insertHTML', false, `<a href="${url}" target="_blank">${url}</a>`);
+            }
+            
+            linkPanel.style.display = 'none';
+            state.cardDescHTML = descEditor.innerHTML;
+        });
+
+        // --- ЛОГИКА КНОПОК ---
+        toolbar.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault(); 
+                descEditor.focus();
+                const cmd = btn.dataset.cmd;
+
+                // Скрываем панели при нажатии любой кнопки тулбара
+                shakePanel.style.display = 'none';
+                linkPanel.style.display = 'none';
+
+                if (['bold', 'italic', 'underline'].includes(cmd)) {
+                    document.execCommand(cmd, false, null);
+                } 
+                else if (cmd === 'clear') {
+                    document.execCommand('removeFormat', false, null);
+                    const sel = window.getSelection();
+                    if (sel.rangeCount) {
+                        const range = sel.getRangeAt(0);
+                        const fragment = range.cloneContents();
+                        fragment.querySelectorAll('span, a').forEach(el => el.replaceWith(...el.childNodes));
+                        range.deleteContents();
+                        range.insertNode(fragment);
+                    }
+                }
+                else if (cmd === 'link') {
+                    const sel = window.getSelection();
+                    if (sel.rangeCount) savedRange = sel.getRangeAt(0);
+                    linkPanel.style.display = 'flex';
+                }
+                else if (cmd === 'rainbow') {
+                    const sel = window.getSelection();
+                    if (sel.rangeCount && sel.toString()) {
+                        const range = sel.getRangeAt(0);
+                        const parentSpan = range.commonAncestorContainer.parentElement;
+                        if (parentSpan && parentSpan.classList.contains('rainbow-text')) {
+                            parentSpan.replaceWith(...parentSpan.childNodes);
+                        } else {
+                            document.execCommand('insertHTML', false, `<span class="rainbow-text">${sel.toString()}</span>`);
+                        }
+                    }
+                }
+                else if (cmd === 'shake') {
+                    const sel = window.getSelection();
+                    if (sel.rangeCount && sel.toString().length > 0) {
+                        savedRange = sel.getRangeAt(0); 
+                        shakePanel.style.display = 'flex'; 
+                    } else {
+                        alert(currentLang === 'ru' ? "Сначала выделите текст для тряски!" : "Select text to shake first!");
+                    }
+                }
+                state.cardDescHTML = descEditor.innerHTML;
+            });
+        });
+
+        // Цвет
+        const colorPicker = toolbar.querySelector('.bb-color-input');
+        colorPicker.addEventListener('mousedown', (e) => e.stopPropagation());
+        colorPicker.addEventListener('input', (e) => {
+            descEditor.focus();
+            document.execCommand('foreColor', false, e.target.value);
+            state.cardDescHTML = descEditor.innerHTML;
+        });
+
+        editorWrap.appendChild(toolbar);
+        editorWrap.appendChild(descEditor);
+        card.appendChild(editorWrap);
+
+        // Соц-сети
+        const socInput = document.createElement('textarea');
+        socInput.className = 'editable-text';
+        socInput.rows = 2;
+        socInput.placeholder = tDialog('socialsPlaceholderInline');
+        socInput.value = state.socials || '';
+        socInput.style.borderTop = '1px dashed var(--border-color)';
+        socInput.style.marginTop = '10px';
+        socInput.style.paddingTop = '10px';
+        socInput.style.textAlign = 'left';
+        socInput.addEventListener('input', () => {
+            state.socials = socInput.value;
+        });
+        card.appendChild(socInput);
+
+        layout.appendChild(card);
+        dialogue.appendChild(layout);
+
+        // Кнопки
+        const actions = document.createElement('div');
+        actions.className = 'dt-actions';
+        actions.style.marginTop = '20px';
+        const next = document.createElement('button');
+        next.type = 'button'; next.className = 'dt-btn'; next.textContent = tDialog('btnNext');
+        
+        actions.appendChild(next);
+        dialogue.appendChild(actions);
+
+        next.addEventListener('click', () => {
+            const plainText = descEditor.innerText.trim();
+            if (!plainText) {
+                descEditor.style.borderColor = '#ff4444'; 
+                descEditor.focus();
+                setTimeout(() => { descEditor.style.borderColor = 'transparent'; }, 800);
+                return;
+            }
+            if (!state.charName) state.charName = tDialog('unnamed');
+            
+            state.cardDesc = htmlToBBCode(descEditor).trim();
+            state.socials = socInput.value.trim();
+            
+            playConfirm();
+            goNext(step);
+        });
+
+        setTimeout(() => nameInput.focus(), 200);
+    }
+    
     function renderFileInput(step) {
         const inp = document.createElement('input'); inp.type = 'file'; inp.className = 'dt-file'; inp.accept = 'image/*'; inp.multiple = true;
 
@@ -3918,8 +4332,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const sum = document.createElement('div'); sum.className = 'dt-summary';
         const fileCount = state.files ? state.files.length : 0;
         
+        // Берем текст, обрезаем его до 200 символов, чтобы не сломать верстку
+        const rawDesc = state.cardDesc || state.message || '—';
+        const truncatedDesc = rawDesc.length > 200 ? rawDesc.substring(0, 200) + '...' : rawDesc;
+        const parsedDesc = parseBBCode(truncatedDesc).replace(/\n/g, '<br>');
+
         sum.innerHTML = `
-            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ИМЯ' : 'NAME'}:</span><span class="dt-summary-value">${escapeHtml(state.name || '—')}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ИМЯ ОТПРАВИТЕЛЯ' : 'SENDER'}:</span><span class="dt-summary-value">${escapeHtml(state.name || '—')}</span></div>
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ИМЯ ПЕРСОНАЖА' : 'CHAR NAME'}:</span><span class="dt-summary-value">${escapeHtml(state.charName || '—')}</span></div>
             <div><span class="dt-summary-label">${currentLang === 'ru' ? 'МАТЕРИАЛ' : 'MATERIAL'}:</span><span class="dt-summary-value">${state.material}</span></div>
             <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЕДА' : 'FOOD'}:</span><span class="dt-summary-value">${state.food}</span></div>
             <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЦВЕТ' : 'COLOR'}:</span><span class="dt-summary-value" style="color: ${state.colorHex || '#fff'}; text-shadow: 0 0 10px ${state.colorHex || '#fff'};">${state.color}</span></div>
@@ -3929,7 +4349,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЧУВСТВА' : 'FEELING'}:</span><span class="dt-summary-value">${state.feeling}</span></div>
             <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ЧЕСТНОСТЬ' : 'HONEST'}:</span><span class="dt-summary-value">${state.honest}</span></div>
             <div><span class="dt-summary-label">${currentLang === 'ru' ? 'БОЛЬ' : 'PAIN'}:</span><span class="dt-summary-value">${state.pain}</span></div>
-            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ОПИСАНИЕ' : 'DESCRIPTION'}:</span><span class="dt-summary-value">${escapeHtml(state.message).replace(/\n/g, '<br>')}</span></div>
+            
+            <!-- ВОТ ЗДЕСЬ ТЕПЕРЬ КРАСИВЫЙ ТЕКСТ -->
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'ОПИСАНИЕ' : 'DESC'}:</span><span class="dt-summary-value">${parsedDesc}</span></div>
+            
+            <div><span class="dt-summary-label">${currentLang === 'ru' ? 'СОЦ-СЕТИ' : 'SOCIALS'}:</span><span class="dt-summary-value">${escapeHtml(state.socials || '—').replace(/\n/g, '<br>')}</span></div>
             <div><span class="dt-summary-label">${currentLang === 'ru' ? 'РЕФЕРЕНСЫ' : 'REFERENCES'}:</span><span class="dt-summary-value">${fileCount > 0 ? fileCount + (currentLang === 'ru' ? ' файл(ов)' : ' file(s)') : '—'}</span></div>
         `;
         dialogue.appendChild(sum); await pause(300);
@@ -4473,3 +4897,48 @@ window.RETRO = (function () {
         if (e.ctrlKey && e.altKey && (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К')) { e.preventDefault(); location.reload(); }
     });
 })();
+
+// Функция для перевода HTML из редактора обратно в BBCode
+function htmlToBBCode(node) {
+    if (node.nodeType === 3) return node.textContent; 
+    if (node.nodeType !== 1) return '';
+    
+    let content = Array.from(node.childNodes).map(htmlToBBCode).join('');
+    
+    if (node.nodeName === 'B' || node.nodeName === 'STRONG') return `[b]${content}[/b]`;
+    if (node.nodeName === 'I' || node.nodeName === 'EM') return `[i]${content}[/i]`;
+    if (node.nodeName === 'U') return `[u]${content}[/u]`;
+    if (node.nodeName === 'BR') return '\n';
+    if (node.nodeName === 'DIV' || node.nodeName === 'P') return `\n${content}`;
+    if (node.nodeName === 'A') return `[url=${node.getAttribute('href')}]${content}[/url]`;
+    
+    if (node.nodeName === 'SPAN') {
+        if (node.classList.contains('rainbow-text')) return `[rainbow]${content}[/rainbow]`;
+        
+        // ГЛАВНОЕ ОБНОВЛЕНИЕ: Группируем буквы обратно в одно слово
+        if (node.classList.contains('shake-preview')) {
+            const dur = node.getAttribute('data-dur') || '0.1';
+            const dist = node.getAttribute('data-dist') || '2';
+            // Берем чистый текст (без вложенных спанов) для тегов
+            const textContent = node.textContent; 
+            return `[shake=${dur},${dist}]${textContent}[/shake]`;
+        }
+
+        // Игнорируем внутренние спаны тряски, чтобы не дублировать теги
+        if (node.classList.contains('shake-char-preview')) {
+            return node.textContent;
+        }
+        
+        // Цвет
+        if (node.style.color) {
+            let color = node.style.color;
+            if (color.startsWith('rgb')) {
+                const rgb = color.match(/\d+/g);
+                if (rgb) color = '#' + rgb.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+            }
+            return `[color=${color}]${content}[/color]`;
+        }
+    }
+    
+    return content;
+}

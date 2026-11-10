@@ -2987,10 +2987,23 @@ body.dt-active #console-panel {
     width: 100%;
     text-align: left;
     text-shadow: 1px 1px 0 #000;
-    animation: dtFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: dtFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; 
+    /* НОВЫЕ СТИЛИ: */
+    max-height: 400px; /* Ограничиваем высоту */
+    overflow-y: auto;  /* Добавляем скроллбар */
+    overflow-wrap: anywhere; /* Заставляет длинные слова переноситься */
+    padding-right: 10px; /* Отступ для скроллбара */
 }
+
+
+
 .dt-summary-label { color: #666; display: inline-block; min-width: 155px; }
-.dt-summary-value { color: #eee; text-shadow: 2px 2px 0 #000; }
+.dt-summary-value {
+    color: #eee; 
+    text-shadow: 2px 2px 0 #000;
+    display: inline-block;
+    word-break: break-all; /* Помогает переносить длинные строки */
+}
 
 /* ---- Статус ---- */
 .dt-status {
@@ -3677,4 +3690,502 @@ body.dt-active #console-panel {
     font-size: 1.4rem;
     text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 15px #ff0000 !important;
     z-index: 1000 !important;
+}
+
+/* ===== ФИНАЛЬНЫЙ ЭКРАН ЗАКАЗА (СПЛИТ) ===== */
+.dt-split-layout {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: left;
+    align-items: flex-start;
+    animation: dtFadeUp 0.5s ease both;
+}
+@media (max-width: 768px) {
+    .dt-split-layout { flex-direction: column; }
+}
+
+.dt-form-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.dt-form-side label {
+    font-size: 0.85rem;
+    color: #a898c8;
+    margin-bottom: -5px;
+    letter-spacing: 1px;
+}
+
+.dt-preview-side {
+    flex: 1;
+    background: #2b2d31;
+    border-left: 4px solid #3eff6e;
+    border-radius: 4px;
+    padding: 16px;
+    font-family: 'Roboto', 'Segoe UI', sans-serif;
+    color: #dbdee1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    position: sticky;
+    top: 20px;
+    width: 100%;
+}
+
+.mock-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.mock-app-name {
+    color: #f2f3f5;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.mock-title {
+    color: #00a8fc;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    word-break: break-word;
+}
+
+.mock-desc {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+    color: #dbdee1;
+}
+
+.mock-socials {
+    font-size: 0.8rem;
+    color: #00a8fc;
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+    border-top: 1px solid #1e1f22;
+    padding-top: 8px;
+    word-break: break-all;
+}
+
+.mock-image-wrapper {
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #1e1f22;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+}
+
+.mock-image-wrapper img {
+    width: 100%;
+    height: auto;
+    max-height: 250px;
+    object-fit: contain;
+    display: block;
+}
+.mock-image-wrapper .no-img {
+    color: #949ba4;
+    font-size: 0.8rem;
+    padding: 40px;
+}
+
+/* ===== ИНТЕРАКТИВНАЯ КАРТОЧКА (WYSIWYG) ===== */
+.dt-card-edit-wrapper {
+    width: 100%;
+    max-width: 650px;
+    margin: 0 auto;
+    animation: dtFadeUp 0.5s ease both;
+}
+
+.site-replica-preview {
+    background: var(--bg-panel);
+    border: 2px solid var(--border-color);
+    box-shadow: 8px 8px 0 var(--shadow), 0 0 20px var(--glow);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-family: 'RetroFont', 'Courier New', monospace !important;
+    color: var(--text-primary);
+    text-shadow: 0 0 2px var(--accent);
+    position: relative;
+}
+
+.site-replica-preview .preview-header {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+}
+.preview-header .edit-hint {
+    color: var(--accent);
+    animation: pulse 2s infinite alternate;
+}
+
+.site-replica-preview .preview-img-wrap {
+    width: 100%;
+    aspect-ratio: 1/1;
+    max-height: 250px;
+    background: #000;
+    border: 2px solid var(--border-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+.site-replica-preview .preview-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* --- Поля ввода, замаскированные под текст --- */
+.editable-title {
+    background: transparent;
+    border: 2px dashed transparent;
+    color: #fff;
+    font-family: 'RetroFont', monospace;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    width: 100%;
+    outline: none;
+    padding: 4px;
+    margin: -4px;
+    transition: all 0.2s;
+    text-shadow: 0 0 2px var(--accent);
+}
+.editable-title:hover, .editable-title:focus {
+    border-color: #444;
+    background: rgba(0,0,0,0.3);
+}
+
+.editable-text {
+    background: transparent;
+    border: 2px dashed transparent;
+    color: var(--text-secondary);
+    font-family: 'RetroFont', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    width: 100%;
+    outline: none;
+    resize: none;
+    padding: 4px;
+    margin: -4px;
+    transition: all 0.2s;
+}
+.editable-text:hover, .editable-text:focus {
+    border-color: #444;
+    background: rgba(0,0,0,0.3);
+}
+
+.preview-tags {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin: 5px 0;
+}
+
+/* ===== ПАНЕЛЬ ФОРМАТИРОВАНИЯ (КАК В DISCORD) ===== */
+.bb-editor-wrap {
+    position: relative;
+    width: 100%;
+    margin-top: 10px;
+    z-index: 50; /* Поднимаем весь редактор выше соц-сетей */
+}
+
+.bb-toolbar {
+    position: absolute;
+    top: -38px;
+    left: 0;
+    background: rgba(10, 15, 10, 0.95);
+    border: 1px solid var(--border-color);
+    display: none; /* Скрыто по умолчанию */
+    padding: 3px;
+    gap: 4px;
+    z-index: 100;
+    align-items: center;
+    box-shadow: 0 0 10px var(--glow);
+}
+
+.bb-toolbar button {
+    background: transparent;
+    border: 1px solid #444;
+    color: var(--text-primary);
+    padding: 3px 8px;
+    font-family: 'RetroFont', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: 0.1s;
+}
+
+.bb-toolbar button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(62, 255, 110, 0.1);
+}
+
+.bb-color {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #444;
+    background: transparent;
+    cursor: pointer;
+}
+.bb-color::-webkit-color-swatch-wrapper { padding: 0; }
+.bb-color::-webkit-color-swatch { border: none; }
+
+/* ===== РЕТРО-ПАЛИТРА ЦВЕТОВ ===== */
+.bb-colors {
+    display: flex;
+    gap: 4px;
+    margin-left: 5px;
+    padding-left: 5px;
+    border-left: 1px solid #444;
+}
+
+.bb-colors span {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    border: 1px solid #000;
+    box-shadow: 0 0 2px #000;
+    transition: transform 0.1s;
+}
+
+.bb-colors span:hover {
+    transform: scale(1.2);
+    border-color: #fff;
+}
+
+/* ===== ЖИВОЙ ПРЕДПРОСМОТР ===== */
+.live-bb-preview {
+    padding: 10px;
+    border: 1px dashed var(--border-color);
+    margin-top: 5px;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    min-height: 30px;
+    background: rgba(0,0,0,0.3);
+}
+
+.editable-text[contenteditable] {
+    outline: none;
+    border: 2px dashed transparent;
+    color: var(--text-secondary);
+    font-family: 'RetroFont', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    padding: 4px;
+    margin: -4px;
+    transition: all 0.2s;
+    max-height: 150px !important; 
+    overflow-y: auto !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+}
+/* Красивый скроллбар для редактора */
+.editable-text[contenteditable]::-webkit-scrollbar {
+    width: 6px;
+}
+.editable-text[contenteditable]::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+}
+
+/* Общие стили для выезжающих панелей (тряска и ссылки) */
+.settings-panel {
+    position: absolute;
+    top: 40px;
+    left: 0;
+    background: #0a0f0a;
+    border: 2px solid var(--accent);
+    padding: 12px;
+    z-index: 9999 !important;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.9), 0 0 10px var(--accent);
+    width: 240px;
+    font-family: 'RetroFont', monospace;
+    pointer-events: auto !important;
+}
+
+.settings-panel label {
+    font-size: 0.65rem;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: uppercase;
+}
+
+.settings-panel input[type="range"],
+.settings-panel input[type="text"] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+    background: #000;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 5px;
+    font-family: 'RetroFont', monospace;
+    font-size: 0.7rem;
+}
+
+.settings-panel .btn-apply {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 6px;
+    font-family: 'RetroFont', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+.settings-panel .btn-apply:hover {
+    background: #fff;
+}
+
+.editable-text[contenteditable]:hover,
+.editable-text[contenteditable]:focus {
+    border-color: #444;
+    background: rgba(0,0,0,0.3);
+}
+/* Стиль ссылок внутри редактора */
+.editable-text[contenteditable] a {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+/* Обновленная панель */
+.bb-toolbar { display: none; flex-wrap: wrap; align-items: center; }
+.bb-color-input {
+    width: 20px; height: 20px; padding: 0; border: 1px solid #444;
+    background: transparent; cursor: pointer; margin-left: 5px;
+}
+.bb-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.bb-color-input::-webkit-color-swatch { border: none; }
+
+/* Визуальная тряска в редакторе */
+.shake-preview {
+    display: inline-block;
+    animation: letterShake 0.15s infinite alternate;
+}
+
+/* ===== ПАНЕЛЬ НАСТРОЙКИ ТРЯСКИ ===== */
+.shake-settings-panel {
+    position: absolute;
+    top: 40px;
+    left: 0;
+    background: #0a0f0a;
+    border: 2px solid var(--accent);
+    padding: 12px;
+    z-index: 9999 !important; /* Максимальный приоритет */
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.9), 0 0 10px var(--accent);
+    width: 220px;
+    font-family: 'RetroFont', monospace;
+    pointer-events: auto !important; /* Разрешаем клики */
+}
+
+.shake-settings-panel label {
+    font-size: 0.65rem;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: uppercase;
+}
+
+.shake-settings-panel input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.shake-settings-panel .btn-apply {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 6px;
+    font-family: 'RetroFont', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+.shake-settings-panel .btn-apply:hover {
+    background: #fff;
+}
+
+/* Тряска в редакторе (каждая буква) */
+.shake-char-preview {
+    display: inline-block;
+    animation-name: letterShake;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+/* ===== ИСПРАВЛЕНИЕ ПАНЕЛИ ТРЯСКИ ===== */
+.shake-settings-panel {
+    z-index: 9999 !important; /* Поднимаем на самый верх */
+    pointer-events: auto !important; /* Разрешаем клики по панели */
+    background: #0a0f0a !important; /* Делаем фон непрозрачным */
+    border: 2px solid var(--accent) !important;
+}
+
+.shake-settings-panel input[type="range"] {
+    pointer-events: auto !important;
+    z-index: 10000;
+}
+
+/* ===== ВЫРАВНИВАНИЕ ТЕКСТА ПО ЛЕВОМУ КРАЮ ===== */
+/* Перебиваем центрирование из .dt-dialogue */
+.site-replica-preview, 
+.site-replica-preview *,
+.bb-editor-wrap,
+.editable-text,
+.preview-header,
+.preview-desc,
+.preview-socials {
+    text-align: left !important;
+}
+
+/* Убедимся, что карточка не растягивается на весь экран, а стоит по центру сама по себе */
+.dt-card-edit-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+.site-replica-preview {
+    width: 100%;
+    max-width: 600px; /* Ограничиваем ширину карточки для красоты */
+}
+
+.shake-settings-panel input[type="range"],
+.shake-settings-panel button,
+.shake-settings-panel label {
+    pointer-events: auto !important;
+}
+
+#socials-input-field {
+    position: relative;
+    z-index: 1; 
 }
