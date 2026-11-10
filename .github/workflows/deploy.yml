@@ -24,25 +24,58 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 1. Сначала настраиваем Pages, чтобы получить BASE_URL
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
 
-      # 2. Генерируем страницы для соцсетей (используем BASE_URL из шага выше)
+      # Генерируем страницы прямо здесь, без внешних скриптов
       - name: Generate OG pages
-        run: node generate-og.js  # <-- Убрали "scripts/"
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const BASE_URL = process.env.BASE_URL.replace(/\/$/, "") + "/";
+            const models = JSON.parse(fs.readFileSync("models_list.json", "utf8"));
+            
+            models.forEach(model => {
+              const name = model.name;
+              if (!name) return;
+              const displayName = model.displayName || name;
+              const description = (model.description || "").replace(/\[.*?\]/g, "").substring(0, 160);
+              const preview = model.preview || `models/${name}/icon.webp`;
+              const imageUrl = `${BASE_URL}${preview.replace(/^\//, "")}`;
+              const pageUrl = `${BASE_URL}model/${name}/`;
+              
+              const html = `<!DOCTYPE html>
+            <html lang="ru">
+            <head>
+                <meta charset="UTF-8">
+                <title>${displayName}</title>
+                <meta property="og:title" content="${displayName}">
+                <meta property="og:description" content="${description}">
+                <meta property="og:image" content="${imageUrl}">
+                <meta property="og:url" content="${pageUrl}">
+                <meta property="og:type" content="website">
+                <meta name="twitter:card" content="summary_large_image">
+                <script>location.replace("${BASE_URL}?model=${encodeURIComponent(name)}");</script>
+            </head>
+            <body></body>
+            </html>`;
+              
+              const dir = path.join("model", name);
+              fs.mkdirSync(dir, { recursive: true });
+              fs.writeFileSync(path.join(dir, "index.html"), html);
+              console.log(`✅ Сгенерировано: model/${name}/index.html`);
+            });
+          '
         env:
           BASE_URL: ${{ steps.pages.outputs.base_url }}
-          OUTPUT_DIR: .
 
-      # 3. Загружаем все файлы (теперь они включают сгенерированную папку model)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
-      # 4. Публикуем на GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
