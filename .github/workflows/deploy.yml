@@ -2,8 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main] # или ваша основная ветка
-  workflow_dispatch: # позволяет запускать вручную
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,21 +24,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 1. Сначала настраиваем Pages, чтобы получить BASE_URL
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
 
+      # 2. Генерируем страницы для соцсетей (используем BASE_URL из шага выше)
       - name: Generate OG pages
-        run: node generate-og.js
+        run: node scripts/generate-og.js
         env:
           BASE_URL: ${{ steps.pages.outputs.base_url }}
-          OUTPUT_DIR: . # генерируем прямо в корне
+          OUTPUT_DIR: .
 
+      # 3. Загружаем все файлы (теперь они включают сгенерированную папку model)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
+      # 4. Публикуем на GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
