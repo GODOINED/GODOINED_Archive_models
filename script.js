@@ -1592,11 +1592,12 @@ function showModelDetail(modelName) {
 
     const allMedia = [];
 
+    // Применяем resolveUrl к рендерам и видео
     renders.forEach(src => {
-        allMedia.push({ type: 'image', src: resolveUrl(src) }); 
+        allMedia.push({ type: 'image', src: resolveUrl(src) });
     });
     videos.forEach(src => {
-        allMedia.push({ type: 'video', src: resolveUrl(src) }); 
+        allMedia.push({ type: 'video', src: resolveUrl(src) });
     });
 
     function openModalWithMedia(index) {
@@ -1612,7 +1613,7 @@ function showModelDetail(modelName) {
             renders.forEach((url, index) => {
                 const thumb = document.createElement('img');
                 thumb.className = 'render-thumbnail';
-                thumb.src = resolveUrl(url);
+                thumb.src = resolveUrl(url); // <-- Применяем resolveUrl
                 thumb.alt = `Рендер ${index + 1}`;
                 thumb.loading = 'lazy';
                 thumb.addEventListener('click', () => {
@@ -1650,7 +1651,7 @@ function showModelDetail(modelName) {
 
                 const posterUrl = url.replace(/\.(mp4|webm|mov)$/i, '.webp');
                 const posterImg = document.createElement('img');
-                posterImg.src = posterUrl;
+                posterImg.src = resolveUrl(posterUrl); // <-- Применяем resolveUrl
                 posterImg.alt = `Видео ${vidIndex + 1}`;
                 posterImg.style.width = '100%';
                 posterImg.style.height = '100%';
@@ -1680,11 +1681,12 @@ function showModelDetail(modelName) {
         }
     }
 
+    // --- ИСПРАВЛЕННЫЕ ПУТИ К КАДРАМ АНИМАЦИИ ---
     const startUrls = Array.from({ length: model.startFrames }, (_, i) => 
-        resolveUrl(`models/${model.name}/frames/start/${String(i+1).padStart(4, '0')}.webp`)
+        resolveUrl(`models/${model.name}/frames/start/${String(i+1).padStart(4, '0')}.webp`) // <-- Применяем resolveUrl
     );
     const idleUrls = Array.from({ length: model.idleFrames }, (_, i) => 
-        resolveUrl(`models/${model.name}/frames/idle/${String(i+1).padStart(4, '0')}.webp`)
+        resolveUrl(`models/${model.name}/frames/idle/${String(i+1).padStart(4, '0')}.webp`) // <-- Применяем resolveUrl
     );
 
     const fps = (model.fps && typeof model.fps === 'number' && model.fps > 0) ? model.fps : 24;
@@ -1693,7 +1695,7 @@ function showModelDetail(modelName) {
     if (model.startFrames === 0 && model.idleFrames === 0) {
         const canvas = document.getElementById('animation-canvas');
         const ctx = canvas.getContext('2d');
-        const iconUrl = resolveUrl(model.preview || `models/${model.name}/icon.webp`);
+        const iconUrl = resolveUrl(model.preview || `models/${model.name}/icon.webp`); // <-- Применяем resolveUrl
         const img = new Image();
         img.onload = () => {
             canvas.width = img.width;
