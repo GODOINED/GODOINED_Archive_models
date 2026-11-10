@@ -31,7 +31,7 @@ jobs:
 
       # 2. Генерируем страницы для соцсетей (используем BASE_URL из шага выше)
       - name: Generate OG pages
-        run: node scripts/generate-og.js
+        run: node generate-og.js  # <-- Убрали "scripts/"
         env:
           BASE_URL: ${{ steps.pages.outputs.base_url }}
           OUTPUT_DIR: .
