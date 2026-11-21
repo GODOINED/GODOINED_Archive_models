@@ -2425,8 +2425,15 @@ textarea:focus-visible {
     animation: orderPulse 2.6s ease-in-out infinite;
 }
 @keyframes orderPulse {
-    0%, 100% { box-shadow: 3px 3px 0 var(--shadow); }
-    50% { box-shadow: 3px 3px 0 var(--shadow), 0 0 18px var(--glow); }
+    0%, 100% { 
+        box-shadow: 3px 3px 0 var(--shadow), 0 0 5px var(--glow); 
+        border-color: var(--border-color);
+    }
+    50% { 
+        box-shadow: 3px 3px 0 var(--shadow), 0 0 25px var(--accent), 0 0 50px var(--accent); 
+        border-color: #fff;
+        text-shadow: 0 0 10px var(--accent);
+    }
 }
 .order-btn:hover { animation: none; }
 
@@ -4188,4 +4195,53 @@ body.dt-active #console-panel {
 #socials-input-field {
     position: relative;
     z-index: 1; 
+}
+
+/* Кастомный курсор */
+.retro-cursor {
+    position: fixed;
+    top: 0; left: 0;
+    width: 14px; height: 14px;
+    border: 2px solid var(--accent);
+    background: rgba(62, 255, 110, 0.2);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2147483647; /* Максимально возможный z-index */
+    transition: width 0.15s, height 0.15s, background 0.15s, border-color 0.15s;
+    box-shadow: 0 0 8px var(--accent);
+    display: none;
+}
+.retro-cursor.visible { display: block; }
+.retro-cursor.active {
+    width: 28px; height: 28px;
+    background: rgba(62, 255, 110, 0.4);
+    border-color: #fff;
+}
+/* На мобильных устройствах оставляем обычный палец */
+@media (max-width: 768px) { 
+    body, a, button { cursor: auto !important; } 
+    .retro-cursor { display: none !important; } 
+}
+/* ===== ДИЗЕРИНГ ФОНА (DITHERING) ===== */
+.dither-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0; /* Находится прямо над bg-canvas, но под контентом */
+    opacity: 0.15; /* Прозрачность эффекта (можно настроить) */
+    mix-blend-mode: multiply; /* Режим наложения */
+    background-size: 4px 4px; /* Размер пикселя дизеринга */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    /* Анимация легкого "дыхания" или сдвига, как на старых мониторах */
+    animation: ditherShift 4s steps(4) infinite;
+}
+
+/* Анимация сдвига узора */
+@keyframes ditherShift {
+    0% { background-position: 0 0; }
+    25% { background-position: 2px 0; }
+    50% { background-position: 2px 2px; }
+    75% { background-position: 0 2px; }
+    100% { background-position: 0 0; }
 }

@@ -276,7 +276,21 @@ function isLocalServer() {
         const currentSpan = output.querySelector(`[data-line="${lineIndex}"]`);
         if (!currentSpan) return;
         const char = currentLine[charIndex];
-        currentSpan.textContent += char;
+        // 8% шанс, что буква на мгновение превратится в глитч-символ
+        const isGlitch = Math.random() < 0.08 && char !== ' ' && char !== '_';
+        
+        if (isGlitch) {
+            const glitchChars = '!@#$%^&*()_+-=[]{}|;:,.<>?/\\~';
+            const gChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+            currentSpan.textContent += gChar;
+            setTimeout(() => {
+                if (currentSpan) {
+                    currentSpan.textContent = currentSpan.textContent.slice(0, -1) + char;
+                }
+            }, 50);
+        } else {
+            currentSpan.textContent += char;
+        }
         charIndex++;
         output.scrollTop = output.scrollHeight;
         if (charIndex < currentLine.length && char !== ' ') {
@@ -531,6 +545,14 @@ let modalIsOpen = false;
 
 let currentVideoElement = null;
 let playerInterval = null;
+// Переменные для параллакса
+let parallaxX = 0, parallaxY = 0;
+let targetParallaxX = 0, targetParallaxY = 0;
+
+window.addEventListener('mousemove', (e) => {
+    targetParallaxX = (e.clientX / window.innerWidth - 0.5) * 2;
+    targetParallaxY = (e.clientY / window.innerHeight - 0.5) * 2;
+}, { passive: true });
 
 // Возвращает корневой путь сайта (например, / или /GODOINED_Archive_models/)
 function getBaseUrl() {
@@ -1853,9 +1875,14 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
     function draw() {
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Смещение частиц (параллакс)
+        const pX = -parallaxX * 20;
+        const pY = -parallaxY * 20;
+        
         particles.forEach(p => {
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.arc(p.x + pX, p.y + pY, p.r, 0, Math.PI * 2);
             ctx.fillStyle = p.color;
             ctx.fill();
             p.x += p.vx;
@@ -2150,6 +2177,11 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
 
     function draw() {
         if (!ctx) return;
+        
+        // Плавное движение параллакса
+        parallaxX += (targetParallaxX - parallaxX) * 0.05;
+        parallaxY += (targetParallaxY - parallaxY) * 0.05;
+
         colors = themeColors();
         ctx.clearRect(0, 0, W, H);
 
@@ -2158,7 +2190,11 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
 
+        // Смещение сетки
+        ctx.save();
+        ctx.translate(-parallaxX * 25, -parallaxY * 25);
         drawPerspectiveGrid();
+        ctx.restore();
 
         if (dotPattern) {
             ctx.save();
@@ -2170,7 +2206,12 @@ function startAnimation(images, startCount, idleCount, frameDelay) {
         }
 
         shapes.forEach(sh => {
+            ctx.save();
+            // Разный масштаб смещения для разных фигур (глубина)
+            ctx.translate(-parallaxX * 50 * (sh.scale || 1), -parallaxY * 50 * (sh.scale || 1));
             drawShape(sh);
+            ctx.restore();
+            
             if (!reducedMotion) updatePortalFlight(sh);
         });
 
@@ -4896,6 +4937,116 @@ window.RETRO = (function () {
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.altKey && (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К')) { e.preventDefault(); location.reload(); }
     });
+})();
+
+// ===== ГЕНЕРАТОР ДИЗЕРИНГА (DITHERING) =====
+(function initDithering() {
+    // Создаем элемент, если его нет
+    let dither = document.querySelector('.dither-overlay');
+    if (!dither) {
+        dither = document.createElement('div');
+        dither.className = 'dither-overlay';
+        // Добавляем в page-content, чтобы он был под контентом, но над canvas
+        document.getElementById('page-content').prepend(dither); 
+    }
+
+    // Создаем матрицу Байера 4x4
+    const bayerMatrix = [
+        [ 0,  8,  2, 10],
+        [12,  4, 14,  6],
+        [ 3, 11,  1,  9],
+        [15,  7, 13,  5]
+    ];
+
+    const size = 4;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Рисуем пиксели
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const val = bayerMatrix[y][x];
+            // Чем больше значение, тем темнее пиксель (от 0 до 255)
+            // Мы используем полупрозрачный черный, чтобы смешивать с фоном
+            const alpha = val / 16; 
+            // Получаем текущий цвет акцента из CSS
+            const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#3eff6e';
+            // Для простоты используем черный, так как multiply с цветом может дать грязный оттенок,
+            // но если хочется, можно прописать тут rgb.
+            ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+
+    // Превращаем в картинку и ставим на фон
+    const dataURL = canvas.toDataURL();
+    dither.style.backgroundImage = `url(${dataURL})`;
+
+    console.log('[GODOINED ARCHIVE] Дизеринг фона активирован');
+})();
+
+// ===== КАСТОМНЫЙ КУРСОР =====
+(function initCustomCursor() {
+    // Если это мобилка (тач), вообще не включаем кастомный курсор
+    if ('ontouchstart' in window && window.innerWidth < 1024) return;
+
+    // Создаем элемент курсора прямо в JS, чтобы он точно был
+    let cursor = document.getElementById('retro-cursor');
+    if (!cursor) {
+        cursor = document.createElement('div');
+        cursor.id = 'retro-cursor';
+        cursor.className = 'retro-cursor';
+        document.body.appendChild(cursor);
+    }
+
+    // Прячем стандартный курсор ТОЛЬКО когда скрипт успешно запустился
+    document.body.style.cursor = 'none';
+    
+    // Добавляем стиль для скрытия курсора на кликабельных элементах
+    const style = document.createElement('style');
+    style.innerHTML = `
+        a, button, input, textarea, select, .model-card, .dt-choice, .tag-filter-btn { cursor: none !important; }
+    `;
+    document.head.appendChild(style);
+
+    let curX = window.innerWidth / 2, curY = window.innerHeight / 2;
+    let targetX = curX, targetY = curY;
+    
+    // Показываем курсор
+    cursor.style.display = 'block';
+
+    window.addEventListener('mousemove', (e) => {
+        targetX = e.clientX;
+        targetY = e.clientY;
+    }, { passive: true });
+
+    // Плавное движение (инерция)
+    function loop() {
+        curX += (targetX - curX) * 0.25;
+        curY += (targetY - curY) * 0.25;
+        cursor.style.transform = `translate(${curX}px, ${curY}px) translate(-50%, -50%)`;
+        requestAnimationFrame(loop);
+    }
+    loop();
+
+    // Увеличение при наведении на кнопки и ссылки
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('a, button, .model-card, .dt-btn, input, textarea, select, .tag')) {
+            cursor.classList.add('active');
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('a, button, .model-card, .dt-btn, input, textarea, select, .tag')) {
+            cursor.classList.remove('active');
+        }
+    });
+
+    // Прячем курсор, если мышь ушла за пределы окна
+    document.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; });
+    document.addEventListener('mouseenter', () => { cursor.style.opacity = '1'; });
 })();
 
 // Функция для перевода HTML из редактора обратно в BBCode
