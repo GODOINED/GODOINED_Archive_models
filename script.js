@@ -786,9 +786,12 @@ function downloadWithEffect(downloadUrl) {
         overlay.classList.add('fade-out');
         setTimeout(() => {
             overlay.remove();
+            // Принудительно кодируем URL, чтобы пробелы и скобки не ломали ссылку
+            const safeUrl = encodeURI(downloadUrl); 
             const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = '';
+            link.href = safeUrl;
+            // Если указать download = '', браузер попытается скачать файл, а не открыть его
+            link.download = ''; 
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
