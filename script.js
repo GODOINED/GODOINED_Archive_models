@@ -1584,7 +1584,7 @@ function showModelDetail(modelName) {
     if (model.downloadable && model.downloadFile) {
         downloadBtn.style.display = 'inline-block';
         downloadBtn.onclick = () => {
-            const downloadUrl = `models/${model.name}/${model.downloadFile}`;
+            const downloadUrl = resolveUrl(`models/${model.name}/${model.downloadFile}`);
             downloadWithEffect(downloadUrl);
         };
     } else {
